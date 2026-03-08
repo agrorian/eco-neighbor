@@ -62,7 +62,7 @@ const RecentActivity = () => {
     const fetchTx = async () => {
       const { data } = await supabase
         .from('transactions')
-        .select('id, description, amount, rep_change, created_at')
+        .select('id, description, enb_amount, rep_change, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3);
@@ -91,7 +91,7 @@ const RecentActivity = () => {
             </div>
           </div>
           <div className="text-right">
-            <div className="font-bold text-enb-green">+{item.amount} ENB</div>
+            <div className="font-bold text-enb-green">+{item.enb_amount} ENB</div>
             {item.rep_change > 0 && (
               <div className="text-xs text-enb-gold">+{item.rep_change} Rep</div>
             )}
