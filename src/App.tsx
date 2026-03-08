@@ -86,12 +86,15 @@ export default function App() {
     }
 
     // Check current Supabase session on load — fetch real profile
+    const timeout = setTimeout(() => setAuthChecked(true), 5000); // fallback after 5s
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         await fetchAndSetUser(session.user.id, session.user.email ?? '', setUser);
       }
+      clearTimeout(timeout);
       setAuthChecked(true);
     }).catch(() => {
+      clearTimeout(timeout);
       setAuthChecked(true);
     });
 
