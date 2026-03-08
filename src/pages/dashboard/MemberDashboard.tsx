@@ -59,7 +59,7 @@ const RecentActivity = () => {
 
   React.useEffect(() => {
     if (!user) return;
-    const fetch = async () => {
+    const fetchTx = async () => {
       const { data } = await supabase
         .from('transactions')
         .select('id, description, amount, rep_change, created_at')
@@ -68,12 +68,15 @@ const RecentActivity = () => {
         .limit(3);
       if (data) setTransactions(data);
     };
-    fetch();
-  }, [user]);
+    fetchTx();
+  }, [user?.id]);
 
   return (
     <div className="space-y-4">
       <h3 className="font-bold text-enb-text-primary text-lg">Recent Activity</h3>
+      {transactions.length === 0 && (
+        <div className="text-sm text-enb-text-secondary text-center py-4">No activity yet.</div>
+      )}
       {transactions.map((item, i) => (
         <div key={i} className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="flex items-center gap-3">
@@ -89,30 +92,15 @@ const RecentActivity = () => {
           </div>
           <div className="text-right">
             <div className="font-bold text-enb-green">+{item.amount} ENB</div>
-            {item.rep_change > 0 && <div className="text-xs text-enb-gold">+{item.rep_change} Rep</div>}
+            {item.rep_change > 0 && (
+              <div className="text-xs text-enb-gold">+{item.rep_change} Rep</div>
+            )}
           </div>
         </div>
       ))}
     </div>
   );
 };
-      <div key={i} className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.amount.startsWith('+') ? 'bg-enb-green/10 text-enb-green' : 'bg-red-50 text-red-500'}`}>
-            {item.amount.startsWith('+') ? <Leaf className="w-5 h-5" /> : <ArrowRight className="w-5 h-5 rotate-45" />}
-          </div>
-          <div>
-            <div className="font-medium text-enb-text-primary">{item.action}</div>
-            <div className="text-xs text-enb-text-secondary">{item.date} • {item.status}</div>
-          </div>
-        </div>
-        <div className={`font-bold ${item.amount.startsWith('+') ? 'text-enb-green' : 'text-red-500'}`}>
-          {item.amount}
-        </div>
-      </div>
-    ))}
-  </div>
-);
 
 const getTierIcon = (repScore: number) => {
   const tier = getTier(repScore);
