@@ -45,32 +45,50 @@ import ConnectWallet from '@/pages/onboarding/ConnectWallet';
 import Tutorial from '@/pages/onboarding/Tutorial';
 import Login from '@/pages/onboarding/Login';
 
+async function fetchAndSetUser(
+  userId: string,
+  email: string,
+  setUser: (u: any) => void
+) {
+  const { data } = await supabase
+    .from('users')
+    .select('id, email, full_name, neighbourhood, profession, enb_local_bal, enb_global_bal, rep_score, tier, role, wallet_address')
+    .eq('id', userId)
+    .single();
+
+  if (data) {
+    setUser(data);
+  } else {
+    // Profile not created yet — set minimal user so app doesn't break
+    setUser({
+      id: userId,
+      email: email,
+      full_name: '',
+      neighbourhood: '',
+      profession: '',
+      enb_local_bal: 0,
+      rep_score: 0,
+      tier: 'Newcomer',
+      role: 'member'
+    });
+  }
+}
+
 export default function App() {
   const { user, setUser } = useUserStore();
   const [showSplash, setShowSplash] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    // Check if splash has been shown this session
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
     if (hasSeenSplash) {
       setShowSplash(false);
     }
 
-    // Check current Supabase session on load
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Check current Supabase session on load — fetch real profile
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email ?? '',
-          full_name: '',
-          neighbourhood: '',
-          profession: '',
-          enb_local_bal: 0,
-          rep_score: 0,
-          tier: 'Newcomer',
-          role: 'member'
-        });
+        await fetchAndSetUser(session.user.id, session.user.email ?? '', setUser);
       }
       setAuthChecked(true);
     }).catch(() => {
@@ -79,19 +97,9 @@ export default function App() {
 
     // Listen for auth changes (magic link clicks, logouts)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email ?? '',
-            full_name: '',
-            neighbourhood: '',
-            profession: '',
-            enb_local_bal: 0,
-            rep_score: 0,
-            tier: 'Newcomer',
-            role: 'member'
-          });
+          await fetchAndSetUser(session.user.id, session.user.email ?? '', setUser);
         } else {
           setUser(null);
         }
