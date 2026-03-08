@@ -1,3 +1,5 @@
+import React from 'react';
+import { supabase } from '@/lib/supabase';
 import { motion } from 'motion/react';
 import { Leaf, ArrowRight, Clock, Star, MapPin, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,14 +53,49 @@ const ImpactCounter = () => (
   </div>
 );
 
-const RecentActivity = () => (
-  <div className="space-y-4">
-    <h3 className="font-bold text-enb-text-primary text-lg">Recent Activity</h3>
-    {[
-      { action: "Recycling Drop-off", date: "2h ago", amount: "+15 ENB", status: "Approved" },
-      { action: "Community Cleanup", date: "Yesterday", amount: "+50 ENB", status: "Pending" },
-      { action: "Local Purchase", date: "2 days ago", amount: "-12 ENB", status: "Completed" },
-    ].map((item, i) => (
+const RecentActivity = () => {
+  const { user } = useUserStore();
+  const [transactions, setTransactions] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (!user) return;
+    const fetch = async () => {
+      const { data } = await supabase
+        .from('transactions')
+        .select('id, description, amount, rep_change, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (data) setTransactions(data);
+    };
+    fetch();
+  }, [user]);
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-bold text-enb-text-primary text-lg">Recent Activity</h3>
+      {transactions.map((item, i) => (
+        <div key={i} className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-enb-green/10 text-enb-green">
+              <Leaf className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-medium text-enb-text-primary">{item.description}</div>
+              <div className="text-xs text-enb-text-secondary">
+                {new Date(item.created_at).toLocaleDateString()}
+              </div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="font-bold text-enb-green">+{item.amount} ENB</div>
+            {item.rep_change > 0 && <div className="text-xs text-enb-gold">+{item.rep_change} Rep</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
       <div key={i} className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.amount.startsWith('+') ? 'bg-enb-green/10 text-enb-green' : 'bg-red-50 text-red-500'}`}>
