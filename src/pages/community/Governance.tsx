@@ -17,7 +17,7 @@ export default function Governance() {
 
   if (!user) return null;
 
-  const isPillar = ['Grove', 'Forest'].includes(user.tier);
+  const isPillar = ['Pillar', 'Founder'].includes(user.tier);
 
   return (
     <div className="space-y-6 pb-24">
@@ -32,7 +32,7 @@ export default function Governance() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <div className="text-sm text-white/70 uppercase tracking-wider font-medium">Your Voting Power</div>
-              <div className="text-3xl font-bold mt-1">{user.repScore} VP</div>
+              <div className="text-3xl font-bold mt-1">{user.rep_score} VP</div>
             </div>
             <div className="bg-white/10 p-2 rounded-lg">
               <Vote className="w-6 h-6 text-white" />
@@ -45,7 +45,7 @@ export default function Governance() {
               <div>
                 <span className="font-bold text-enb-gold">Voting Locked</span>
                 <p className="text-white/80 text-xs mt-1">
-                  Reach <span className="font-bold text-white">Grove Tier</span> to unlock voting rights. Keep earning Rep!
+                  Reach <span className="font-bold text-white">Pillar Tier</span> (50,000 Rep) to unlock voting rights. Keep earning Rep!
                 </p>
               </div>
             </div>

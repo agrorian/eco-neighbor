@@ -62,14 +62,7 @@ export default function SubmitAction() {
 
       if (submissionError) throw submissionError;
 
-      await supabase.from('transactions').insert({
-        user_id: user.id,
-        type: 'submission',
-        enb_amount: rewards.enb,
-        rep_change: rewards.rep,
-        description: `Submitted: ${selectedAction.replace(/_/g, ' ')}`,
-      });
-
+      // Transaction will be inserted by admin when approving the submission
       setStep('success');
     } catch (err) {
       console.error('Submission failed:', err);

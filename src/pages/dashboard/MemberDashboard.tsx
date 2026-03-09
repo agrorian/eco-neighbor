@@ -7,51 +7,92 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore, getTier } from '@/store/user';
 import { Link } from 'react-router-dom';
 
-const ActiveCampaignBanner = () => (
-  <motion.div 
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-gradient-to-r from-enb-green to-enb-teal rounded-2xl p-6 text-white mb-6 relative overflow-hidden shadow-lg shadow-enb-green/20"
-  >
-    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10" />
-    <div className="relative z-10">
-      <div className="flex justify-between items-start mb-2">
-        <div className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
-          2× Bonus Active
-        </div>
-        <div className="flex items-center gap-1 text-xs font-medium bg-black/20 px-2 py-1 rounded-lg">
-          <Clock className="w-3 h-3" />
-          <span>48h left</span>
-        </div>
-      </div>
-      <h3 className="text-xl font-bold mb-1">Spring Cleanup Drive</h3>
-      <p className="text-white/90 text-sm mb-4 max-w-xs">
-        Earn double ENB for all neighborhood cleanup actions this weekend!
-      </p>
-      <Button variant="secondary" size="sm" className="bg-white text-enb-green hover:bg-white/90 border-none">
-        Join Campaign
-        <ArrowRight className="w-4 h-4 ml-1" />
-      </Button>
-    </div>
-  </motion.div>
-);
+const ActiveCampaignBanner = () => {
+  const [campaign, setCampaign] = React.useState<any>(null);
 
-const ImpactCounter = () => (
-  <div className="grid grid-cols-2 gap-4 mb-6">
-    <Card className="bg-enb-green/5 border-enb-green/10">
-      <CardContent className="p-4 text-center">
-        <div className="text-2xl font-bold text-enb-green mb-1">1,250</div>
-        <div className="text-xs text-enb-text-secondary uppercase tracking-wider">kg Waste Saved</div>
-      </CardContent>
-    </Card>
-    <Card className="bg-enb-gold/5 border-enb-gold/10">
-      <CardContent className="p-4 text-center">
-        <div className="text-2xl font-bold text-enb-gold mb-1">45.2k</div>
-        <div className="text-xs text-enb-text-secondary uppercase tracking-wider">ENB Distributed</div>
-      </CardContent>
-    </Card>
-  </div>
-);
+  React.useEffect(() => {
+    const fetchCampaign = async () => {
+      const { data } = await supabase
+        .from('campaigns')
+        .select('name, multiplier, ends_at')
+        .eq('is_active', true)
+        .gte('ends_at', new Date().toISOString())
+        .order('ends_at', { ascending: true })
+        .limit(1)
+        .single();
+      if (data) setCampaign(data);
+    };
+    fetchCampaign();
+  }, []);
+
+  if (!campaign) return null;
+
+  const endsAt = new Date(campaign.ends_at);
+  const hoursLeft = Math.max(0, Math.round((endsAt.getTime() - Date.now()) / 3600000));
+  const timeLabel = hoursLeft >= 48 ? `${Math.round(hoursLeft / 24)}d left` : `${hoursLeft}h left`;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gradient-to-r from-enb-green to-enb-teal rounded-2xl p-6 text-white mb-6 relative overflow-hidden shadow-lg shadow-enb-green/20"
+    >
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10" />
+      <div className="relative z-10">
+        <div className="flex justify-between items-start mb-2">
+          <div className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+            {campaign.multiplier}× Bonus Active
+          </div>
+          <div className="flex items-center gap-1 text-xs font-medium bg-black/20 px-2 py-1 rounded-lg">
+            <Clock className="w-3 h-3" />
+            <span>{timeLabel}</span>
+          </div>
+        </div>
+        <h3 className="text-xl font-bold mb-1">{campaign.name}</h3>
+        <p className="text-white/90 text-sm mb-4 max-w-xs">
+          Earn {campaign.multiplier}× ENB for eligible actions during this campaign!
+        </p>
+        <Button variant="secondary" size="sm" className="bg-white text-enb-green hover:bg-white/90 border-none">
+          View Campaign
+          <ArrowRight className="w-4 h-4 ml-1" />
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
+
+const ImpactCounter = () => {
+  const [stats, setStats] = React.useState({ actions: 0, enb: 0 });
+
+  React.useEffect(() => {
+    const fetch = async () => {
+      const [aRes, tRes] = await Promise.all([
+        supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+        supabase.from('transactions').select('enb_amount').eq('type', 'credit'),
+      ]);
+      const totalEnb = (tRes.data || []).reduce((s: number, t: any) => s + (t.enb_amount || 0), 0);
+      setStats({ actions: aRes.count || 0, enb: totalEnb });
+    };
+    fetch();
+  }, []);
+
+  return (
+    <div className="grid grid-cols-2 gap-4 mb-6">
+      <Card className="bg-enb-green/5 border-enb-green/10">
+        <CardContent className="p-4 text-center">
+          <div className="text-2xl font-bold text-enb-green mb-1">{stats.actions.toLocaleString()}</div>
+          <div className="text-xs text-enb-text-secondary uppercase tracking-wider">Verified Actions</div>
+        </CardContent>
+      </Card>
+      <Card className="bg-enb-gold/5 border-enb-gold/10">
+        <CardContent className="p-4 text-center">
+          <div className="text-2xl font-bold text-enb-gold mb-1">{(stats.enb / 1000).toFixed(1)}k</div>
+          <div className="text-xs text-enb-text-secondary uppercase tracking-wider">ENB Distributed</div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 const RecentActivity = () => {
   const { user } = useUserStore();

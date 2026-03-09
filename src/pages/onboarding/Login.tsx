@@ -2,31 +2,28 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowRight, ArrowLeft, Mail } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSendLink = async () => {
+  const handleLogin = async () => {
+    if (!email || !password) return;
     setLoading(true);
     setError('');
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/dashboard`
-        }
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      setSent(true);
+      // App.tsx onAuthStateChange will handle loading the user profile
+      navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to send link. Please try again.');
+      setError(err.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -53,50 +50,58 @@ export default function Login() {
           </div>
         )}
 
-        {!sent ? (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500">
-              Enter your email and we'll send you a magic link to sign in instantly.
-            </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-enb-text-primary">Email Address</label>
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-enb-text-primary">Email Address</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-enb-text-primary">Password</label>
+            <div className="relative">
               <Input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                className="pr-10"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
+          </div>
 
-            <Button
-              onClick={handleSendLink}
-              className="w-full mt-4"
-              disabled={!email || loading}
-            >
-              {loading ? 'Sending...' : 'Send Magic Link'}
-              {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
-            </Button>
-          </div>
-        ) : (
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-enb-green/10 rounded-full flex items-center justify-center mx-auto">
-              <Mail className="w-8 h-8 text-enb-green" />
-            </div>
-            <h3 className="text-lg font-semibold text-enb-text-primary">Check your email</h3>
-            <p className="text-sm text-gray-500">
-              We sent a magic link to <span className="font-medium text-enb-text-primary">{email}</span>.
-              Tap the link to sign in.
-            </p>
-            <p className="text-xs text-gray-400">Don't see it? Check your spam folder.</p>
+          <Button
+            onClick={handleLogin}
+            className="w-full mt-4"
+            disabled={!email || !password || loading}
+          >
+            {loading ? 'Logging in...' : 'Log In'}
+            {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
+          </Button>
+
+          <p className="text-center text-sm text-gray-400 pt-2">
+            Don't have an account?{' '}
             <button
-              onClick={() => setSent(false)}
-              className="text-sm text-enb-green hover:underline"
+              onClick={() => navigate('/signup/step1')}
+              className="text-enb-green font-medium hover:underline"
             >
-              Use a different email
+              Sign up
             </button>
-          </div>
-        )}
+          </p>
+        </div>
       </div>
     </div>
   );
