@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowUpRight, ArrowDownLeft, RefreshCw, QrCode, Users } from 'lucide-react';
 import { useUserStore } from '@/store/user';
+import { supabase } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
 import TransactionHistory from './wallet/TransactionHistory';
 
@@ -15,7 +15,7 @@ export default function Wallet() {
     const refreshBalance = async () => {
       const { data } = await supabase
         .from('users')
-        .select('enb_local_bal, rep_score, tier')
+        .select('enb_local_bal, enb_global_bal, rep_score, tier')
         .eq('id', user.id)
         .single();
       if (data) setUser({ ...user, ...data });
@@ -39,8 +39,8 @@ export default function Wallet() {
             {user.tier?.charAt(0) || 'N'}
           </div>
           <div>
-            <div className="font-bold text-enb-text-primary">{user.tier || 'Newcomer'} Tier</div>
-            <div className="text-xs text-enb-text-secondary">Rep Score: {user.rep_score ?? 0}</div>
+            <div className="font-bold text-enb-text-primary">{user.tier} Tier</div>
+            <div className="text-xs text-enb-text-secondary">Rep Score: {user.rep_score}</div>
           </div>
         </div>
         <Link to="/leaderboard">
@@ -57,7 +57,9 @@ export default function Wallet() {
             <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">ENB.LOCAL</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-enb-green mb-2">{(user.enb_local_bal ?? 0).toLocaleString()}</div>
+            <div className="text-4xl font-bold text-enb-green mb-2">
+              {(user.enb_local_bal || 0).toLocaleString()}
+            </div>
             <p className="text-xs text-enb-text-secondary mb-6">Community Rewards (Non-transferable)</p>
             <div className="flex gap-3">
               <Link to="/wallet/redeem" className="flex-1">
@@ -82,7 +84,9 @@ export default function Wallet() {
             <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">ENB.GLOBAL</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-enb-gold mb-2">{(user.enb_global_bal ?? 0).toLocaleString()}</div>
+            <div className="text-4xl font-bold text-enb-gold mb-2">
+              {(user.enb_global_bal || 0).toLocaleString()}
+            </div>
             <p className="text-xs text-enb-text-secondary mb-6">Tradeable Token (Solana)</p>
             <div className="flex gap-3">
               <Button className="w-full bg-enb-dark text-white hover:bg-enb-dark/90 shadow-lg shadow-enb-dark/20">

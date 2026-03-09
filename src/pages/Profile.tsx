@@ -1,17 +1,9 @@
 import { motion } from 'motion/react';
-import { Settings, LogOut, Edit2, MapPin, Briefcase, Calendar, Award } from 'lucide-react';
-import { useUserStore } from '@/store/user';
+import { Settings, LogOut, Edit2, MapPin, Briefcase, Award, Star } from 'lucide-react';
+import { useUserStore, getTier } from '@/store/user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-
-const TIER_THRESHOLDS: Record<string, number> = {
-  Newcomer: 5000,
-  Helper: 20000,
-  Guardian: 50000,
-  Pillar: 100000,
-  Founder: 999999,
-};
 
 const BADGES = [
   { id: 1, name: 'Early Adopter', icon: '🚀', description: 'Joined in the first month' },
@@ -20,20 +12,18 @@ const BADGES = [
   { id: 4, name: 'Community Pillar', icon: '🏛️', description: 'Reached Pillar tier' },
 ];
 
-function Crown(props: any) {
+const TIER_THRESHOLDS: Record<string, number> = {
+  Newcomer: 5000,
+  Helper: 20000,
+  Guardian: 50000,
+  Pillar: 100000,
+  Founder: 100000,
+};
+
+function Crown(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
     </svg>
   );
@@ -44,10 +34,9 @@ export default function Profile() {
 
   if (!user) return null;
 
-  const tier = user.tier || 'Newcomer';
-  const repScore = user.rep_score ?? 0;
-  const nextTierRep = TIER_THRESHOLDS[tier] ?? 5000;
-  const progress = Math.min((repScore / nextTierRep) * 100, 100);
+  const tier = getTier(user.rep_score);
+  const nextTierThreshold = TIER_THRESHOLDS[tier] || 5000;
+  const progress = Math.min((user.rep_score / nextTierThreshold) * 100, 100);
   const displayName = user.full_name || user.email || 'Member';
 
   return (
@@ -71,7 +60,7 @@ export default function Profile() {
           <div className="flex justify-between items-end -mt-12 mb-4">
             <div className="w-24 h-24 rounded-full border-4 border-white bg-white shadow-sm overflow-hidden">
               <img
-                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1A6B3C&color=fff`}
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1A6B3C&color=fff&size=96`}
                 alt={displayName}
                 className="w-full h-full object-cover"
               />
@@ -86,7 +75,7 @@ export default function Profile() {
             <div className="flex items-center gap-2 mb-1">
               <h2 className="text-2xl font-bold text-enb-text-primary">{displayName}</h2>
               <span className="bg-enb-gold/10 text-enb-gold text-xs px-2 py-0.5 rounded-full font-bold border border-enb-gold/20 flex items-center gap-1">
-                <Crown className="w-3 h-3 fill-current" />
+                <Crown className="w-3 h-3" style={{ fill: 'currentColor' }} />
                 {tier}
               </span>
             </div>
@@ -105,8 +94,8 @@ export default function Profile() {
                 </div>
               )}
               <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                Member
+                <Star className="w-3 h-3 text-enb-gold fill-current" />
+                {user.rep_score} Rep
               </div>
             </div>
           </div>
@@ -115,7 +104,7 @@ export default function Profile() {
           <div className="mt-6">
             <div className="flex justify-between text-xs font-medium mb-1">
               <span className="text-enb-text-secondary">Reputation Score</span>
-              <span className="text-enb-text-primary">{repScore.toLocaleString()} / {nextTierRep.toLocaleString()}</span>
+              <span className="text-enb-text-primary">{user.rep_score} / {nextTierThreshold.toLocaleString()}</span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <motion.div
@@ -125,7 +114,9 @@ export default function Profile() {
               />
             </div>
             <p className="text-xs text-gray-400 mt-1">
-              {(nextTierRep - repScore).toLocaleString()} Rep to next tier
+              {tier === 'Founder'
+                ? 'Maximum tier reached!'
+                : `${(nextTierThreshold - user.rep_score).toLocaleString()} Rep to next tier`}
             </p>
           </div>
         </CardContent>
@@ -135,13 +126,15 @@ export default function Profile() {
       <div className="grid grid-cols-2 gap-4">
         <Card className="bg-enb-green/5 border-enb-green/10">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-enb-green mb-1">{(user.enb_local_bal ?? 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold text-enb-green mb-1">
+              {(user.enb_local_bal || 0).toLocaleString()}
+            </div>
             <div className="text-xs text-enb-text-secondary uppercase tracking-wider">ENB.LOCAL Balance</div>
           </CardContent>
         </Card>
-        <Card className="bg-enb-teal/5 border-enb-teal/10">
+        <Card className="bg-enb-gold/5 border-enb-gold/10">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-enb-teal mb-1">{repScore.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-enb-gold mb-1">{user.rep_score}</div>
             <div className="text-xs text-enb-text-secondary uppercase tracking-wider">Rep Score</div>
           </CardContent>
         </Card>

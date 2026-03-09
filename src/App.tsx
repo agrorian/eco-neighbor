@@ -10,7 +10,6 @@ import Layout from '@/components/layout/Layout';
 import SplashScreen from '@/components/SplashScreen';
 import { supabase } from '@/lib/supabase';
 
-// Pages
 import Dashboard from '@/pages/Dashboard';
 import SubmitAction from '@/pages/SubmitAction';
 import Wallet from '@/pages/Wallet';
@@ -28,7 +27,6 @@ import ReferralHub from '@/pages/wallet/ReferralHub';
 import Settings from '@/pages/Settings';
 import More from '@/pages/More';
 
-// Admin Pages
 import AdminLayout from '@/pages/admin/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import SubmissionQueue from '@/pages/admin/SubmissionQueue';
@@ -37,7 +35,6 @@ import CampaignManager from '@/pages/admin/CampaignManager';
 import PartnerManager from '@/pages/admin/PartnerManager';
 import BridgeManager from '@/pages/admin/BridgeManager';
 
-// Onboarding Pages
 import Welcome from '@/pages/onboarding/Welcome';
 import SignUpStep1 from '@/pages/onboarding/SignUpStep1';
 import SignUpStep2 from '@/pages/onboarding/SignUpStep2';
@@ -45,69 +42,46 @@ import ConnectWallet from '@/pages/onboarding/ConnectWallet';
 import Tutorial from '@/pages/onboarding/Tutorial';
 import Login from '@/pages/onboarding/Login';
 
-async function fetchAndSetUser(
-  userId: string,
-  email: string,
-  setUser: (u: any) => void
-) {
-  const { data } = await supabase
-    .from('users')
-    .select('id, email, full_name, neighbourhood, profession, enb_local_bal, enb_global_bal, rep_score, tier, role, wallet_address')
-    .eq('id', userId)
-    .single();
-
-  if (data) {
-    setUser(data);
-  } else {
-    // Profile not created yet — set minimal user so app doesn't break
-    setUser({
-      id: userId,
-      email: email,
-      full_name: '',
-      neighbourhood: '',
-      profession: '',
-      enb_local_bal: 0,
-      rep_score: 0,
-      tier: 'Newcomer',
-      role: 'member'
-    });
-  }
-}
-
 export default function App() {
   const { user, setUser } = useUserStore();
   const [showSplash, setShowSplash] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
 
+  const loadUserProfile = async (userId: string, email: string) => {
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('id, email, full_name, neighbourhood, profession, enb_local_bal, enb_global_bal, rep_score, tier, role, wallet_address')
+        .eq('id', userId)
+        .single();
+      if (data) {
+        setUser(data);
+      } else {
+        setUser({ id: userId, email, full_name: '', neighbourhood: '', profession: '', enb_local_bal: 0, rep_score: 0, tier: 'Newcomer', role: 'member' });
+      }
+    } catch {
+      setUser({ id: userId, email, full_name: '', neighbourhood: '', profession: '', enb_local_bal: 0, rep_score: 0, tier: 'Newcomer', role: 'member' });
+    }
+  };
+
   useEffect(() => {
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
-    if (hasSeenSplash) {
-      setShowSplash(false);
-    }
+    if (hasSeenSplash) setShowSplash(false);
 
-    // Check current Supabase session on load — fetch real profile
-    const timeout = setTimeout(() => setAuthChecked(true), 5000); // fallback after 5s
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        await fetchAndSetUser(session.user.id, session.user.email ?? '', setUser);
+        await loadUserProfile(session.user.id, session.user.email ?? '');
       }
-      clearTimeout(timeout);
       setAuthChecked(true);
-    }).catch(() => {
-      clearTimeout(timeout);
-      setAuthChecked(true);
-    });
+    }).catch(() => setAuthChecked(true));
 
-    // Listen for auth changes (magic link clicks, logouts)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          await fetchAndSetUser(session.user.id, session.user.email ?? '', setUser);
-        } else {
-          setUser(null);
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        await loadUserProfile(session.user.id, session.user.email ?? '');
+      } else {
+        setUser(null);
       }
-    );
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -117,9 +91,7 @@ export default function App() {
     sessionStorage.setItem('hasSeenSplash', 'true');
   };
 
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
-  }
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} />;
 
   if (!authChecked) {
     return (
@@ -135,7 +107,6 @@ export default function App() {
         <Routes>
           {user ? (
             <>
-              {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="queue" element={<SubmissionQueue />} />
@@ -144,8 +115,6 @@ export default function App() {
                 <Route path="partners" element={<PartnerManager />} />
                 <Route path="bridge" element={<BridgeManager />} />
               </Route>
-
-              {/* Main App Routes */}
               <Route path="/*" element={
                 <Layout>
                   <Routes>
