@@ -68,13 +68,20 @@ export default function App() {
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
     if (hasSeenSplash) setShowSplash(false);
 
+    const authTimeout = setTimeout(() => {
+      setAuthChecked(true);
+    }, 3000);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      clearTimeout(authTimeout);
       if (session?.user) {
         await loadUserProfile(session.user.id, session.user.email ?? '');
       }
       setAuthChecked(true);
-    }).catch(() => setAuthChecked(true));
-
+    }).catch(() => {
+      clearTimeout(authTimeout);
+      setAuthChecked(true);
+    });
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         await loadUserProfile(session.user.id, session.user.email ?? '');
