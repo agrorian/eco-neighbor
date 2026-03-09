@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/user';
@@ -48,51 +43,56 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
 
   const loadUserProfile = async (userId: string, userEmail: string) => {
+    console.log('Loading profile for:', userId);
+    
     try {
-      // Select only columns that actually exist in the table
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, full_name, neighbourhood, profession, enb_local_bal, rep_score, tier, role, wallet_address, whatsapp_number, lifetime_earned')
+        .select('*')
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.error('Profile load error:', error.message);
-        // Still set user from auth — don't log them out
-        setUser({
-          id: userId,
-          email: userEmail,
-          full_name: '',
-          neighbourhood: '',
-          profession: '',
-          enb_local_bal: 0,
-          rep_score: 0,
-          tier: 'Newcomer',
-          role: 'member',
-        });
-        return;
-      }
+      console.log('Profile result:', { data, error });
 
       if (data) {
+        // Success — set full profile
         setUser({
           id: data.id,
           email: data.email || userEmail,
           full_name: data.full_name || '',
           neighbourhood: data.neighbourhood || '',
           profession: data.profession || '',
-          enb_local_bal: data.enb_local_bal ?? 0,
-          enb_global_bal: 0, // not in DB yet — default to 0
-          rep_score: data.rep_score ?? 0,
+          enb_local_bal: Number(data.enb_local_bal) || 0,
+          enb_global_bal: Number(data.enb_global_bal) || 0,
+          rep_score: Number(data.rep_score) || 0,
           tier: data.tier || 'Newcomer',
           role: data.role || 'member',
           wallet_address: data.wallet_address || undefined,
           whatsapp_number: data.whatsapp_number || undefined,
-          lifetime_earned: data.lifetime_earned ?? 0,
+          lifetime_earned: Number(data.lifetime_earned) || 0,
         });
+      } else {
+        // No profile row yet — create a minimal one so user stays logged in
+        console.warn('No profile row found, error:', error?.message);
+        const fallback = {
+          id: userId,
+          email: userEmail,
+          full_name: '',
+          neighbourhood: '',
+          profession: '',
+          enb_local_bal: 0,
+          enb_global_bal: 0,
+          rep_score: 0,
+          tier: 'Newcomer' as const,
+          role: 'member' as const,
+        };
+        // Try to insert the row so next load works
+        await supabase.from('users').upsert({ id: userId, email: userEmail });
+        setUser(fallback);
       }
     } catch (err) {
-      console.error('Unexpected profile error:', err);
-      // NEVER log out on error — keep them authenticated
+      console.error('Profile load exception:', err);
+      // ALWAYS keep user logged in even on error
       setUser({
         id: userId,
         email: userEmail,
@@ -100,6 +100,7 @@ export default function App() {
         neighbourhood: '',
         profession: '',
         enb_local_bal: 0,
+        enb_global_bal: 0,
         rep_score: 0,
         tier: 'Newcomer',
         role: 'member',
@@ -111,17 +112,29 @@ export default function App() {
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
     if (hasSeenSplash) setShowSplash(false);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event, '| User:', session?.user?.email ?? 'none');
+    // Get session immediately on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email ?? 'no session');
       if (session?.user) {
-        await loadUserProfile(session.user.id, session.user.email ?? '');
+        loadUserProfile(session.user.id, session.user.email ?? '').then(() => {
+          setAuthChecked(true);
+        });
       } else {
-        setUser(null);
+        setAuthChecked(true);
       }
-      setAuthChecked(true);
     });
 
-    const authTimeout = setTimeout(() => setAuthChecked(true), 3000);
+    // Also listen for future auth changes (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth change:', event, session?.user?.email ?? 'none');
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+      // SIGNED_IN is handled by getSession above on initial load
+      // and by window.location.href reload in Login.tsx
+    });
+
+    const authTimeout = setTimeout(() => setAuthChecked(true), 4000);
 
     return () => {
       subscription.unsubscribe();
@@ -138,8 +151,9 @@ export default function App() {
 
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-enb-surface flex items-center justify-center">
+      <div className="min-h-screen bg-enb-surface flex items-center justify-center flex-col gap-3">
         <div className="w-8 h-8 border-4 border-enb-green border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-gray-400">Loading your account...</p>
       </div>
     );
   }
