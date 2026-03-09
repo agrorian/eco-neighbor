@@ -19,10 +19,13 @@ interface UserState {
     neighbourhood: string;
     profession: string;
     enb_local_bal: number;
+    enb_global_bal?: number;
     rep_score: number;
     tier: UserTier;
     role: UserRole;
     wallet_address?: string;
+    whatsapp_number?: string;
+    lifetime_earned?: number;
   } | null;
   setUser: (user: UserState['user']) => void;
   logout: () => void;
