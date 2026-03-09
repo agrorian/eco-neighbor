@@ -20,11 +20,12 @@ export default function Login() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      // App.tsx onAuthStateChange will handle loading the user profile
-      navigate('/');
+      // Don't navigate manually — App.tsx onAuthStateChange will re-render
+      // with user set, which automatically shows the dashboard routes.
+      // Force a full reload to ensure React Router picks up the new state.
+      window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Invalid email or password. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
