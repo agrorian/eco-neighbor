@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle, XCircle, MapPin, Loader2, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, MapPin, Loader2, RefreshCw, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
+import { useUserStore } from '@/store/user';
 
 interface Submission {
   id: string;
@@ -17,87 +18,86 @@ interface Submission {
   enb_awarded: number;
   rep_awarded: number;
   submitted_at: string;
-  users?: { full_name: string | null; email: string | null };
+  users?: { full_name: string | null; email: string | null; whatsapp_number: string | null };
 }
 
 export default function SubmissionQueue() {
+  const { user } = useUserStore();
   const [queue, setQueue] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState<string | null>(null);
+  const [lastApproved, setLastApproved] = useState<{ name: string; whatsapp: string | null; enb: number } | null>(null);
 
   const fetchQueue = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('submissions')
-      .select('id, user_id, action_type, description, photo_urls, gps_address, status, enb_awarded, rep_awarded, submitted_at')
-      .eq('status', 'pending');
-    if (error) {
-      console.error('Queue fetch error:', error);
-    }
-    if (data) setQueue(data as Submission[]);
+      .select('id, user_id, action_type, description, photo_urls, gps_address, status, enb_awarded, rep_awarded, submitted_at, users(full_name, email, whatsapp_number)')
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: true });
+    if (error) console.error('Queue fetch error:', error);
+    if (data) setQueue(data as any);
     setLoading(false);
   };
 
   useEffect(() => { fetchQueue(); }, []);
 
   const handleApprove = async (item: Submission) => {
+    if (!user) return;
     setProcessing(item.id);
     try {
-      // Update submission status
-      await supabase.from('submissions').update({ status: 'approved' }).eq('id', item.id);
-
-      // Credit ENB and Rep to user
-      const { data: userData } = await supabase
-        .from('users')
-        .select('enb_local_bal, rep_score')
-        .eq('id', item.user_id)
-        .single();
-
-      if (userData) {
-        await supabase.from('users').update({
-          enb_local_bal: (userData.enb_local_bal ?? 0) + item.enb_awarded,
-          rep_score: (userData.rep_score ?? 0) + item.rep_awarded,
-        }).eq('id', item.user_id);
-      }
-
-      // Log transaction
-      await supabase.from('transactions').insert({
-        user_id: item.user_id,
-        type: 'approval',
-        enb_amount: item.enb_awarded,
-        rep_change: item.rep_awarded,
-        description: `Approved: ${item.action_type.replace(/_/g, ' ')}`,
+      const { data, error } = await supabase.rpc('approve_submission', {
+        p_submission_id: item.id,
+        p_moderator_id: user.id,
+        p_enb_amount: item.enb_awarded,
+        p_rep_amount: item.rep_awarded,
+        p_note: null,
       });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Approval failed');
 
+      const submitter = item.users as any;
+      const name = submitter?.full_name || submitter?.email || 'Member';
+      const whatsapp = submitter?.whatsapp_number || null;
+
+      setLastApproved({ name, whatsapp, enb: item.enb_awarded });
       setQueue(prev => prev.filter(s => s.id !== item.id));
       setSelectedItem(null);
-    } catch (err) {
-      console.error('Approve failed:', err);
-      alert('Failed to approve. Please try again.');
+    } catch (err: any) {
+      alert('Failed to approve: ' + err.message);
     } finally {
       setProcessing(null);
     }
   };
 
   const handleReject = async (item: Submission) => {
-    if (!rejectReason) return;
+    if (!rejectReason || !user) return;
     setProcessing(item.id);
     try {
-      await supabase.from('submissions').update({
-        status: 'rejected',
-        rejection_reason: rejectReason,
-      }).eq('id', item.id);
+      const { data, error } = await supabase.rpc('reject_submission', {
+        p_submission_id: item.id,
+        p_moderator_id: user.id,
+        p_reason: rejectReason,
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Rejection failed');
       setQueue(prev => prev.filter(s => s.id !== item.id));
       setSelectedItem(null);
       setRejectReason('');
-    } catch (err) {
-      console.error('Reject failed:', err);
-      alert('Failed to reject. Please try again.');
+    } catch (err: any) {
+      alert('Failed to reject: ' + err.message);
     } finally {
       setProcessing(null);
     }
+  };
+
+  const sendWhatsApp = (name: string, whatsapp: string, enb: number) => {
+    const msg = encodeURIComponent(
+      `✅ Assalam-o-Alaikum ${name}!\n\nYour ENB action submission has been approved! 🌿\n\n+${enb.toLocaleString()} ENB has been credited to your wallet.\n\nKeep up the great work for our community!\n\n— ENB Team`
+    );
+    window.open(`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${msg}`, '_blank');
   };
 
   return (
@@ -113,6 +113,35 @@ export default function SubmissionQueue() {
         </Button>
       </header>
 
+      {/* WhatsApp notify banner after approval */}
+      {lastApproved && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between"
+        >
+          <div>
+            <p className="text-sm font-bold text-green-700">✅ Approved — {lastApproved.name}</p>
+            <p className="text-xs text-green-600">+{lastApproved.enb.toLocaleString()} ENB credited</p>
+          </div>
+          <div className="flex gap-2">
+            {lastApproved.whatsapp && (
+              <Button
+                size="sm"
+                onClick={() => sendWhatsApp(lastApproved.name, lastApproved.whatsapp!, lastApproved.enb)}
+                className="bg-green-500 hover:bg-green-600 text-white text-xs"
+              >
+                <MessageCircle className="w-3 h-3 mr-1" />
+                Notify on WhatsApp
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => setLastApproved(null)} className="text-xs text-gray-400">
+              Dismiss
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-16 text-gray-400">
           <Loader2 className="w-6 h-6 animate-spin mr-2" />
@@ -121,7 +150,8 @@ export default function SubmissionQueue() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {queue.map((item) => {
-            const submitterName = item.users?.full_name || item.users?.email || 'Unknown User';
+            const submitter = item.users as any;
+            const submitterName = submitter?.full_name || submitter?.email || 'Unknown User';
             const photoUrl = item.photo_urls?.[0] || null;
             const isProcessing = processing === item.id;
 
@@ -144,12 +174,11 @@ export default function SubmissionQueue() {
                       </div>
                       {item.gps_address && (
                         <div className="flex items-center text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          GPS ✓
+                          <MapPin className="w-3 h-3 mr-1" />GPS ✓
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">{item.description}</p>
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
                     <div className="flex gap-2 mb-4">
                       <span className="text-xs font-medium text-enb-green bg-enb-green/5 px-2 py-0.5 rounded-full">+{item.enb_awarded.toLocaleString()} ENB</span>
                       <span className="text-xs font-medium text-enb-gold bg-enb-gold/5 px-2 py-0.5 rounded-full">+{item.rep_awarded} Rep</span>
@@ -157,40 +186,19 @@ export default function SubmissionQueue() {
 
                     {selectedItem === item.id ? (
                       <div className="space-y-3 bg-gray-50 p-3 rounded-lg">
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => handleApprove(item)}
-                            disabled={isProcessing}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm"
-                          >
-                            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : `Approve (+${item.enb_awarded.toLocaleString()} ENB)`}
-                          </Button>
-                          <Button variant="outline" onClick={() => setSelectedItem(null)} className="text-gray-500">Cancel</Button>
-                        </div>
-                        <Input
-                          placeholder="Reason for rejection..."
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          className="text-sm"
-                        />
-                        <Button
-                          onClick={() => handleReject(item)}
-                          disabled={!rejectReason || isProcessing}
-                          variant="destructive"
-                          className="w-full bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
-                        >
-                          Reject Submission
+                        <Button onClick={() => handleApprove(item)} disabled={isProcessing} className="w-full bg-green-600 hover:bg-green-700 text-white text-sm">
+                          {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : `✓ Approve (+${item.enb_awarded.toLocaleString()} ENB)`}
                         </Button>
+                        <Input placeholder="Reason for rejection (required)..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="text-sm" />
+                        <Button onClick={() => handleReject(item)} disabled={!rejectReason || isProcessing} variant="destructive" className="w-full bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 text-sm">
+                          ✗ Reject Submission
+                        </Button>
+                        <Button variant="ghost" onClick={() => setSelectedItem(null)} className="w-full text-xs text-gray-400">Cancel</Button>
                       </div>
                     ) : (
-                      <div className="flex gap-2">
-                        <Button onClick={() => handleApprove(item)} disabled={isProcessing} className="flex-1 bg-enb-green hover:bg-enb-green/90 text-white shadow-sm text-sm">
-                          {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4 mr-1" />Approve</>}
-                        </Button>
-                        <Button variant="outline" onClick={() => setSelectedItem(item.id)} className="px-3 text-red-500 border-red-100 hover:bg-red-50">
-                          <XCircle className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      <Button onClick={() => setSelectedItem(item.id)} className="w-full bg-enb-green hover:bg-enb-green/90 text-white shadow-sm text-sm">
+                        Review Submission
+                      </Button>
                     )}
                   </CardContent>
                 </Card>
@@ -198,10 +206,10 @@ export default function SubmissionQueue() {
             );
           })}
 
-          {queue.length === 0 && (
+          {queue.length === 0 && !loading && (
             <div className="col-span-full text-center py-12 text-gray-400">
               <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500 opacity-20" />
-              <p>All caught up! No pending submissions.</p>
+              <p className="font-medium">All caught up! No pending submissions.</p>
             </div>
           )}
         </div>
