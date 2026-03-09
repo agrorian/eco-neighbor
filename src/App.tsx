@@ -47,20 +47,63 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
 
-  const loadUserProfile = async (userId: string, email: string) => {
+  const loadUserProfile = async (userId: string, userEmail: string) => {
     try {
-      const { data } = await supabase
+      // Select only columns that actually exist in the table
+      const { data, error } = await supabase
         .from('users')
-        .select('id, email, full_name, neighbourhood, profession, enb_local_bal, enb_global_bal, rep_score, tier, role, wallet_address')
+        .select('id, email, full_name, neighbourhood, profession, enb_local_bal, rep_score, tier, role, wallet_address, whatsapp_number, lifetime_earned')
         .eq('id', userId)
         .single();
-      if (data) {
-        setUser(data);
-      } else {
-        setUser({ id: userId, email, full_name: '', neighbourhood: '', profession: '', enb_local_bal: 0, rep_score: 0, tier: 'Newcomer', role: 'member' });
+
+      if (error) {
+        console.error('Profile load error:', error.message);
+        // Still set user from auth — don't log them out
+        setUser({
+          id: userId,
+          email: userEmail,
+          full_name: '',
+          neighbourhood: '',
+          profession: '',
+          enb_local_bal: 0,
+          rep_score: 0,
+          tier: 'Newcomer',
+          role: 'member',
+        });
+        return;
       }
-    } catch {
-      setUser({ id: userId, email, full_name: '', neighbourhood: '', profession: '', enb_local_bal: 0, rep_score: 0, tier: 'Newcomer', role: 'member' });
+
+      if (data) {
+        setUser({
+          id: data.id,
+          email: data.email || userEmail,
+          full_name: data.full_name || '',
+          neighbourhood: data.neighbourhood || '',
+          profession: data.profession || '',
+          enb_local_bal: data.enb_local_bal ?? 0,
+          enb_global_bal: 0, // not in DB yet — default to 0
+          rep_score: data.rep_score ?? 0,
+          tier: data.tier || 'Newcomer',
+          role: data.role || 'member',
+          wallet_address: data.wallet_address || undefined,
+          whatsapp_number: data.whatsapp_number || undefined,
+          lifetime_earned: data.lifetime_earned ?? 0,
+        });
+      }
+    } catch (err) {
+      console.error('Unexpected profile error:', err);
+      // NEVER log out on error — keep them authenticated
+      setUser({
+        id: userId,
+        email: userEmail,
+        full_name: '',
+        neighbourhood: '',
+        profession: '',
+        enb_local_bal: 0,
+        rep_score: 0,
+        tier: 'Newcomer',
+        role: 'member',
+      });
     }
   };
 
@@ -68,8 +111,8 @@ export default function App() {
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
     if (hasSeenSplash) setShowSplash(false);
 
-    // Subscribe to auth changes first - fires immediately with existing session on refresh
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event, '| User:', session?.user?.email ?? 'none');
       if (session?.user) {
         await loadUserProfile(session.user.id, session.user.email ?? '');
       } else {
@@ -78,8 +121,7 @@ export default function App() {
       setAuthChecked(true);
     });
 
-    // Fallback timeout in case auth state never fires (e.g. network issue)
-    const authTimeout = setTimeout(() => setAuthChecked(true), 2000);
+    const authTimeout = setTimeout(() => setAuthChecked(true), 3000);
 
     return () => {
       subscription.unsubscribe();
