@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Leaf, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut } from 'lucide-react';
+import { Leaf, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Users, CheckSquare, Megaphone } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
 
 export default function DesktopSidebar() {
   const location = useLocation();
@@ -10,7 +11,7 @@ export default function DesktopSidebar() {
 
   if (!user) return null;
 
-  const navItems = [
+  const memberNav = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/submit', icon: PlusCircle, label: 'Submit Action' },
     { path: '/wallet', icon: Wallet, label: 'Wallet' },
@@ -20,8 +21,27 @@ export default function DesktopSidebar() {
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
+  const adminNav = [
+    { path: '/admin', icon: Home, label: 'Overview' },
+    { path: '/admin/queue', icon: CheckSquare, label: 'Review Queue' },
+    { path: '/admin/users', icon: Users, label: 'Members' },
+    { path: '/admin/campaigns', icon: Megaphone, label: 'Campaigns' },
+    { path: '/admin/partners', icon: Store, label: 'Partners' },
+    { path: '/admin/bridge', icon: ArrowRightLeft, label: 'Bridge Manager' },
+  ];
+
+  const isAdminSection = location.pathname.startsWith('/admin');
+  const navItems = isAdminSection ? adminNav : memberNav;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    logout();
+    window.location.href = '/';
+  };
+
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen bg-white border-r border-gray-200 fixed left-0 top-0 z-50">
+      {/* Logo */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <div className="bg-enb-green p-2 rounded-xl">
@@ -31,9 +51,24 @@ export default function DesktopSidebar() {
         </div>
       </div>
 
+      {/* Admin / Member toggle — only shown for admin users */}
+      {user.role === 'admin' && (
+        <div className="px-4 pt-4 pb-1 flex gap-2">
+          <Link to="/" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${!isAdminSection ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            Member View
+          </Link>
+          <Link to="/admin" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${isAdminSection ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            Admin Panel
+          </Link>
+        </div>
+      )}
+
+      {/* Nav Items */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = item.path === '/admin'
+            ? location.pathname === '/admin'
+            : location.pathname === item.path || location.pathname.startsWith(item.path + '/');
           return (
             <Link key={item.path} to={item.path}>
               <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive ? 'bg-enb-green/10 text-enb-green font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
@@ -51,17 +86,21 @@ export default function DesktopSidebar() {
         })}
       </nav>
 
+      {/* User footer */}
       <div className="p-4 border-t border-gray-100">
         <div className="flex items-center gap-3 px-4 py-3 mb-2">
-          <div className="w-8 h-8 rounded-full bg-enb-green/10 flex items-center justify-center text-enb-green font-bold text-sm">
+          <div className="w-8 h-8 rounded-full bg-enb-green/10 flex items-center justify-center text-enb-green font-bold text-sm flex-shrink-0">
             {(user.full_name || user.email || 'U').charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 overflow-hidden">
             <div className="text-sm font-bold text-gray-900 truncate">{user.full_name || user.email}</div>
-            <div className="text-xs text-gray-500 truncate capitalize">{user.role}</div>
+            <div className="text-xs text-gray-500 truncate capitalize flex items-center gap-1">
+              {user.role === 'admin' && <ShieldCheck className="w-3 h-3 text-enb-green" />}
+              {user.role}
+            </div>
           </div>
         </div>
-        <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" onClick={logout}>
+        <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleLogout}>
           <LogOut className="w-4 h-4 mr-2" />
           Log Out
         </Button>
