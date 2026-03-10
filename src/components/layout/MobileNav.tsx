@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Home, PlusCircle, Wallet, Store, MoreHorizontal } from 'lucide-react';
+import { Home, PlusCircle, Wallet, Store, MoreHorizontal, ShieldCheck } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 
 export default function MobileNav() {
@@ -14,14 +14,18 @@ export default function MobileNav() {
     { path: '/submit', icon: PlusCircle, label: 'Action' },
     { path: '/wallet', icon: Wallet, label: 'Wallet' },
     { path: '/directory', icon: Store, label: 'Directory' },
-    { path: '/more', icon: MoreHorizontal, label: 'More' },
+    ...(user.role === 'admin'
+      ? [{ path: '/admin', icon: ShieldCheck, label: 'Admin' }]
+      : [{ path: '/more', icon: MoreHorizontal, label: 'More' }]
+    ),
   ];
 
   return (
     <nav className="fixed bottom-0 w-full bg-white border-t border-gray-200 pb-safe pt-2 px-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 md:hidden">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path ||
+            (item.path === '/admin' && location.pathname.startsWith('/admin'));
           return (
             <Link key={item.path} to={item.path} className="relative flex flex-col items-center gap-1 w-16 group">
               {isActive && (
@@ -32,8 +36,8 @@ export default function MobileNav() {
                 />
               )}
               <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-enb-green/10' : 'group-hover:bg-gray-50'}`}>
-                <item.icon 
-                  className={`w-6 h-6 transition-colors ${isActive ? 'text-enb-green' : 'text-gray-400'}`} 
+                <item.icon
+                  className={`w-6 h-6 transition-colors ${isActive ? 'text-enb-green' : 'text-gray-400'}`}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
               </div>
