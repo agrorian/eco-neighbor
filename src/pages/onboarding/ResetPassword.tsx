@@ -14,22 +14,58 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
-    // Supabase puts the token in the URL hash when user clicks the reset link.
-    // onAuthStateChange fires with SIGNED_IN when Supabase processes it.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
-        setSessionReady(true);
+    const init = async () => {
+      // Method 1: token_hash in URL query params (our email template)
+      const params = new URLSearchParams(window.location.search);
+      const tokenHash = params.get('token_hash');
+      const type = params.get('type');
+
+      if (tokenHash && type === 'recovery') {
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+        if (!error) {
+          setSessionReady(true);
+          setVerifying(false);
+          return;
+        } else {
+          setError('This reset link has expired or already been used. Please request a new one.');
+          setVerifying(false);
+          return;
+        }
       }
-    });
 
-    // Also check if session already exists (page reload case)
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setSessionReady(true);
-    });
+      // Method 2: Supabase puts access_token in URL hash (old-style links)
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token')) {
+        // onAuthStateChange will fire PASSWORD_RECOVERY
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+            setSessionReady(true);
+            setVerifying(false);
+            subscription.unsubscribe();
+          }
+        });
+        // Timeout fallback
+        setTimeout(() => {
+          setVerifying(false);
+          if (!sessionReady) setError('Could not verify reset link. Please request a new one.');
+        }, 5000);
+        return;
+      }
 
-    return () => subscription.unsubscribe();
+      // No token found — check if already has a valid session
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        setSessionReady(true);
+      } else {
+        setError('No valid reset link found. Please request a new password reset from the login page.');
+      }
+      setVerifying(false);
+    };
+
+    init();
   }, []);
 
   const handleSetPassword = async () => {
@@ -41,7 +77,6 @@ export default function ResetPassword() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       setDone(true);
-      // Redirect to home after 2 seconds
       setTimeout(() => { window.location.href = '/'; }, 2000);
     } catch (err: any) {
       setError(err.message || 'Failed to update password. Please try again.');
@@ -58,52 +93,49 @@ export default function ResetPassword() {
       </div>
 
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg relative z-10">
-
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
           <div className="bg-enb-green p-2 rounded-xl">
-            <div className="w-5 h-5 text-white font-bold text-xs flex items-center justify-center">🌿</div>
+            <span className="text-white text-sm">🌿</span>
           </div>
           <span className="font-bold text-lg text-enb-text-primary">Eco-Neighbor</span>
         </div>
 
+        {/* Done state */}
         {done ? (
-          /* Success state */
           <div className="text-center py-4 space-y-4">
             <CheckCircle className="w-16 h-16 text-enb-green mx-auto" />
             <h3 className="font-bold text-enb-text-primary text-xl">Password Updated!</h3>
-            <p className="text-sm text-gray-500">
-              Your password has been set successfully. Redirecting you to the app...
-            </p>
+            <p className="text-sm text-gray-500">Redirecting you to the app...</p>
             <Loader2 className="w-5 h-5 animate-spin text-enb-green mx-auto" />
           </div>
 
-        ) : !sessionReady ? (
-          /* Waiting for Supabase to process the token */
+        /* Verifying token */
+        ) : verifying ? (
           <div className="text-center py-8 space-y-4">
             <Loader2 className="w-10 h-10 animate-spin text-enb-green mx-auto" />
             <p className="text-sm text-gray-500">Verifying your reset link...</p>
-            <p className="text-xs text-gray-400">
-              If this takes too long,{' '}
-              <button onClick={() => navigate('/login')} className="text-enb-green underline">
-                go back to login
-              </button>
-              {' '}and request a new link.
-            </p>
           </div>
 
+        /* Error — bad/expired link */
+        ) : error && !sessionReady ? (
+          <div className="text-center py-4 space-y-4">
+            <div className="text-5xl">⚠️</div>
+            <h3 className="font-bold text-enb-text-primary text-lg">Link Expired</h3>
+            <p className="text-sm text-gray-500">{error}</p>
+            <Button onClick={() => navigate('/login')} className="w-full bg-enb-green text-white">
+              Back to Login
+            </Button>
+          </div>
+
+        /* Password form */
         ) : (
-          /* Password form */
           <>
             <h2 className="text-2xl font-bold text-enb-text-primary mb-2">Set New Password</h2>
-            <p className="text-sm text-gray-500 mb-6">
-              Choose a strong password for your Eco-Neighbor account.
-            </p>
+            <p className="text-sm text-gray-500 mb-6">Choose a strong password for your account.</p>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-                {error}
-              </div>
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{error}</div>
             )}
 
             <div className="space-y-4">
@@ -117,11 +149,8 @@ export default function ResetPassword() {
                     onChange={(e) => { setPassword(e.target.value); setError(''); }}
                     className="pr-10"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -138,7 +167,7 @@ export default function ResetPassword() {
                 />
               </div>
 
-              {/* Password strength hint */}
+              {/* Strength bar */}
               {password.length > 0 && (
                 <div className="flex gap-1">
                   {[...Array(4)].map((_, i) => (
