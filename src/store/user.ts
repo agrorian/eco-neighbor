@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type UserRole = 'member' | 'business' | 'admin';
+export type UserRole = 'member' | 'business' | 'admin' | 'moderator' | 'organiser' | 'founder';
 export type UserTier = 'Newcomer' | 'Helper' | 'Guardian' | 'Pillar' | 'Founder';
 
 export function getTier(repScore: number): UserTier {
@@ -19,13 +19,16 @@ interface UserState {
     neighbourhood: string;
     profession: string;
     enb_local_bal: number;
-    enb_global_bal?: number;
+    enb_global_bal: number;
     rep_score: number;
     tier: UserTier;
     role: UserRole;
     wallet_address?: string;
     whatsapp_number?: string;
     lifetime_earned?: number;
+    referred_by?: string;
+    referral_code?: string;
+    consecutive_absences?: number;
   } | null;
   setUser: (user: UserState['user']) => void;
   logout: () => void;
