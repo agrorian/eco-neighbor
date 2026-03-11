@@ -88,7 +88,7 @@ export default function App() {
           role: 'member' as const,
         };
         // Try to insert the row so next load works
-        await supabase.from('users').upsert({ id: userId, email: userEmail });
+        await supabase.from('users').upsert({ id: userId, email: userEmail, full_name: '', enb_local_bal: 0, enb_global_bal: 0, rep_score: 0, tier: 'Newcomer', role: 'member', is_active: true }, { onConflict: 'id' });
         setUser(fallback);
       }
     } catch (err) {
