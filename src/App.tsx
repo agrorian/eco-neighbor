@@ -33,12 +33,11 @@ import UserManagement from '@/pages/admin/UserManagement';
 import CampaignManager from '@/pages/admin/CampaignManager';
 import PartnerManager from '@/pages/admin/PartnerManager';
 import BridgeManager from '@/pages/admin/BridgeManager';
-import ModQueue from '@/pages/admin/ModQueue';
-
 // --- Lazily loaded (newer pages, role-gated) ---
 const FounderSale = lazy(() => import('@/pages/FounderSale'));
 const FounderHardship = lazy(() => import('@/pages/FounderHardship'));
 const PartnerFloat = lazy(() => import('@/pages/PartnerFloat'));
+const ModQueue = lazy(() => import('@/pages/admin/ModQueue'));
 
 // --- Onboarding ---
 import Welcome from '@/pages/onboarding/Welcome';
