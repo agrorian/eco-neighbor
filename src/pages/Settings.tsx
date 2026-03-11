@@ -43,17 +43,28 @@ export default function Settings() {
     setSaving(true);
     setProfileError('');
     try {
-      const { error } = await supabase
+      const updatePayload = {
+        full_name: fullName,
+        whatsapp_number: whatsapp.replace(/\D/g, '') || null,
+        neighbourhood: neighbourhood || null,
+        profession: profession || null,
+      };
+      const { data, error } = await supabase
         .from('users')
-        .update({
-          full_name: fullName,
-          whatsapp_number: whatsapp.replace(/\D/g, '') || null,
-          neighbourhood: neighbourhood || null,
-          profession: profession || null,
-        })
-        .eq('id', user.id);
+        .update(updatePayload)
+        .eq('id', user.id)
+        .select('full_name, neighbourhood, profession, whatsapp_number')
+        .single();
       if (error) throw error;
-      setUser({ ...user, full_name: fullName, whatsapp_number: whatsapp, neighbourhood, profession });
+      // Use DB-confirmed values to update store
+      const confirmed = data || updatePayload;
+      setUser({ 
+        ...user, 
+        full_name: confirmed.full_name || fullName,
+        whatsapp_number: confirmed.whatsapp_number || whatsapp,
+        neighbourhood: confirmed.neighbourhood || neighbourhood,
+        profession: confirmed.profession || profession,
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: any) {
