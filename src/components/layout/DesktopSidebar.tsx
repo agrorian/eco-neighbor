@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Leaf, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Users, CheckSquare, Megaphone } from 'lucide-react';
+import { Leaf, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Users, CheckSquare, Megaphone, ClipboardList, AlertTriangle, BarChart2 } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
@@ -21,6 +21,13 @@ export default function DesktopSidebar() {
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
+  const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
+  const roleBasedNav = ALLOWED_LOG_ROLES.includes(user?.role || '') ? [
+    { path: '/my-log', icon: ClipboardList, label: 'Daily Log' },
+    { path: '/report-submission', icon: AlertTriangle, label: 'Report Submission' },
+    { path: '/governance', icon: BarChart2, label: 'Governance' },
+  ] : [];
+
   const adminNav = [
     { path: '/admin', icon: Home, label: 'Overview' },
     { path: '/admin/queue', icon: CheckSquare, label: 'Review Queue' },
@@ -28,10 +35,11 @@ export default function DesktopSidebar() {
     { path: '/admin/campaigns', icon: Megaphone, label: 'Campaigns' },
     { path: '/admin/partners', icon: Store, label: 'Partners' },
     { path: '/admin/bridge', icon: ArrowRightLeft, label: 'Bridge Manager' },
+    { path: '/admin/mod-queue', icon: CheckSquare, label: 'Mod Queue' },
   ];
 
   const isAdminSection = location.pathname.startsWith('/admin');
-  const navItems = isAdminSection ? adminNav : memberNav;
+  const navItems = isAdminSection ? adminNav : [...memberNav, ...roleBasedNav];
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
