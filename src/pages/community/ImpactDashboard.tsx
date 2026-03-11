@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Leaf, Users, Store, CheckCircle, Share2 } from 'lucide-react';
+import { Leaf, Users, Store, CheckCircle, Share2, Coins } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -83,6 +83,7 @@ export default function ImpactDashboard() {
     { icon: CheckCircle, value: stats.totalActions.toLocaleString(), label: 'Verified Actions', color: 'bg-enb-teal/10 text-enb-teal' },
     { icon: Leaf, value: `${(stats.totalEnbDistributed / 1000).toFixed(1)}k`, label: 'ENB Distributed', color: 'bg-enb-gold/10 text-enb-gold' },
     { icon: Store, value: stats.totalPartners.toLocaleString(), label: 'Business Partners', color: 'bg-purple-100 text-purple-600' },
+    { icon: Coins, value: '10,000,000,000', label: 'Total ENB Supply', color: 'bg-enb-green/10 text-enb-green' },
   ];
 
   return (

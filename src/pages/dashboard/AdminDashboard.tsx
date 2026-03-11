@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Users, Leaf, Clock, CheckCircle, XCircle, Store, Loader2, RefreshCw, MessageCircle } from 'lucide-react';
+import { Users, Leaf, Clock, CheckCircle, XCircle, Store, Loader2, RefreshCw, MessageCircle, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
@@ -36,9 +36,9 @@ export default function AdminDashboard() {
         supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('transactions').select('enb_amount').eq('type', 'credit'),
         supabase.from('submissions')
-          .select('id, action_type, status, reviewed_at, submitted_at, users(full_name)')
+          .select('id, user_id, action_type, status, reviewed_at, submitted_at')
           .in('status', ['approved', 'rejected'])
-          .order('reviewed_at', { ascending: false })
+          .order('submitted_at', { ascending: false })
           .limit(5),
       ]);
 
@@ -51,9 +51,16 @@ export default function AdminDashboard() {
         totalApproved: 0,
       });
 
-      // Build activity feed from real submissions
+      // Fetch user names separately to avoid join issues
+      const userIds = [...new Set((recentSubsRes.data || []).map((s: any) => s.user_id))];
+      const { data: usersData } = userIds.length > 0
+        ? await supabase.from('users').select('id, full_name').in('id', userIds)
+        : { data: [] };
+      const userMap = new Map((usersData || []).map((u: any) => [u.id, u.full_name]));
+
+      // Build activity feed
       const acts: RecentActivity[] = (recentSubsRes.data || []).map((s: any) => {
-        const name = s.users?.full_name || 'A member';
+        const name = userMap.get(s.user_id) || 'A member';
         const action = s.action_type?.replace(/_/g, ' ') || 'action';
         const when = s.reviewed_at || s.submitted_at;
         const timeAgo = when ? getTimeAgo(new Date(when)) : '';
@@ -83,6 +90,7 @@ export default function AdminDashboard() {
     { icon: Leaf, label: 'ENB Distributed', value: loading ? '—' : stats.totalEnbDistributed.toLocaleString(), color: 'text-enb-green', bg: 'bg-enb-green/10' },
     { icon: Clock, label: 'Pending Review', value: loading ? '—' : stats.pendingQueue.toString(), color: 'text-enb-gold', bg: 'bg-enb-gold/10' },
     { icon: MessageCircle, label: 'WhatsApp Ready', value: 'Active', color: 'text-green-600', bg: 'bg-green-100' },
+    { icon: Coins, label: 'Total ENB Supply', value: '10,000,000,000', color: 'text-enb-green', bg: 'bg-enb-green/10' },
   ];
 
   return (
