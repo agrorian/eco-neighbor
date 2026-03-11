@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // Mock Data (In a real app, fetch based on ID)
 const BUSINESS_DATA = {
   id: '1',
-  name: 'Green Leaf Cafe',
+  name: 'Green Leaf Chai House',
   category: 'Food & Drink',
   verified: true,
   address: '123 Eco Lane, Green City',
@@ -18,7 +18,7 @@ const BUSINESS_DATA = {
   tier: 'Grove',
   hours: 'Mon-Fri: 8am - 6pm',
   phone: '+1 (555) 123-4567',
-  website: 'www.greenleafcafe.com',
+  website: 'www.greenleaf.pk',
   description: 'Organic, locally sourced ingredients with a zero-waste philosophy. Bring your own cup for an extra discount!',
   offer: {
     title: '10% Off Any Purchase',
@@ -28,7 +28,7 @@ const BUSINESS_DATA = {
   image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1000&auto=format&fit=crop',
   reviewsList: [
     { id: 1, user: 'Alice G.', rating: 5, text: 'Amazing vegan options! Love the zero-waste vibe.', date: '2 days ago' },
-    { id: 2, user: 'Bob M.', rating: 4, text: 'Great coffee, but a bit pricey without the ENB discount.', date: '1 week ago' },
+    { id: 2, user: 'Bob M.', rating: 4, text: 'Great chai, but a bit pricey without the ENB discount.', date: '1 week ago' },
   ]
 };
 
