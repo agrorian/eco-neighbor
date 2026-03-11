@@ -1,33 +1,35 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useUserStore } from '@/store/user';
+import { supabase } from '@/lib/supabase';
 import ActionSelector from './submit/ActionSelector';
 import ActionForm from './submit/ActionForm';
 import SubmissionReview from './submit/SubmissionReview';
 import SubmissionSuccess from './submit/SubmissionSuccess';
-import { supabase } from '@/lib/supabase';
-import { useUserStore } from '@/store/user';
+
+type Step = 'select' | 'form' | 'review' | 'success';
 
 const ACTION_REWARDS: Record<string, { enb: number; rep: number }> = {
-  neighbourhood_cleanup:  { enb: 1000, rep: 500 },
-  recycling_dropoff:      { enb: 500,  rep: 200 },
-  carpool:                { enb: 300,  rep: 100 },
-  food_sharing:           { enb: 800,  rep: 300 },
-  skill_workshop:         { enb: 1500, rep: 1000 },
-  infrastructure_report:  { enb: 300,  rep: 100 },
-  trade_job:              { enb: 1000, rep: 800 },
-  youth_mentoring:        { enb: 2000, rep: 1500 },
-  tree_planting:          { enb: 2000, rep: 1200 },
-  waste_reporting:        { enb: 500,  rep: 200 },
+  neighbourhood_cleanup: { enb: 1000, rep: 500 },
+  recycling_dropoff:     { enb: 500,  rep: 200 },
+  carpool:               { enb: 300,  rep: 100 },
+  food_sharing:          { enb: 800,  rep: 300 },
+  skill_workshop:        { enb: 1500, rep: 1000 },
+  infrastructure_report: { enb: 300,  rep: 100 },
+  trade_job:             { enb: 1000, rep: 800 },
+  youth_mentoring:       { enb: 2000, rep: 1500 },
+  tree_planting:         { enb: 2000, rep: 1200 },
+  waste_reporting:       { enb: 500,  rep: 200 },
 };
 
 export default function SubmitAction() {
   const { user } = useUserStore();
-  const [step, setStep] = useState<'select' | 'form' | 'review' | 'success'>('select');
-  const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [step, setStep] = useState<Step>('select');
+  const [selectedAction, setSelectedAction] = useState('');
   const [formData, setFormData] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleActionSelect = (action: string) => {
     setSelectedAction(action);
@@ -39,81 +41,81 @@ export default function SubmitAction() {
     setStep('review');
   };
 
-  const handleReviewConfirm = async () => {
-    if (!user || !selectedAction) return;
+  const handleConfirmSubmit = async () => {
+    if (!user || !formData) return;
     setSubmitting(true);
+    setSubmitError('');
+
     try {
-      const rewards = ACTION_REWARDS[selectedAction] || { enb: 0, rep: 0 };
+      const rewards = ACTION_REWARDS[selectedAction] || { enb: 500, rep: 200 };
+      
+      // Parse GPS
+      let lat: number | null = null;
+      let lng: number | null = null;
+      if (formData.gpsLat) {
+        lat = formData.gpsLat;
+        lng = formData.gpsLng;
+      } else if (formData.location) {
+        const parts = formData.location.split(',');
+        if (parts.length === 2) { lat = parseFloat(parts[0]); lng = parseFloat(parts[1]); }
+      }
 
-      const { error: submissionError } = await supabase
-        .from('submissions')
-        .insert({
-          user_id: user.id,
-          action_type: selectedAction,
-          description: formData.description || '',
-          photo_urls: formData.photo ? [formData.photo] : [],
-          gps_lat: formData.gps_lat || null,
-          gps_lng: formData.gps_lng || null,
-          gps_address: formData.location || null,
-          status: 'pending',
-          enb_awarded: rewards.enb,
-          rep_awarded: rewards.rep,
-        });
+      const { error } = await supabase.from('submissions').insert({
+        user_id: user.id,
+        action_type: selectedAction,
+        description: formData.description,
+        photo_urls: formData.photoUrls?.length > 0 ? formData.photoUrls : (formData.photo ? [formData.photo] : []),
+        gps_lat: lat,
+        gps_lng: lng,
+        gps_address: formData.gpsAddress || formData.location || null,
+        status: 'pending',
+        enb_awarded: rewards.enb,
+        rep_awarded: rewards.rep,
+        image_source: formData.imageSource || 'CAMERA',
+        captcha_score: formData.captchaScore || null,
+        submitted_at: new Date().toISOString(),
+      });
 
-      if (submissionError) throw submissionError;
-
-      // Transaction will be inserted by admin when approving the submission
+      if (error) throw error;
       setStep('success');
-    } catch (err) {
-      console.error('Submission failed:', err);
-      alert('Submission failed. Please try again.');
+    } catch (err: any) {
+      setSubmitError(err.message || 'Submission failed. Please try again.');
+      console.error('Submit error:', err);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleBack = () => {
-    if (step === 'form') { setStep('select'); setSelectedAction(null); }
-    else if (step === 'review') { setStep('form'); }
-  };
-
   return (
-    <div className="min-h-screen bg-enb-surface pb-24">
-      <header className="bg-white border-b border-gray-100 p-6 sticky top-0 z-10 shadow-sm flex items-center gap-4">
-        {step !== 'select' && step !== 'success' && (
-          <Button variant="ghost" size="icon" onClick={handleBack} className="-ml-2">
-            <ArrowLeft className="w-5 h-5 text-enb-text-secondary" />
-          </Button>
-        )}
-        <div>
-          <h1 className="text-xl font-bold text-enb-text-primary">Submit Action</h1>
-          <p className="text-sm text-enb-text-secondary">Record your impact to earn ENB</p>
-        </div>
-      </header>
-      <div className="p-6 max-w-lg mx-auto">
-        <AnimatePresence mode="wait">
-          {step === 'select' && (
-            <motion.div key="select" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-              <ActionSelector onSelect={handleActionSelect} />
-            </motion.div>
+    <div className="pb-24">
+      {step === 'select' && (
+        <ActionSelector onSelect={handleActionSelect} />
+      )}
+      {step === 'form' && (
+        <ActionForm
+          actionType={selectedAction}
+          onSubmit={handleFormSubmit}
+          onBack={() => setStep('select')}
+        />
+      )}
+      {step === 'review' && formData && (
+        <>
+          {submitError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+              ⚠️ {submitError}
+            </div>
           )}
-          {step === 'form' && selectedAction && (
-            <motion.div key="form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <ActionForm actionType={selectedAction} onSubmit={handleFormSubmit} onBack={handleBack} />
-            </motion.div>
-          )}
-          {step === 'review' && formData && (
-            <motion.div key="review" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <SubmissionReview data={formData} onConfirm={handleReviewConfirm} onEdit={handleBack} submitting={submitting} />
-            </motion.div>
-          )}
-          {step === 'success' && (
-            <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-              <SubmissionSuccess actionType={selectedAction || undefined} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          <SubmissionReview
+            data={formData}
+            onConfirm={handleConfirmSubmit}
+            onEdit={() => setStep('form')}
+            submitting={submitting}
+          />
+        </>
+      )}
+      {step === 'success' && (
+        <SubmissionSuccess actionType={selectedAction} />
+      )}
     </div>
   );
 }
