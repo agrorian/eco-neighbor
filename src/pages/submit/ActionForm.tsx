@@ -1,10 +1,8 @@
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Camera, MapPin, Upload, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Camera, MapPin, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
 
 interface ActionFormProps {
   actionType: string;
@@ -12,141 +10,255 @@ interface ActionFormProps {
   onBack: () => void;
 }
 
-export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormProps) {
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState<string | null>(null);
-  const [loadingLocation, setLoadingLocation] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+// Behavioural CAPTCHA — measures touch/click timing and presents a contextual question
+const CAPTCHA_QUESTIONS = [
+  { q: 'Kaunsa kaam ek achha shehri karta hai?', options: ['Kachra bin mein daalna', 'Sadak par phenkna'], correct: 0 },
+  { q: 'Apne mohalle ki safai karna?', options: ['Achhi baat hai', 'Faaida nahi', ], correct: 0 },
+  { q: 'Dost ko recycle karne ki targhib dena?', options: ['Bilkul sahi hai', 'Bekar kaam hai'], correct: 0 },
+];
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormProps) {
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [cloudinaryUrl, setCloudinaryUrl] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
+  const [gpsLat, setGpsLat] = useState<number | null>(null);
+  const [gpsLng, setGpsLng] = useState<number | null>(null);
+  const [gpsAddress, setGpsAddress] = useState<string | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const [captchaIdx] = useState(() => Math.floor(Math.random() * CAPTCHA_QUESTIONS.length));
+  const [captchaAnswer, setCaptchaAnswer] = useState<number | null>(null);
+  const [captchaFailed, setCaptchaFailed] = useState(false);
+  const [formStartTime] = useState(Date.now());
+  const [touchEvents, setTouchEvents] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const captcha = CAPTCHA_QUESTIONS[captchaIdx];
+
+  // Track touch events for behavioural CAPTCHA
+  useEffect(() => {
+    const handler = () => setTouchEvents(n => n + 1);
+    window.addEventListener('touchstart', handler, { passive: true });
+    return () => window.removeEventListener('touchstart', handler);
+  }, []);
+
+  const openCamera = async () => {
+    setCameraError('');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        setCameraActive(true);
+      }
+    } catch (err) {
+      setCameraError('Camera access denied. Civic action photos must be taken live — gallery uploads not accepted.');
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `action_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setPhotoFile(file);
+      setPhotoPreview(canvas.toDataURL('image/jpeg', 0.8));
+      // Stop camera
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      setCameraActive(false);
+      // Auto-upload to Cloudinary
+      uploadToCloudinary(file);
+    }, 'image/jpeg', 0.85);
+  };
+
+  const uploadToCloudinary = async (file: File) => {
+    setPhotoUploading(true);
+    try {
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dl86obm3b';
+      const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'enb_photos';
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', preset);
+      formData.append('folder', 'enb_submissions');
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST', body: formData,
+      });
+      const data = await res.json();
+      if (data.secure_url) {
+        setCloudinaryUrl(data.secure_url);
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (err) {
+      console.error('Cloudinary upload failed:', err);
+      // Fall back to base64 if upload fails
+      setCloudinaryUrl(null);
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
   const handleGetLocation = () => {
     setLoadingLocation(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation(`${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
-          setLoadingLocation(false);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          setLoadingLocation(false);
-          // Fallback or error handling
-        }
-      );
-    } else {
-      setLoadingLocation(false);
-      // Geolocation not supported
-    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsLat(pos.coords.latitude);
+        setGpsLng(pos.coords.longitude);
+        setGpsAddress(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+        setLoadingLocation(false);
+      },
+      () => setLoadingLocation(false),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleSubmit = () => {
-    if (photo && description && location) {
-      onSubmit({
-        actionType,
-        photo,
-        description,
-        location,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    if (!photoPreview || !description || !gpsLat) return;
+
+    // CAPTCHA validation
+    if (captchaAnswer === null) { setCaptchaFailed(true); return; }
+    if (captchaAnswer !== captcha.correct) { setCaptchaFailed(true); return; }
+
+    // Compute captcha score (0–1): time, touch variance, correct answer
+    const timeMs = Date.now() - formStartTime;
+    const timeScore = Math.min(timeMs / 10000, 1); // at least 10s = score 1
+    const touchScore = Math.min(touchEvents / 5, 1);
+    const captchaScore = (timeScore * 0.4 + touchScore * 0.3 + (captchaAnswer === captcha.correct ? 0.3 : 0));
+
+    onSubmit({
+      actionType,
+      photo: cloudinaryUrl || photoPreview, // Cloudinary URL preferred, base64 fallback
+      photoUrls: cloudinaryUrl ? [cloudinaryUrl] : [],
+      description,
+      gpsLat,
+      gpsLng,
+      gpsAddress,
+      imageSource: 'CAMERA',
+      captchaScore: parseFloat(captchaScore.toFixed(2)),
+      timestamp: new Date().toISOString(),
+    });
   };
 
+  const canSubmit = photoPreview && !photoUploading && description.trim().length > 10 && gpsLat && captchaAnswer !== null;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" onClick={onBack} className="text-enb-text-secondary -ml-2">
-          Back
-        </Button>
-        <h2 className="text-xl font-bold text-enb-text-primary capitalize">{actionType.replace('-', ' ')}</h2>
-        <div className="w-10" /> {/* Spacer */}
+        <Button variant="ghost" onClick={onBack} className="text-enb-text-secondary -ml-2">Back</Button>
+        <h2 className="text-xl font-bold text-enb-text-primary capitalize">{actionType.replace(/_/g, ' ')}</h2>
+        <div className="w-10" />
       </div>
 
-      {/* Photo Upload */}
+      {/* Camera / Photo */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-enb-text-primary">Photo Proof</label>
-        <div 
-          onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer group transition-all relative overflow-hidden ${photo ? 'border-enb-green bg-enb-green/5' : 'border-gray-300 hover:bg-gray-50 bg-white'}`}
-        >
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept="image/*" 
-            className="hidden" 
-          />
-          
-          {photo ? (
-            <div className="relative z-10">
-              <img src={photo} alt="Proof" className="max-h-48 mx-auto rounded-lg shadow-sm" />
-              <div className="absolute top-2 right-2 bg-white/80 p-1 rounded-full text-enb-green">
-                <CheckCircle className="w-5 h-5" />
+        <label className="text-sm font-medium text-enb-text-primary">Live Photo Proof <span className="text-red-500">*</span></label>
+        
+        {cameraActive ? (
+          <div className="relative rounded-xl overflow-hidden bg-black">
+            <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-64 object-cover" />
+            <canvas ref={canvasRef} className="hidden" />
+            <Button onClick={capturePhoto}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white">
+              <Camera className="w-6 h-6" />
+            </Button>
+          </div>
+        ) : photoPreview ? (
+          <div className="relative rounded-xl overflow-hidden">
+            <img src={photoPreview} alt="Proof" className="w-full max-h-48 object-cover rounded-xl" />
+            {photoUploading && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
+                <Loader2 className="w-8 h-8 text-white animate-spin" />
+                <span className="text-white ml-2 text-sm">Uploading...</span>
               </div>
-              <p className="text-xs text-enb-green mt-2 font-medium">Photo uploaded successfully</p>
-            </div>
-          ) : (
-            <>
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-enb-green/10 group-hover:text-enb-green transition-colors">
-                <Camera className="w-6 h-6 text-gray-400 group-hover:text-enb-green" />
+            )}
+            {!photoUploading && cloudinaryUrl && (
+              <div className="absolute top-2 right-2 bg-enb-green text-white text-xs px-2 py-1 rounded-full">✓ Uploaded</div>
+            )}
+            <Button variant="outline" size="sm" onClick={openCamera}
+              className="mt-2 w-full text-xs">
+              <Camera className="w-3 h-3 mr-1" /> Retake
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <Button onClick={openCamera}
+              className="w-full h-24 border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 text-enb-green flex flex-col gap-2 rounded-xl">
+              <Camera className="w-8 h-8" />
+              <span className="text-sm font-medium">Open Camera</span>
+            </Button>
+            {cameraError && (
+              <div className="mt-2 p-3 bg-red-50 rounded-lg flex items-start gap-2 text-sm text-red-600">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                {cameraError}
               </div>
-              <p className="text-sm text-enb-text-secondary font-medium">Tap to take photo</p>
-              <p className="text-xs text-gray-400 mt-1">or upload from gallery</p>
-            </>
-          )}
-        </div>
+            )}
+            <p className="text-xs text-gray-400 mt-1 text-center">Gallery uploads not accepted — live photos only</p>
+          </div>
+        )}
       </div>
 
-      {/* Location */}
+      {/* GPS Location */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-enb-text-primary">Location</label>
-        <div 
-          onClick={!location ? handleGetLocation : undefined}
-          className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${location ? 'bg-enb-green/10 border-enb-green/20 text-enb-green' : 'bg-white border-gray-200 text-gray-500 cursor-pointer hover:bg-gray-50'}`}
+        <label className="text-sm font-medium text-enb-text-primary">GPS Location <span className="text-red-500">*</span></label>
+        <div
+          onClick={!gpsAddress ? handleGetLocation : undefined}
+          className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${gpsAddress ? 'bg-enb-green/10 border-enb-green/20 text-enb-green' : 'bg-white border-gray-200 text-gray-500 cursor-pointer hover:bg-gray-50'}`}
         >
-          {loadingLocation ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <MapPin className="w-5 h-5" />
-          )}
-          
-          <span className="text-sm font-medium">
-            {location ? `Location Verified: ${location}` : loadingLocation ? "Detecting location..." : "Tap to detect location"}
-          </span>
-          
-          {location && <CheckCircle className="w-4 h-4 ml-auto" />}
+          {loadingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
+          <span className="text-sm font-medium">{gpsAddress ? `📍 ${gpsAddress}` : loadingLocation ? 'Detecting...' : 'Tap to detect GPS location'}</span>
+          {gpsAddress && <CheckCircle className="w-4 h-4 ml-auto" />}
         </div>
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-enb-text-primary">Description</label>
-        <Textarea 
-          placeholder="Describe what you did..."
-          className="h-32 resize-none bg-white"
+        <label className="text-sm font-medium text-enb-text-primary">Description <span className="text-red-500">*</span></label>
+        <Textarea
+          placeholder="Describe what you did in detail (min. 10 characters)..."
+          className="h-28 resize-none bg-white"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
+        <p className="text-xs text-gray-400">{description.length}/500 characters</p>
       </div>
 
-      {/* Submit Button */}
-      <Button 
+      {/* Behavioural CAPTCHA */}
+      <div className="space-y-2 bg-enb-green/5 border border-enb-green/20 rounded-xl p-4">
+        <label className="text-sm font-bold text-enb-text-primary">Quick Check 🌿</label>
+        <p className="text-sm text-enb-text-secondary">{captcha.q}</p>
+        <div className="flex flex-col gap-2 mt-2">
+          {captcha.options.map((opt, i) => (
+            <button key={i} onClick={() => { setCaptchaAnswer(i); setCaptchaFailed(false); }}
+              className={`text-left p-3 rounded-lg border text-sm font-medium transition-all ${captchaAnswer === i ? 'bg-enb-green text-white border-enb-green' : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green'}`}>
+              {opt}
+            </button>
+          ))}
+        </div>
+        {captchaFailed && (
+          <p className="text-sm text-red-500 mt-1">⚠️ Please answer the question correctly to continue.</p>
+        )}
+      </div>
+
+      <Button
         onClick={handleSubmit}
-        disabled={!photo || !description || !location}
+        disabled={!canSubmit}
         className="w-full h-12 text-lg shadow-lg shadow-enb-green/20 bg-enb-green hover:bg-enb-green/90 text-white"
       >
-        <Upload className="w-5 h-5 mr-2" />
-        Review Submission
+        {photoUploading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Uploading photo...</> : 'Review Submission'}
       </Button>
     </div>
   );
