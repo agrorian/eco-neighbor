@@ -36,6 +36,7 @@ import SignUpStep2 from '@/pages/onboarding/SignUpStep2';
 import ConnectWallet from '@/pages/onboarding/ConnectWallet';
 import Tutorial from '@/pages/onboarding/Tutorial';
 import Login from '@/pages/onboarding/Login';
+import ResetPassword from '@/pages/onboarding/ResetPassword';
 
 export default function App() {
   const { user, setUser } = useUserStore();
@@ -204,6 +205,7 @@ export default function App() {
               <Route path="/signup/step2" element={<SignUpStep2 />} />
               <Route path="/onboarding/wallet" element={<ConnectWallet />} />
               <Route path="/onboarding/tutorial" element={<Tutorial />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
