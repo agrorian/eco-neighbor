@@ -1,10 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Suspense, lazy } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/user';
 import Layout from '@/components/layout/Layout';
 import SplashScreen from '@/components/SplashScreen';
 import { supabase } from '@/lib/supabase';
 
+// --- Eagerly loaded (core pages, always needed) ---
 import Dashboard from '@/pages/Dashboard';
 import SubmitAction from '@/pages/SubmitAction';
 import Wallet from '@/pages/Wallet';
@@ -23,10 +24,8 @@ import Settings from '@/pages/Settings';
 import More from '@/pages/More';
 import MyLog from '@/pages/MyLog';
 import ReportSubmission from '@/pages/ReportSubmission';
-import FounderSale from '@/pages/FounderSale';
-import FounderHardship from '@/pages/FounderHardship';
-import PartnerFloat from '@/pages/PartnerFloat';
 
+// --- Admin pages ---
 import AdminLayout from '@/pages/admin/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import SubmissionQueue from '@/pages/admin/SubmissionQueue';
@@ -36,6 +35,12 @@ import PartnerManager from '@/pages/admin/PartnerManager';
 import BridgeManager from '@/pages/admin/BridgeManager';
 import ModQueue from '@/pages/admin/ModQueue';
 
+// --- Lazily loaded (newer pages, role-gated) ---
+const FounderSale = lazy(() => import('@/pages/FounderSale'));
+const FounderHardship = lazy(() => import('@/pages/FounderHardship'));
+const PartnerFloat = lazy(() => import('@/pages/PartnerFloat'));
+
+// --- Onboarding ---
 import Welcome from '@/pages/onboarding/Welcome';
 import SignUpStep1 from '@/pages/onboarding/SignUpStep1';
 import SignUpStep2 from '@/pages/onboarding/SignUpStep2';
@@ -43,6 +48,13 @@ import ConnectWallet from '@/pages/onboarding/ConnectWallet';
 import Tutorial from '@/pages/onboarding/Tutorial';
 import Login from '@/pages/onboarding/Login';
 import ResetPassword from '@/pages/onboarding/ResetPassword';
+
+// Fallback spinner for lazy-loaded pages
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="w-8 h-8 border-4 border-enb-green border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 export default function App() {
   const { user, setUser } = useUserStore();
@@ -153,30 +165,32 @@ export default function App() {
               </Route>
               <Route path="/*" element={
                 <Layout>
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/submit" element={<SubmitAction />} />
-                    <Route path="/wallet" element={<Wallet />} />
-                    <Route path="/directory" element={<BusinessDirectory />} />
-                    <Route path="/directory/:id" element={<BusinessProfile />} />
-                    <Route path="/partner-signup" element={<PartnerSignup />} />
-                    <Route path="/scan" element={<ScanRedemption />} />
-                    <Route path="/leaderboard" element={<Leaderboard />} />
-                    <Route path="/impact" element={<ImpactDashboard />} />
-                    <Route path="/governance" element={<Governance />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/bridge" element={<MaturationBridge />} />
-                    <Route path="/wallet/redeem" element={<GenerateRedemptionQR />} />
-                    <Route path="/wallet/referrals" element={<ReferralHub />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/more" element={<More />} />
-                    <Route path="/my-log" element={<MyLog />} />
-                    <Route path="/report" element={<ReportSubmission />} />
-                    <Route path="/founder-sale" element={<FounderSale />} />
-                    <Route path="/founder-hardship" element={<FounderHardship />} />
-                    <Route path="/partner-float" element={<PartnerFloat />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/submit" element={<SubmitAction />} />
+                      <Route path="/wallet" element={<Wallet />} />
+                      <Route path="/directory" element={<BusinessDirectory />} />
+                      <Route path="/directory/:id" element={<BusinessProfile />} />
+                      <Route path="/partner-signup" element={<PartnerSignup />} />
+                      <Route path="/scan" element={<ScanRedemption />} />
+                      <Route path="/leaderboard" element={<Leaderboard />} />
+                      <Route path="/impact" element={<ImpactDashboard />} />
+                      <Route path="/governance" element={<Governance />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/bridge" element={<MaturationBridge />} />
+                      <Route path="/wallet/redeem" element={<GenerateRedemptionQR />} />
+                      <Route path="/wallet/referrals" element={<ReferralHub />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/more" element={<More />} />
+                      <Route path="/my-log" element={<MyLog />} />
+                      <Route path="/report" element={<ReportSubmission />} />
+                      <Route path="/founder-sale" element={<FounderSale />} />
+                      <Route path="/founder-hardship" element={<FounderHardship />} />
+                      <Route path="/partner-float" element={<PartnerFloat />} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Suspense>
                 </Layout>
               } />
             </>
