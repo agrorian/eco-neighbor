@@ -61,6 +61,18 @@ export default function ModQueue() {
       : { decision2: dec.decision, reason2: dec.reason };
 
     await supabase.from('moderator_assignments').update(update).eq('id', assignment.id);
+
+    // If both mods have decided, trigger auto-evaluate (approve/reject/escalate)
+    const { data: updated } = await supabase
+      .from('moderator_assignments')
+      .select('decision1, decision2')
+      .eq('id', assignment.id)
+      .single();
+
+    if (updated?.decision1 && updated?.decision2) {
+      await supabase.rpc('evaluate_mod_decision', { p_assignment_id: assignment.id });
+    }
+
     await fetchAssignments();
     setSubmitting(null);
   };
