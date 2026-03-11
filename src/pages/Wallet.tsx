@@ -50,27 +50,29 @@ export default function Wallet() {
         </Link>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Token Cards — stack on mobile, side by side on md+ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
         {/* ENB.LOCAL Card */}
         <Card className="border-l-4 border-l-enb-green shadow-md">
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">ENB.LOCAL</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-enb-green mb-2">
+            <div className="text-4xl font-bold text-enb-green mb-1">
               {(user.enb_local_bal || 0).toLocaleString()}
             </div>
-            <p className="text-xs text-enb-text-secondary mb-6">Community Rewards (Non-transferable)</p>
-            <div className="flex gap-3">
-              <Link to="/wallet/redeem" className="flex-1">
+            <p className="text-xs text-enb-text-secondary mb-5">Community Rewards (Non-transferable)</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Link to="/wallet/redeem">
                 <Button variant="outline" size="sm" className="w-full">
-                  <QrCode className="w-4 h-4 mr-2" />
+                  <QrCode className="w-4 h-4 mr-2 flex-shrink-0" />
                   Redeem
                 </Button>
               </Link>
-              <Link to="/bridge" className="flex-1">
+              <Link to="/bridge">
                 <Button variant="outline" size="sm" className="w-full text-enb-gold border-enb-gold/20 hover:bg-enb-gold/5">
-                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0" />
                   Bridge
                 </Button>
               </Link>
@@ -80,21 +82,21 @@ export default function Wallet() {
 
         {/* ENB.GLOBAL Card */}
         <Card className="border-l-4 border-l-enb-gold shadow-md">
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">ENB.GLOBAL</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-enb-gold mb-2">
+            <div className="text-4xl font-bold text-enb-gold mb-1">
               {(user.enb_global_bal || 0).toLocaleString()}
             </div>
-            <p className="text-xs text-enb-text-secondary mb-6">Tradeable Token (Solana)</p>
-            <div className="flex gap-3">
-              <Button className="w-full bg-enb-dark text-white hover:bg-enb-dark/90 shadow-lg shadow-enb-dark/20">
-                <ArrowUpRight className="w-4 h-4 mr-2" />
+            <p className="text-xs text-enb-text-secondary mb-5">Tradeable Token (Solana)</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full bg-enb-dark text-white hover:bg-enb-dark/90 shadow-sm text-sm" size="sm">
+                <ArrowUpRight className="w-4 h-4 mr-2 flex-shrink-0" />
                 Send
               </Button>
-              <Button variant="outline" className="w-full">
-                <ArrowDownLeft className="w-4 h-4 mr-2" />
+              <Button variant="outline" size="sm" className="w-full text-sm">
+                <ArrowDownLeft className="w-4 h-4 mr-2 flex-shrink-0" />
                 Receive
               </Button>
             </div>
@@ -106,13 +108,13 @@ export default function Wallet() {
       <Link to="/wallet/referrals">
         <div className="bg-gradient-to-r from-enb-green/10 to-enb-teal/10 p-4 rounded-xl border border-enb-green/20 flex items-center justify-between cursor-pointer hover:bg-enb-green/20 transition-colors">
           <div className="flex items-center gap-3">
-            <Users className="w-6 h-6 text-enb-green" />
+            <Users className="w-6 h-6 text-enb-green flex-shrink-0" />
             <div>
               <div className="font-bold text-enb-text-primary">Invite Friends</div>
               <div className="text-xs text-enb-text-secondary">Earn 500 ENB for every referral</div>
             </div>
           </div>
-          <ArrowUpRight className="w-5 h-5 text-enb-green" />
+          <ArrowUpRight className="w-5 h-5 text-enb-green flex-shrink-0" />
         </div>
       </Link>
 
