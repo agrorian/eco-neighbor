@@ -21,6 +21,11 @@ import GenerateRedemptionQR from '@/pages/wallet/GenerateRedemptionQR';
 import ReferralHub from '@/pages/wallet/ReferralHub';
 import Settings from '@/pages/Settings';
 import More from '@/pages/More';
+import MyLog from '@/pages/MyLog';
+import ReportSubmission from '@/pages/ReportSubmission';
+import FounderSale from '@/pages/FounderSale';
+import FounderHardship from '@/pages/FounderHardship';
+import PartnerFloat from '@/pages/PartnerFloat';
 
 import AdminLayout from '@/pages/admin/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -29,6 +34,7 @@ import UserManagement from '@/pages/admin/UserManagement';
 import CampaignManager from '@/pages/admin/CampaignManager';
 import PartnerManager from '@/pages/admin/PartnerManager';
 import BridgeManager from '@/pages/admin/BridgeManager';
+import ModQueue from '@/pages/admin/ModQueue';
 
 import Welcome from '@/pages/onboarding/Welcome';
 import SignUpStep1 from '@/pages/onboarding/SignUpStep1';
@@ -44,8 +50,6 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
 
   const loadUserProfile = async (userId: string, userEmail: string) => {
-    console.log('Loading profile for:', userId);
-    
     try {
       const { data, error } = await supabase
         .from('users')
@@ -53,10 +57,7 @@ export default function App() {
         .eq('id', userId)
         .single();
 
-      console.log('Profile result:', { data, error });
-
       if (data) {
-        // Success — set full profile
         setUser({
           id: data.id,
           email: data.email || userEmail,
@@ -71,40 +72,31 @@ export default function App() {
           wallet_address: data.wallet_address || undefined,
           whatsapp_number: data.whatsapp_number || undefined,
           lifetime_earned: Number(data.lifetime_earned) || 0,
+          referred_by: data.referred_by || undefined,
+          referral_code: data.referral_code || undefined,
+          consecutive_absences: Number(data.consecutive_absences) || 0,
         });
       } else {
-        // No profile row yet — create a minimal one so user stays logged in
-        console.warn('No profile row found, error:', error?.message);
-        const fallback = {
-          id: userId,
-          email: userEmail,
-          full_name: '',
-          neighbourhood: '',
-          profession: '',
-          enb_local_bal: 0,
-          enb_global_bal: 0,
-          rep_score: 0,
-          tier: 'Newcomer' as const,
-          role: 'member' as const,
-        };
-        // Try to insert the row so next load works
-        await supabase.from('users').upsert({ id: userId, email: userEmail, full_name: '', enb_local_bal: 0, enb_global_bal: 0, rep_score: 0, tier: 'Newcomer', role: 'member', is_active: true }, { onConflict: 'id' });
-        setUser(fallback);
+        console.warn('No profile row, creating fallback. Error:', error?.message);
+        await supabase.from('users').upsert({
+          id: userId, email: userEmail, full_name: '',
+          enb_local_bal: 0, enb_global_bal: 0, rep_score: 0,
+          tier: 'Newcomer', role: 'member', is_active: true,
+        }, { onConflict: 'id' });
+        setUser({
+          id: userId, email: userEmail, full_name: '',
+          neighbourhood: '', profession: '',
+          enb_local_bal: 0, enb_global_bal: 0,
+          rep_score: 0, tier: 'Newcomer', role: 'member',
+        });
       }
     } catch (err) {
       console.error('Profile load exception:', err);
-      // ALWAYS keep user logged in even on error
       setUser({
-        id: userId,
-        email: userEmail,
-        full_name: '',
-        neighbourhood: '',
-        profession: '',
-        enb_local_bal: 0,
-        enb_global_bal: 0,
-        rep_score: 0,
-        tier: 'Newcomer',
-        role: 'member',
+        id: userId, email: userEmail, full_name: '',
+        neighbourhood: '', profession: '',
+        enb_local_bal: 0, enb_global_bal: 0,
+        rep_score: 0, tier: 'Newcomer', role: 'member',
       });
     }
   };
@@ -113,34 +105,20 @@ export default function App() {
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
     if (hasSeenSplash) setShowSplash(false);
 
-    // Get session immediately on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.email ?? 'no session');
       if (session?.user) {
-        loadUserProfile(session.user.id, session.user.email ?? '').then(() => {
-          setAuthChecked(true);
-        });
+        loadUserProfile(session.user.id, session.user.email ?? '').then(() => setAuthChecked(true));
       } else {
         setAuthChecked(true);
       }
     });
 
-    // Also listen for future auth changes (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth change:', event, session?.user?.email ?? 'none');
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-      // SIGNED_IN is handled by getSession above on initial load
-      // and by window.location.href reload in Login.tsx
+      if (event === 'SIGNED_OUT') setUser(null);
     });
 
     const authTimeout = setTimeout(() => setAuthChecked(true), 4000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(authTimeout);
-    };
+    return () => { subscription.unsubscribe(); clearTimeout(authTimeout); };
   }, []);
 
   const handleSplashComplete = () => {
@@ -149,7 +127,6 @@ export default function App() {
   };
 
   if (showSplash) return <SplashScreen onComplete={handleSplashComplete} />;
-
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-enb-surface flex items-center justify-center flex-col gap-3">
@@ -172,6 +149,7 @@ export default function App() {
                 <Route path="campaigns" element={<CampaignManager />} />
                 <Route path="partners" element={<PartnerManager />} />
                 <Route path="bridge" element={<BridgeManager />} />
+                <Route path="mod-queue" element={<ModQueue />} />
               </Route>
               <Route path="/*" element={
                 <Layout>
@@ -192,6 +170,11 @@ export default function App() {
                     <Route path="/wallet/referrals" element={<ReferralHub />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/more" element={<More />} />
+                    <Route path="/my-log" element={<MyLog />} />
+                    <Route path="/report" element={<ReportSubmission />} />
+                    <Route path="/founder-sale" element={<FounderSale />} />
+                    <Route path="/founder-hardship" element={<FounderHardship />} />
+                    <Route path="/partner-float" element={<PartnerFloat />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Layout>
