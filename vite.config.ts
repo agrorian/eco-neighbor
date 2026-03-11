@@ -1,10 +1,10 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig(({mode}) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
     plugins: [
@@ -12,11 +12,11 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+        includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
           name: 'Eco-Neighbor',
-          short_name: 'Eco-Neighbor',
-          description: 'A community utility token platform on Solana.',
+          short_name: 'ENB',
+          description: 'A community utility token platform.',
           theme_color: '#1A6B3C',
           background_color: '#1B2B1E',
           display: 'standalone',
@@ -48,13 +48,8 @@ export default defineConfig(({mode}) => {
               handler: 'CacheFirst',
               options: {
                 cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
-                },
-                cacheableResponse: {
-                  statuses: [0, 200]
-                }
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] }
               }
             },
             {
@@ -62,13 +57,8 @@ export default defineConfig(({mode}) => {
               handler: 'CacheFirst',
               options: {
                 cacheName: 'gstatic-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
-                },
-                cacheableResponse: {
-                  statuses: [0, 200]
-                },
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] }
               }
             }
           ]
@@ -84,8 +74,6 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };
