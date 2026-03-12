@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Leaf, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
+import { Leaf, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
@@ -22,6 +22,9 @@ export default function DesktopSidebar() {
   ];
 
   const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
+  const modNav = ['moderator', 'admin'].includes(user?.role || '') ? [
+    { path: '/mod-queue', icon: Shield, label: 'Mod Queue' },
+  ] : [];
   const roleBasedNav = ALLOWED_LOG_ROLES.includes(user?.role || '') ? [
     { path: '/my-log', icon: ClipboardList, label: 'Daily Log' },
     { path: '/impact', icon: Globe, label: 'Community Impact' },
@@ -39,7 +42,7 @@ export default function DesktopSidebar() {
   ];
 
   const isAdminSection = location.pathname.startsWith('/admin');
-  const navItems = isAdminSection ? adminNav : [...memberNav, ...roleBasedNav];
+  const navItems = isAdminSection ? adminNav : [...memberNav, ...roleBasedNav, ...modNav];
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

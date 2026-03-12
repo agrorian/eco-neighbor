@@ -183,6 +183,7 @@ export default function App() {
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/more" element={<More />} />
                       <Route path="/my-log" element={<MyLog />} />
+                      <Route path="/mod-queue" element={<ModQueue />} />
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/founder-sale" element={<FounderSale />} />
                       <Route path="/founder-hardship" element={<FounderHardship />} />
