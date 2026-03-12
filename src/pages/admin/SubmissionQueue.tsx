@@ -36,11 +36,22 @@ export default function SubmissionQueue() {
     setLoading(true);
     setFetchError('');
     try {
-      // Step 1: fetch submissions without join first (most reliable)
-      const { data: subs, error: subError } = await supabase
+      // Step 1: Get escalated submission IDs to exclude
+      const { data: escalated } = await supabase
+        .from('moderator_assignments')
+        .select('submission_id')
+        .eq('escalation_flag', true);
+      const escalatedIds = (escalated || []).map((e: any) => e.submission_id);
+
+      // Step 2: fetch pending submissions excluding escalated ones
+      let query = supabase
         .from('submissions')
         .select('id, user_id, action_type, description, photo_urls, gps_address, status, enb_awarded, rep_awarded, submitted_at')
-        .eq('status', 'pending')
+        .eq('status', 'pending');
+      if (escalatedIds.length > 0) {
+        query = query.not('id', 'in', `(${escalatedIds.map((id: string) => `"${id}"`).join(',')})`);
+      }
+      const { data: subs, error: subError } = await query
         .order('submitted_at', { ascending: true });
 
       if (subError) {
