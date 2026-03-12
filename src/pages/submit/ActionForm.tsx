@@ -55,13 +55,31 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setCameraActive(true);
-      }
-    } catch (err) {
-      setCameraError('Camera access denied. Civic action photos must be taken live — gallery uploads not accepted.');
+      setCameraActive(true);
+      // Use setTimeout to ensure video element is mounted after state update
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.setAttribute('muted', 'true');
+          videoRef.current.muted = true;
+          const playPromise = videoRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {
+              // Auto-play blocked — try again on user gesture
+              if (videoRef.current) videoRef.current.play();
+            });
+          }
+        }
+      }, 100);
+    } catch (err: any) {
+      setCameraError(
+        err?.name === 'NotAllowedError'
+          ? 'Camera permission denied. Please allow camera access in your browser settings.'
+          : err?.name === 'NotFoundError'
+          ? 'No camera found on this device.'
+          : 'Camera access denied. Civic action photos must be taken live — gallery uploads not accepted.'
+      );
     }
   };
 
@@ -169,7 +187,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         
         {cameraActive ? (
           <div className="relative rounded-xl overflow-hidden bg-black">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-64 object-cover" />
+            <video ref={videoRef} autoPlay playsInline muted webkit-playsinline="true" className="w-full max-h-64 object-cover rounded-xl" onClick={() => videoRef.current?.play()} />
             <canvas ref={canvasRef} className="hidden" />
             <Button onClick={capturePhoto}
               className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white">
