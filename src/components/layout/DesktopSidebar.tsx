@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
+import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
