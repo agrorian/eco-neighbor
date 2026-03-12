@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, LogOut, Loader2 } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { icon: Megaphone, label: 'Campaigns', path: '/admin/campaigns' },
   { icon: Store, label: 'Partners', path: '/admin/partners' },
   { icon: ArrowRightLeft, label: 'Bridge', path: '/admin/bridge' },
+  { icon: Shield, label: 'Mod Queue', path: '/admin/mod-queue' },
 ];
 
 export default function AdminLayout() {
@@ -62,7 +63,25 @@ export default function AdminLayout() {
           </Link>
         </div>
 
-        <nav className="p-4 flex overflow-x-auto md:flex-col gap-2 scrollbar-hide">
+        {/* Mobile: 2-row icon grid */}
+        <nav className="md:hidden p-3 grid grid-cols-4 gap-2">
+          {NAV_ITEMS.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link key={item.path} to={item.path}>
+                <div className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl text-xs font-medium transition-colors ${
+                  isActive ? 'bg-enb-text-primary text-white' : 'text-gray-500 hover:bg-gray-100'
+                }`}>
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                  <span className="text-[10px] text-center leading-tight">{item.label}</span>
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Desktop: vertical list */}
+        <nav className="hidden md:flex flex-col p-4 gap-2">
           {NAV_ITEMS.map((item) => {
             const isActive = location.pathname === item.path;
             return (

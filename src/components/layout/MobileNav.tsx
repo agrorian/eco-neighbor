@@ -13,10 +13,15 @@ export default function MobileNav() {
     { path: '/', icon: Home, label: 'Home' },
     { path: '/submit', icon: PlusCircle, label: 'Action' },
     { path: '/wallet', icon: Wallet, label: 'Wallet' },
-    { path: '/directory', icon: Store, label: 'Directory' },
     ...(user.role === 'admin'
-      ? [{ path: '/admin', icon: ShieldCheck, label: 'Admin' }]
-      : [{ path: '/more', icon: MoreHorizontal, label: 'More' }]
+      ? [
+          { path: '/admin', icon: ShieldCheck, label: 'Admin' },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
+        ]
+      : [
+          { path: '/directory', icon: Store, label: 'Directory' },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
+        ]
     ),
   ];
 
