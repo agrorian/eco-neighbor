@@ -7,13 +7,14 @@ import { supabase } from '@/lib/supabase';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-  { icon: CheckSquare, label: 'Queue', path: '/admin/queue' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Megaphone, label: 'Campaigns', path: '/admin/campaigns' },
-  { icon: Store, label: 'Partners', path: '/admin/partners' },
-  { icon: ArrowRightLeft, label: 'Bridge', path: '/admin/bridge' },
-  { icon: Shield, label: 'Mod Queue', path: '/admin/mod-queue' },
-  { icon: ClipboardList, label: 'Daily Log', path: '/my-log' },
+  { icon: CheckSquare,     label: 'Queue',     path: '/admin/queue' },
+  { icon: Users,           label: 'Users',     path: '/admin/users' },
+  { icon: Megaphone,       label: 'Campaigns', path: '/admin/campaigns' },
+  { icon: Store,           label: 'Partners',  path: '/admin/partners' },
+  { icon: ArrowRightLeft,  label: 'Bridge',    path: '/admin/bridge' },
+  { icon: Shield,          label: 'Mod Queue', path: '/admin/mod-queue' },
+  { icon: AlertTriangle,   label: 'Escalations', path: '/admin/escalation' },
+  { icon: ClipboardList,   label: 'Daily Log', path: '/my-log' },
 ];
 
 export default function AdminLayout() {
@@ -64,17 +65,17 @@ export default function AdminLayout() {
           </Link>
         </div>
 
-        {/* Mobile: 2-row icon grid */}
-        <nav className="md:hidden p-3 grid grid-cols-4 gap-2">
+        {/* Mobile: icon grid — now 5 columns to fit 9 items neatly */}
+        <nav className="md:hidden p-3 grid grid-cols-5 gap-2">
           {NAV_ITEMS.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link key={item.path} to={item.path}>
-                <div className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl text-xs font-medium transition-colors ${
+                <div className={`flex flex-col items-center gap-1 px-1 py-2 rounded-xl text-xs font-medium transition-colors ${
                   isActive ? 'bg-enb-text-primary text-white' : 'text-gray-500 hover:bg-gray-100'
                 }`}>
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                  <span className="text-[10px] text-center leading-tight">{item.label}</span>
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : item.label === 'Escalations' ? 'text-orange-400' : 'text-gray-400'}`} />
+                  <span className="text-[9px] text-center leading-tight">{item.label}</span>
                 </div>
               </Link>
             );
@@ -88,9 +89,15 @@ export default function AdminLayout() {
             return (
               <Link key={item.path} to={item.path}>
                 <button className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors w-full whitespace-nowrap ${
-                  isActive ? 'bg-enb-text-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'
+                  isActive
+                    ? 'bg-enb-text-primary text-white shadow-md'
+                    : item.label === 'Escalations'
+                    ? 'text-orange-600 hover:bg-orange-50'
+                    : 'text-gray-500 hover:bg-gray-100'
                 }`}>
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                  <item.icon className={`w-5 h-5 ${
+                    isActive ? 'text-white' : item.label === 'Escalations' ? 'text-orange-400' : 'text-gray-400'
+                  }`} />
                   {item.label}
                 </button>
               </Link>
