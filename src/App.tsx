@@ -38,6 +38,7 @@ const FounderSale = lazy(() => import('@/pages/FounderSale'));
 const FounderHardship = lazy(() => import('@/pages/FounderHardship'));
 const PartnerFloat = lazy(() => import('@/pages/PartnerFloat'));
 const ModQueue = lazy(() => import('@/pages/admin/ModQueue'));
+const EscalationQueue = lazy(() => import('@/pages/admin/EscalationQueue'));
 const MyHistory = lazy(() => import('@/pages/MyHistory'));
 
 // --- Onboarding ---
@@ -162,6 +163,7 @@ export default function App() {
                 <Route path="partners" element={<PartnerManager />} />
                 <Route path="bridge" element={<BridgeManager />} />
                 <Route path="mod-queue" element={<ModQueue />} />
+                <Route path="escalation" element={<EscalationQueue />} />
               </Route>
               <Route path="/*" element={
                 <Layout>

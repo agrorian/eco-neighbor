@@ -40,6 +40,7 @@ export default function DesktopSidebar() {
     { path: '/admin/partners', icon: Store, label: 'Partners' },
     { path: '/admin/bridge', icon: ArrowRightLeft, label: 'Bridge Manager' },
     { path: '/admin/mod-queue', icon: CheckSquare, label: 'Mod Queue' },
+    { path: '/admin/escalation', icon: AlertTriangle, label: 'Escalations' },
   ];
 
   const isAdminSection = location.pathname.startsWith('/admin');

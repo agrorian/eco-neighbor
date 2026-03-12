@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Home, PlusCircle, Wallet, Store, MoreHorizontal, ShieldCheck, Shield } from 'lucide-react';
+import { Home, PlusCircle, Wallet, Store, MoreHorizontal, ShieldCheck, Shield, AlertTriangle } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 
 export default function MobileNav() {
@@ -14,7 +14,10 @@ export default function MobileNav() {
     { path: '/submit', icon: PlusCircle, label: 'Action' },
     { path: '/wallet', icon: Wallet, label: 'Wallet' },
     ...(user.role === 'moderator'
-      ? [{ path: '/mod-queue', icon: Shield, label: 'Mod Queue' }]
+      ? [
+          { path: '/mod-queue', icon: Shield, label: 'Mod Queue' },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
+        ]
       : []),
     ...(user.role === 'admin'
       ? [

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList } from 'lucide-react';
+import { AlertTriangle, LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';

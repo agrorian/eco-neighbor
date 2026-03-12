@@ -23,10 +23,10 @@
 ---
 
 ## 🟡 NEXT SESSION (Important)
-- [ ] EXIF timestamp check on submitted photos — must be taken within last 2 hours (HIGH VALUE, low effort)
 - [ ] Dual senior mod required to confirm reports (not just admin)
 - [ ] CAPTCHA question rotation from larger pool
 - [ ] Mod pair rotation — same 2 mods never assigned together twice in a row
+- [ ] Moderator social circle problem — mods from same family/friend group can coordinate outside app via WhatsApp. Solution: onboarding process must select mods from DIFFERENT social circles + Neighbourhood Anchor elder acts as social accountability check. Also track mod agreement rate — if two mods agree 100% of the time across many reviews, flag for admin review (statistical anomaly detector)
 
 ---
 
