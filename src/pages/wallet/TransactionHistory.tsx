@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Shield,  useEffect, useState } from 'react';
 import { ArrowDownLeft, RefreshCw, Leaf } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
@@ -37,12 +37,14 @@ export default function TransactionHistory() {
   const displayed = showAll ? transactions : transactions.slice(0, 4);
 
   const getIcon = (type: string) => {
+    if (type === 'MODERATOR_REWARD') return Shield;
     if (type === 'bridge') return RefreshCw;
     if (type === 'spend') return ArrowDownLeft;
     return Leaf;
   };
 
   const getColors = (type: string) => {
+    if (type === 'MODERATOR_REWARD') return { color: 'text-blue-600', bg: 'bg-blue-50' };
     if (type === 'bridge') return { color: 'text-enb-gold', bg: 'bg-enb-gold/10' };
     if (type === 'spend') return { color: 'text-red-500', bg: 'bg-red-50' };
     return { color: 'text-enb-green', bg: 'bg-enb-green/10' };
