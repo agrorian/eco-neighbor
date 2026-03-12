@@ -1,5 +1,5 @@
-import { Shield,  useEffect, useState } from 'react';
-import { ArrowDownLeft, RefreshCw, Leaf } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Shield, ArrowDownLeft, RefreshCw, Leaf } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
