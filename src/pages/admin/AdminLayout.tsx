@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2 } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { icon: Store, label: 'Partners', path: '/admin/partners' },
   { icon: ArrowRightLeft, label: 'Bridge', path: '/admin/bridge' },
   { icon: Shield, label: 'Mod Queue', path: '/admin/mod-queue' },
+  { icon: ClipboardList, label: 'Daily Log', path: '/my-log' },
 ];
 
 export default function AdminLayout() {
