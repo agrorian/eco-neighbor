@@ -38,6 +38,7 @@ const FounderSale = lazy(() => import('@/pages/FounderSale'));
 const FounderHardship = lazy(() => import('@/pages/FounderHardship'));
 const PartnerFloat = lazy(() => import('@/pages/PartnerFloat'));
 const ModQueue = lazy(() => import('@/pages/admin/ModQueue'));
+const MyHistory = lazy(() => import('@/pages/MyHistory'));
 
 // --- Onboarding ---
 import Welcome from '@/pages/onboarding/Welcome';
@@ -184,6 +185,7 @@ export default function App() {
                       <Route path="/more" element={<More />} />
                       <Route path="/my-log" element={<MyLog />} />
                       <Route path="/mod-queue" element={<ModQueue />} />
+                      <Route path="/history" element={<MyHistory />} />
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/founder-sale" element={<FounderSale />} />
                       <Route path="/founder-hardship" element={<FounderHardship />} />

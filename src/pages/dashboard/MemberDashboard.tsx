@@ -230,7 +230,7 @@ export default function MemberDashboard() {
             <span className="text-xs font-medium">Find Business</span>
           </Button>
         </Link>
-        <Link to="/wallet">
+        <Link to="/history">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
             <History className="w-6 h-6 text-enb-gold" />
             <span className="text-xs font-medium">My History</span>
