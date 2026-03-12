@@ -31,9 +31,23 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Get all submission IDs already assigned to mods — exclude from admin queue count
+      const { data: assignedData } = await supabase
+        .from('moderator_assignments')
+        .select('submission_id');
+      const assignedIds = (assignedData || []).map((r: any) => r.submission_id);
+
+      let pendingQuery = supabase
+        .from('submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (assignedIds.length > 0) {
+        pendingQuery = (pendingQuery as any).not('id', 'in', `(${assignedIds.join(',')})`);
+      }
+
       const [usersRes, pendingRes, txRes, recentSubsRes] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        pendingQuery,
         supabase.from('transactions').select('enb_amount').eq('type', 'credit'),
         supabase.from('submissions')
           .select('id, user_id, action_type, status, reviewed_at, submitted_at')

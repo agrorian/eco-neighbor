@@ -1,6 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
-import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
@@ -8,7 +7,6 @@ const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
 
 export default function More() {
   const { user, logout } = useUserStore();
-  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -23,7 +21,10 @@ export default function More() {
     { icon: Store, label: 'Business Directory', path: '/directory', color: 'text-orange-500', show: true },
     { icon: ArrowRightLeft, label: 'Maturation Bridge', path: '/bridge', color: 'text-enb-teal', show: true },
     { icon: Users, label: 'Referral Hub', path: '/wallet/referrals', color: 'text-enb-green', show: true },
+    { icon: History, label: 'My History', path: '/history', color: 'text-enb-teal', show: true },
     { icon: ClipboardList, label: 'Daily Log', path: '/my-log', color: 'text-enb-gold', show: ALLOWED_LOG_ROLES.includes(user?.role || '') },
+    { icon: TrendingUp, label: 'Founder Sale Gate', path: '/founder-sale', color: 'text-enb-gold', show: user?.role === 'admin' || user?.role === 'founder' },
+    { icon: TrendingDown, label: 'Float Monitor', path: '/partner-float', color: 'text-enb-teal', show: user?.role === 'business' || user?.role === 'admin' },
     { icon: LayoutDashboard, label: 'Admin Panel', path: '/admin', color: 'text-purple-600', show: user?.role === 'admin' || user?.role === 'founder' },
     { icon: Settings, label: 'Settings', path: '/settings', color: 'text-gray-600', show: true },
   ].filter(i => i.show);

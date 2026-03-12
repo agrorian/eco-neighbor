@@ -3,7 +3,8 @@ import { Settings, LogOut, Edit2, MapPin, Briefcase, Award, Star } from 'lucide-
 import { useUserStore, getTier } from '@/store/user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 
 const BADGES = [
   { id: 1, name: 'Early Adopter', icon: '🚀', description: 'Joined in the first month' },
@@ -31,8 +32,15 @@ function Crown(props: React.SVGProps<SVGSVGElement>) {
 
 export default function Profile() {
   const { user, logout } = useUserStore();
+  const navigate = useNavigate();
 
   if (!user) return null;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    logout();
+    window.location.href = '/';
+  };
 
   const tier = getTier(user.rep_score);
   const nextTierThreshold = TIER_THRESHOLDS[tier] || 5000;
@@ -65,7 +73,7 @@ export default function Profile() {
                 className="w-full h-full object-cover"
               />
             </div>
-            <Button size="sm" variant="outline" className="mb-2">
+            <Button size="sm" variant="outline" className="mb-2" onClick={() => navigate('/settings')}>
               <Edit2 className="w-3 h-3 mr-1" />
               Edit
             </Button>
@@ -168,7 +176,7 @@ export default function Profile() {
       <Button
         variant="destructive"
         size="lg"
-        onClick={logout}
+        onClick={handleLogout}
         className="w-full mt-4 bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 shadow-none"
       >
         <LogOut className="w-5 h-5 mr-2" />

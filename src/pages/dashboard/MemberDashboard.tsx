@@ -58,9 +58,9 @@ const ActiveCampaignBanner = () => {
         <p className="text-white/90 text-sm mb-4 max-w-xs">
           Earn {campaign.multiplier}× ENB for eligible actions during this campaign!
         </p>
-        <Link to="/admin/campaigns">
+        <Link to="/impact">
           <Button variant="secondary" size="sm" className="bg-white text-enb-green hover:bg-white/90 border-none">
-            View Campaign <ArrowRight className="w-4 h-4 ml-1" />
+            View Details <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </Link>
       </div>
