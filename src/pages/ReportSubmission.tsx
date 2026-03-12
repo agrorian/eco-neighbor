@@ -79,9 +79,15 @@ export default function ReportSubmission() {
         </div>
       </header>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
-        <p className="font-bold mb-1">Whistleblower Programme</p>
-        <p>Confirmed reports earn <span className="font-bold">2,000 ENB</span>. False reports may result in penalties. 3 confirmed flags on a wallet trigger automatic suspension.</p>
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700 space-y-2">
+        <p className="font-bold">Whistleblower Programme — How it works</p>
+        <div className="space-y-1">
+          <p>✅ <strong>Confirmed report</strong> → 2,000 ENB reward + 200 ENB stake returned (after 24h)</p>
+          <p>❌ <strong>False report</strong> → 200 ENB stake burned + -100 Rep penalty</p>
+          <p>🔒 <strong>Requirements</strong> → minimum 100 Rep + 200 ENB stake to file</p>
+          <p>⚠️ <strong>Max 2 active reports</strong> at a time — no spam campaigns</p>
+          <p>🛡️ <strong>Approving moderators</strong> lose their reward if fraud is confirmed</p>
+        </div>
       </div>
 
       <div className="space-y-3">
