@@ -27,13 +27,18 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
       setLoading(true);
 
-      // Step 1: get all submission IDs that are currently escalated
-      const { data: escalatedAssignments } = await supabase
+      // Step 1: get ALL submission IDs assigned to mods (any stage)
+      // These belong to ModQueue or EscalationQueue — not admin pending count
+      const { data: assignedAssignments } = await supabase
         .from('moderator_assignments')
-        .select('submission_id')
-        .eq('escalation_flag', true);
+        .select('submission_id, escalation_flag');
 
-      const escalatedIds = (escalatedAssignments || [])
+      const assignedIds = (assignedAssignments || [])
+        .map((a: any) => a.submission_id)
+        .filter(Boolean);
+
+      const escalatedIds = (assignedAssignments || [])
+        .filter((a: any) => a.escalation_flag === true)
         .map((a: any) => a.submission_id)
         .filter(Boolean);
 
@@ -46,14 +51,14 @@ export default function AdminDashboard() {
           .gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
       ]);
 
-      // Step 3: count pending submissions EXCLUDING escalated ones
+      // Count pending submissions with NO mod assignment yet (truly fresh queue)
       let pendingQuery = supabase
         .from('submissions')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending');
 
-      if (escalatedIds.length > 0) {
-        pendingQuery = pendingQuery.not('id', 'in', `(${escalatedIds.join(',')})`);
+      if (assignedIds.length > 0) {
+        pendingQuery = pendingQuery.not('id', 'in', `(${assignedIds.join(',')})`);
       }
 
       const pendingRes = await pendingQuery;

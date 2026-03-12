@@ -36,20 +36,22 @@ export default function SubmissionQueue() {
     setLoading(true);
     setFetchError('');
     try {
-      // Step 1: Get escalated submission IDs to exclude
-      const { data: escalated } = await supabase
+      // Step 1: Get ALL submission IDs already assigned to mods (any stage)
+      // Admin queue only shows fresh submissions not yet assigned to any moderator.
+      // Mod-assigned submissions belong to ModQueue (pending decisions) or
+      // EscalationQueue (disagreement) — not here.
+      const { data: assigned } = await supabase
         .from('moderator_assignments')
-        .select('submission_id')
-        .eq('escalation_flag', true);
-      const escalatedIds = (escalated || []).map((e: any) => e.submission_id);
+        .select('submission_id');
+      const assignedIds = (assigned || []).map((e: any) => e.submission_id).filter(Boolean);
 
-      // Step 2: fetch pending submissions excluding escalated ones
+      // Step 2: fetch pending submissions excluding all mod-assigned ones
       let query = supabase
         .from('submissions')
         .select('id, user_id, action_type, description, photo_urls, gps_address, status, enb_awarded, rep_awarded, submitted_at')
         .eq('status', 'pending');
-      if (escalatedIds.length > 0) {
-        query = query.not('id', 'in', `(${escalatedIds.map((id: string) => `"${id}"`).join(',')})`);
+      if (assignedIds.length > 0) {
+        query = query.not('id', 'in', `(${assignedIds.map((id: string) => `"${id}"`).join(',')})`);
       }
       const { data: subs, error: subError } = await query
         .order('submitted_at', { ascending: true });
