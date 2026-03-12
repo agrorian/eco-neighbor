@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Shield, CheckCircle, XCircle, Loader2, RefreshCw, MapPin, AlertTriangle, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,8 +26,31 @@ export default function ModQueue() {
   const [decisions, setDecisions] = useState<Record<string, { decision: string; reason: string }>>({});
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [toast, setToast] = useState('');
+  const [timers, setTimers] = useState<Record<string, number>>({});   // seconds elapsed per assignment
+  const timerRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
   useEffect(() => { fetchAssignments(); }, []);
+
+  // Start a 30s timer for each assignment when it appears
+  useEffect(() => {
+    assignments.forEach(a => {
+      if (!timerRefs.current[a.id]) {
+        setTimers(t => ({ ...t, [a.id]: 0 }));
+        timerRefs.current[a.id] = setInterval(() => {
+          setTimers(t => ({ ...t, [a.id]: Math.min((t[a.id] || 0) + 1, 30) }));
+        }, 1000);
+      }
+    });
+    // Clean up timers for assignments no longer shown
+    return () => {
+      Object.keys(timerRefs.current).forEach(id => {
+        if (!assignments.find(a => a.id === id)) {
+          clearInterval(timerRefs.current[id]);
+          delete timerRefs.current[id];
+        }
+      });
+    };
+  }, [assignments]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -210,13 +233,27 @@ export default function ModQueue() {
                     {dec.reason.length > 0 && dec.reason.length < 10 && (
                       <p className="text-xs text-red-500">{10 - dec.reason.length} more characters needed</p>
                     )}
+                    {/* 30s minimum review timer */}
+                    {(timers[a.id] || 0) < 30 && (
+                      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                        <div className="flex-1 bg-amber-200 rounded-full h-1.5">
+                          <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
+                            style={{ width: `${((timers[a.id] || 0) / 30) * 100}%` }} />
+                        </div>
+                        <span className="text-xs text-amber-700 font-medium whitespace-nowrap">
+                          {30 - (timers[a.id] || 0)}s — review carefully
+                        </span>
+                      </div>
+                    )}
                     <Button
                       onClick={() => submitDecision(a)}
-                      disabled={dec.reason.length < 10 || isProcessing}
-                      className="w-full bg-enb-text-primary text-white hover:bg-enb-text-primary/90">
+                      disabled={dec.reason.length < 10 || isProcessing || (timers[a.id] || 0) < 30}
+                      className="w-full bg-enb-text-primary text-white hover:bg-enb-text-primary/90 disabled:opacity-50">
                       {isProcessing
                         ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
-                        : `Submit ${dec.decision === 'APPROVE' ? 'Approval' : 'Rejection'}`}
+                        : (timers[a.id] || 0) < 30
+                          ? `Please review for ${30 - (timers[a.id] || 0)} more seconds`
+                          : `Submit ${dec.decision === 'APPROVE' ? 'Approval' : 'Rejection'}`}
                     </Button>
                   </div>
                 )}
