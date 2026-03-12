@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import ENBLeaf from '@/components/ENBLeaf';
 import { Leaf, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -17,7 +18,7 @@ export default function Welcome() {
         transition={{ duration: 0.5 }}
         className="bg-enb-green p-6 rounded-3xl mb-8 shadow-xl shadow-enb-green/20 relative z-10"
       >
-        <Leaf className="w-16 h-16 text-white" />
+        <ENBLeaf size={80} />
       </motion.div>
       
       <h1 className="text-4xl md:text-5xl font-bold text-enb-text-primary mb-4 tracking-tight">

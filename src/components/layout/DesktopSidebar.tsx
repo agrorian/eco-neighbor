@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Leaf, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
+import ENBLeaf from '@/components/ENBLeaf';
+import { Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
@@ -56,7 +57,7 @@ export default function DesktopSidebar() {
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <div className="bg-enb-green p-2 rounded-xl">
-            <Leaf className="w-6 h-6 text-white" />
+            <ENBLeaf size={28} />
           </div>
           <span className="font-bold text-xl tracking-tight text-enb-text-primary">Eco-Neighbor</span>
         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import ENBLeaf from '@/components/ENBLeaf';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'motion/react';
 import { Leaf, ArrowRight, Clock, Star, MapPin, History } from 'lucide-react';
@@ -143,7 +144,7 @@ const RecentActivity = () => {
         <div key={item.id || i} className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-enb-green/10 text-enb-green flex-shrink-0">
-              <Leaf className="w-5 h-5" />
+              <ENBLeaf size={20} />
             </div>
             <div>
               <div className="font-medium text-enb-text-primary text-sm">{item.description}</div>
@@ -219,7 +220,7 @@ export default function MemberDashboard() {
       <div className="grid grid-cols-3 gap-3">
         <Link to="/submit">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
-            <Leaf className="w-6 h-6 text-enb-green" />
+            <ENBLeaf size={24} />
             <span className="text-xs font-medium">Submit Action</span>
           </Button>
         </Link>
