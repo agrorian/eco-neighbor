@@ -90,7 +90,7 @@ export default function AdminDashboard() {
     { icon: Leaf, label: 'ENB Distributed', value: loading ? '—' : stats.totalEnbDistributed.toLocaleString(), color: 'text-enb-green', bg: 'bg-enb-green/10' },
     { icon: Clock, label: 'Pending Review', value: loading ? '—' : stats.pendingQueue.toString(), color: 'text-enb-gold', bg: 'bg-enb-gold/10' },
     { icon: MessageCircle, label: 'WhatsApp Ready', value: 'Active', color: 'text-green-600', bg: 'bg-green-100' },
-    { icon: Coins, label: 'Total ENB Supply', value: '10,000,000,000', color: 'text-enb-green', bg: 'bg-enb-green/10' },
+    { icon: Coins, label: 'Total ENB Supply', value: '10B ENB', color: 'text-enb-green', bg: 'bg-enb-green/10' },
   ];
 
   return (
