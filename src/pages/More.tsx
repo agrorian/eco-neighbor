@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { Trophy, ArrowRightLeft, Settings, HelpCircle, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, AlertTriangle, Users } from 'lucide-react';
+import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
