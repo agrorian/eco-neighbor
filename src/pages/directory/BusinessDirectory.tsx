@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Map as MapIcon, List, Star, Tag, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
 const CATEGORIES = ['All', 'Food', 'Trades', 'Health', 'Retail', 'Education', 'Services', 'Other'];
@@ -20,7 +20,123 @@ interface Business {
   gps_lng: number | null;
 }
 
+// Leaflet map component — loaded dynamically to avoid SSR issues
+function LeafletMap({ businesses, onSelect }: { businesses: Business[]; onSelect: (id: string) => void }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
+
+    // Dynamically load Leaflet CSS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    // Dynamically load Leaflet JS
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => {
+      const L = (window as any).L;
+      if (!mapRef.current || mapInstanceRef.current) return;
+
+      const withGps = businesses.filter(b => b.gps_lat && b.gps_lng);
+      const centre: [number, number] = withGps.length > 0
+        ? [withGps[0].gps_lat!, withGps[0].gps_lng!]
+        : [33.6007, 73.0679]; // Rawalpindi default
+
+      const map = L.map(mapRef.current).setView(centre, 14);
+      mapInstanceRef.current = map;
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+      }).addTo(map);
+
+      // Custom green marker icon
+      const greenIcon = L.divIcon({
+        className: '',
+        html: `<div style="
+          width: 32px; height: 32px;
+          background: #1A6B3C;
+          border: 3px solid white;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        "></div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -36],
+      });
+
+      withGps.forEach(b => {
+        const marker = L.marker([b.gps_lat!, b.gps_lng!], { icon: greenIcon });
+
+        const popupHtml = `
+          <div style="min-width:180px; font-family: sans-serif;">
+            <div style="font-weight:700; font-size:14px; color:#1a1a1a; margin-bottom:4px;">
+              ${b.business_name}
+            </div>
+            <div style="font-size:12px; color:#666; margin-bottom:4px;">
+              ${b.category}${b.address ? ' · ' + b.address : ''}
+            </div>
+            ${b.discount_offer ? `<div style="background:#f0fdf4; color:#1A6B3C; font-size:12px; font-weight:600; padding:4px 8px; border-radius:6px; margin-bottom:8px;">${b.discount_offer}</div>` : ''}
+            <button
+              onclick="window._enbSelectBusiness('${b.id}')"
+              style="width:100%; background:#1A6B3C; color:white; border:none; border-radius:8px; padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer;"
+            >
+              View Business →
+            </button>
+          </div>
+        `;
+
+        marker.bindPopup(popupHtml, { maxWidth: 240 });
+        marker.addTo(map);
+      });
+
+      // Global callback for popup button clicks
+      (window as any)._enbSelectBusiness = (id: string) => {
+        onSelect(id);
+      };
+
+      // Fit map to all markers if more than one
+      if (withGps.length > 1) {
+        const group = L.featureGroup(
+          withGps.map(b => L.marker([b.gps_lat!, b.gps_lng!]))
+        );
+        map.fitBounds(group.getBounds().pad(0.2));
+      }
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+      delete (window as any)._enbSelectBusiness;
+    };
+  }, []);
+
+  const withGps = businesses.filter(b => b.gps_lat && b.gps_lng);
+
+  return (
+    <div className="space-y-2">
+      <div
+        ref={mapRef}
+        style={{ height: '480px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e5e7eb' }}
+      />
+      <p className="text-xs text-gray-400 text-center">
+        {withGps.length} of {businesses.length} businesses have GPS coordinates. Click a pin to view details.
+        {businesses.some(b => !b.gps_lat) && ' Businesses without GPS do not appear on the map.'}
+      </p>
+    </div>
+  );
+}
+
 export default function BusinessDirectory() {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -52,23 +168,6 @@ export default function BusinessDirectory() {
     if (sortBy === 'category') return a.category.localeCompare(b.category);
     return 0;
   });
-
-  // Build OpenStreetMap embed URL with markers for all businesses that have GPS
-  const buildMapUrl = () => {
-    const withGps = filtered.filter(b => b.gps_lat && b.gps_lng);
-    if (withGps.length === 0) {
-      // Default to Rawalpindi centre
-      return 'https://www.openstreetmap.org/export/embed.html?bbox=73.0%2C33.5%2C73.2%2C33.7&layer=mapnik';
-    }
-    // Centre on first business with GPS
-    const lat = withGps[0].gps_lat!;
-    const lng = withGps[0].gps_lng!;
-    const delta = 0.05;
-    const bbox = `${lng - delta}%2C${lat - delta}%2C${lng + delta}%2C${lat + delta}`;
-    // Add markers using OSM marker param
-    const markers = withGps.map(b => `mlat=${b.gps_lat}&mlon=${b.gps_lng}`).join('&');
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&${markers}`;
-  };
 
   return (
     <div className="space-y-6 pb-24">
@@ -183,32 +282,10 @@ export default function BusinessDirectory() {
           ))}
         </div>
       ) : (
-        // Real OpenStreetMap embed
-        <div className="space-y-3">
-          <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm" style={{ height: '480px' }}>
-            <iframe
-              title="ENB Partner Map"
-              src={buildMapUrl()}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              loading="lazy"
-              allowFullScreen
-            />
-          </div>
-          <p className="text-xs text-gray-400 text-center">
-            Showing {filtered.filter(b => b.gps_lat && b.gps_lng).length} of {filtered.length} businesses on map.
-            {filtered.some(b => !b.gps_lat) && ' Some businesses have no GPS coordinates set.'}
-          </p>
-          <a
-            href={`https://www.openstreetmap.org/#map=14/33.6007/73.0679`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-center text-xs text-enb-teal underline"
-          >
-            Open full map →
-          </a>
-        </div>
+        <LeafletMap
+          businesses={filtered}
+          onSelect={(id) => navigate(`/directory/${id}`)}
+        />
       )}
     </div>
   );
