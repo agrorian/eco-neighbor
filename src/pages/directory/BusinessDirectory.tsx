@@ -1,37 +1,74 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { Search, Map as MapIcon, List, Filter, Star, MapPin, Tag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import { Search, Map as MapIcon, List, Star, Tag, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 
-// Mock Data
-const BUSINESSES = [
-  { id: 1, name: 'Green Leaf Cafe', category: 'Food', discount: '10% Off', rep: 95, distance: '0.2 km', image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1000&auto=format&fit=crop' },
-  { id: 2, name: 'Eco Fix-It', category: 'Trades', discount: '5% Off Labor', rep: 88, distance: '1.5 km', image: 'https://images.unsplash.com/photo-1581092921461-eab62e97a782?q=80&w=1000&auto=format&fit=crop' },
-  { id: 3, name: 'Nature\'s Pantry', category: 'Retail', discount: 'Free Bag', rep: 92, distance: '0.8 km', image: 'https://images.unsplash.com/photo-1604719312566-b76d4685332e?q=80&w=1000&auto=format&fit=crop' },
-  { id: 4, name: 'Wellness Yoga', category: 'Health', discount: 'First Class Free', rep: 98, distance: '2.1 km', image: 'https://images.unsplash.com/photo-1544367563-12123d8965cd?q=80&w=1000&auto=format&fit=crop' },
-  { id: 5, name: 'Re-Cycle Shop', category: 'Retail', discount: '15% Off Used', rep: 85, distance: '3.0 km', image: 'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1000&auto=format&fit=crop' },
-];
+const CATEGORIES = ['All', 'Food', 'Trades', 'Health', 'Retail', 'Education', 'Services', 'Other'];
 
-const CATEGORIES = ['All', 'Food', 'Trades', 'Health', 'Retail', 'Education'];
+interface Business {
+  id: string;
+  business_name: string;
+  category: string;
+  address: string;
+  discount_offer: string;
+  enb_float: number;
+  is_active: boolean;
+  is_verified: boolean;
+  gps_lat: number | null;
+  gps_lng: number | null;
+}
 
 export default function BusinessDirectory() {
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [sortBy, setSortBy] = useState<'distance' | 'discount' | 'rep'>('distance');
+  const [sortBy, setSortBy] = useState<'name' | 'category'>('name');
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredBusinesses = BUSINESSES.filter(b => {
-    const matchesSearch = b.name.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from('business_partners')
+        .select('id, business_name, category, address, discount_offer, enb_float, is_active, is_verified, gps_lat, gps_lng')
+        .eq('is_active', true)
+        .eq('is_verified', true)
+        .order('business_name', { ascending: true });
+      if (data) setBusinesses(data);
+      setLoading(false);
+    };
+    fetchBusinesses();
+  }, []);
+
+  const filtered = businesses.filter(b => {
+    const matchesSearch = b.business_name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || b.category === selectedCategory;
     return matchesSearch && matchesCategory;
   }).sort((a, b) => {
-    if (sortBy === 'distance') return parseFloat(a.distance) - parseFloat(b.distance);
-    if (sortBy === 'rep') return b.rep - a.rep;
-    return 0; // Simplified discount sort
+    if (sortBy === 'name') return a.business_name.localeCompare(b.business_name);
+    if (sortBy === 'category') return a.category.localeCompare(b.category);
+    return 0;
   });
+
+  // Build OpenStreetMap embed URL with markers for all businesses that have GPS
+  const buildMapUrl = () => {
+    const withGps = filtered.filter(b => b.gps_lat && b.gps_lng);
+    if (withGps.length === 0) {
+      // Default to Rawalpindi centre
+      return 'https://www.openstreetmap.org/export/embed.html?bbox=73.0%2C33.5%2C73.2%2C33.7&layer=mapnik';
+    }
+    // Centre on first business with GPS
+    const lat = withGps[0].gps_lat!;
+    const lng = withGps[0].gps_lng!;
+    const delta = 0.05;
+    const bbox = `${lng - delta}%2C${lat - delta}%2C${lng + delta}%2C${lat + delta}`;
+    // Add markers using OSM marker param
+    const markers = withGps.map(b => `mlat=${b.gps_lat}&mlon=${b.gps_lng}`).join('&');
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&${markers}`;
+  };
 
   return (
     <div className="space-y-6 pb-24">
@@ -81,7 +118,7 @@ export default function BusinessDirectory() {
         </div>
 
         <div className="flex justify-between items-center text-sm text-enb-text-secondary">
-          <span>{filteredBusinesses.length} results</span>
+          <span>{loading ? '...' : `${filtered.length} results`}</span>
           <div className="flex items-center gap-2">
             <span className="text-xs">Sort by:</span>
             <select
@@ -89,62 +126,88 @@ export default function BusinessDirectory() {
               onChange={(e) => setSortBy(e.target.value as any)}
               className="bg-transparent font-medium text-enb-text-primary outline-none"
             >
-              <option value="distance">Distance</option>
-              <option value="rep">Reputation</option>
-              <option value="discount">Discount</option>
+              <option value="name">Name</option>
+              <option value="category">Category</option>
             </select>
           </div>
         </div>
       </header>
 
-      {viewMode === 'list' ? (
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-enb-green" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-enb-text-secondary bg-gray-50 rounded-xl">
+          <MapIcon className="w-10 h-10 mx-auto mb-3 opacity-20" />
+          <p className="font-medium">No businesses found.</p>
+          <p className="text-sm mt-1">
+            {businesses.length === 0
+              ? 'No verified partner businesses yet.'
+              : 'Try a different search or category.'}
+          </p>
+        </div>
+      ) : viewMode === 'list' ? (
         <div className="space-y-4">
-          {filteredBusinesses.map((business) => (
+          {filtered.map((business) => (
             <Link to={`/directory/${business.id}`} key={business.id}>
               <Card className="overflow-hidden hover:shadow-md transition-shadow border-gray-100 mb-4">
-                <div className="flex h-32">
-                  <div className="w-32 shrink-0">
-                    <img src={business.image} alt={business.name} className="w-full h-full object-cover" />
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-enb-green/10 flex items-center justify-center text-enb-green font-bold text-lg flex-shrink-0">
+                    {business.business_name.charAt(0)}
                   </div>
-                  <CardContent className="p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-bold text-enb-text-primary truncate">{business.name}</h3>
-                        <div className="flex items-center gap-1 text-xs font-medium bg-enb-gold/10 text-enb-gold px-1.5 py-0.5 rounded">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-bold text-enb-text-primary truncate">{business.business_name}</h3>
+                      {business.enb_float > 0 && (
+                        <div className="flex items-center gap-1 text-xs font-medium bg-enb-gold/10 text-enb-gold px-1.5 py-0.5 rounded flex-shrink-0 ml-2">
                           <Star className="w-3 h-3 fill-current" />
-                          {business.rep}
+                          Active
                         </div>
-                      </div>
-                      <div className="text-xs text-enb-text-secondary flex items-center gap-1 mt-1">
-                        <Tag className="w-3 h-3" />
-                        {business.category} • {business.distance}
-                      </div>
+                      )}
                     </div>
-                    <div className="mt-2">
-                      <span className="inline-block bg-enb-green/10 text-enb-green text-xs font-bold px-2 py-1 rounded-md">
-                        {business.discount}
+                    <div className="text-xs text-enb-text-secondary flex items-center gap-1 mt-1">
+                      <Tag className="w-3 h-3" />
+                      {business.category}
+                      {business.address && ` • ${business.address}`}
+                    </div>
+                    {business.discount_offer && (
+                      <span className="inline-block bg-enb-green/10 text-enb-green text-xs font-bold px-2 py-1 rounded-md mt-2">
+                        {business.discount_offer}
                       </span>
-                    </div>
-                  </CardContent>
-                </div>
+                    )}
+                  </div>
+                </CardContent>
               </Card>
             </Link>
           ))}
         </div>
       ) : (
-        <div className="h-[500px] bg-gray-100 rounded-xl flex items-center justify-center border border-gray-200 relative overflow-hidden">
-          {/* Placeholder for Map View */}
-          <div className="absolute inset-0 bg-[url('https://www.openstreetmap.org/assets/osm_logo-414674681335d3d99999999999999999.svg')] bg-center bg-no-repeat opacity-10" />
-          <div className="text-center p-6 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm z-10">
-            <MapIcon className="w-12 h-12 text-enb-green mx-auto mb-3" />
-            <h3 className="font-bold text-enb-text-primary mb-1">Interactive Map View</h3>
-            <p className="text-sm text-enb-text-secondary mb-4">
-              Visualize eco-friendly businesses near you.
-            </p>
-            <Button variant="outline" onClick={() => setViewMode('list')}>
-              Switch to List View
-            </Button>
+        // Real OpenStreetMap embed
+        <div className="space-y-3">
+          <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm" style={{ height: '480px' }}>
+            <iframe
+              title="ENB Partner Map"
+              src={buildMapUrl()}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              loading="lazy"
+              allowFullScreen
+            />
           </div>
+          <p className="text-xs text-gray-400 text-center">
+            Showing {filtered.filter(b => b.gps_lat && b.gps_lng).length} of {filtered.length} businesses on map.
+            {filtered.some(b => !b.gps_lat) && ' Some businesses have no GPS coordinates set.'}
+          </p>
+          <a
+            href={`https://www.openstreetmap.org/#map=14/33.6007/73.0679`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center text-xs text-enb-teal underline"
+          >
+            Open full map →
+          </a>
         </div>
       )}
     </div>
