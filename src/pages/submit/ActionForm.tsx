@@ -10,11 +10,24 @@ interface ActionFormProps {
   onBack: () => void;
 }
 
-// Behavioural CAPTCHA — measures touch/click timing and presents a contextual question
+// Behavioural CAPTCHA — 15 questions, randomised correct answer positions
+// Mix of Urdu and English to serve all literacy levels
 const CAPTCHA_QUESTIONS = [
   { q: 'Kaunsa kaam ek achha shehri karta hai?', options: ['Kachra bin mein daalna', 'Sadak par phenkna'], correct: 0 },
-  { q: 'Apne mohalle ki safai karna?', options: ['Achhi baat hai', 'Faaida nahi', ], correct: 0 },
+  { q: 'Apne mohalle ki safai karna kaisi baat hai?', options: ['Galat hai, bekar kaam', 'Bahut achhi baat hai'], correct: 1 },
   { q: 'Dost ko recycle karne ki targhib dena?', options: ['Bilkul sahi hai', 'Bekar kaam hai'], correct: 0 },
+  { q: 'Paani ki boond boond bachana kyun zaroori hai?', options: ['Zaroori nahi', 'Paani qeemti cheez hai'], correct: 1 },
+  { q: 'Bijli bachane se kya hota hai?', options: ['Kuch nahi hota', 'Paisa bachta hai aur maahol behtar hota hai'], correct: 1 },
+  { q: 'Sadak par kachra phenkna?', options: ['Bilkul galat hai', 'Thik hai agar koi na dekhe'], correct: 0 },
+  { q: 'Darak hue nalkay ki marammat karwana kyun zaroori hai?', options: ['Zaroori nahi', 'Paani barbad hone se rokta hai'], correct: 1 },
+  { q: 'Apne ghar ke qareeb koi pauda lagana?', options: ['Faaida nahi', 'Maahol ke liye bahut acha hai'], correct: 1 },
+  { q: 'What is the right thing to do with plastic waste?', options: ['Throw it on the street', 'Put it in the recycling bin'], correct: 1 },
+  { q: 'Why should we save water?', options: ['Water is precious and scarce', 'There is no reason to save it'], correct: 0 },
+  { q: 'Planting a tree in your neighbourhood is:', options: ['A waste of time', 'Good for air quality and the environment'], correct: 1 },
+  { q: 'If you see litter on the street, the right action is:', options: ['Pick it up and bin it', 'Ignore it — not your problem'], correct: 0 },
+  { q: 'Turning off lights when leaving a room helps:', options: ['Save electricity and reduce bills', 'Nothing at all'], correct: 0 },
+  { q: 'Composting food scraps instead of throwing them away:', options: ['Is too much effort', 'Reduces waste and helps soil'], correct: 1 },
+  { q: 'Encouraging your neighbours to keep streets clean is:', options: ['A community responsibility', 'Not your concern'], correct: 0 },
 ];
 
 export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormProps) {
