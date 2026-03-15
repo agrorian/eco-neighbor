@@ -287,16 +287,15 @@ function ReportTab({ userId }: { userId: string }) {
 
       report.entries.forEach((entry) => {
         // Parse sections
-        const sections: Record<string, string> = {};
-        const parts = entry.description.split(/
+      const sections: Record<string, string> = {};
+      const parts = entry.description.split(/(?=[A-Z ]+:)/);
 
-(?=[A-Z ]+:)/);
-        parts.forEach(part => {
-          const colonIdx = part.indexOf(':');
-          if (colonIdx > -1) {
-            sections[part.slice(0, colonIdx).trim()] = part.slice(colonIdx + 1).trim();
-          }
-        });
+      parts.forEach(part => {
+       const colonIdx = part.indexOf(':');
+       if (colonIdx > -1) {
+        sections[part.slice(0, colonIdx).trim()] = part.slice(colonIdx + 1).trim();
+       }
+      });
 
         // Estimate height needed
         let heightNeeded = 14;
