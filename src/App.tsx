@@ -154,6 +154,10 @@ export default function App() {
     <Router>
       <div className="font-sans text-enb-text-primary selection:bg-enb-green/20">
         <Routes>
+          {/* Signup routes — always available (even when logged in) */}
+          <Route path="/signup/step1" element={<SignUpStep1 />} />
+          <Route path="/signup/step2" element={<SignUpStep2 />} />
+
           {user ? (
             <>
               <Route path="/admin" element={<AdminLayout />}>
@@ -203,8 +207,6 @@ export default function App() {
             <>
               <Route path="/" element={<Welcome />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/signup/step1" element={<SignUpStep1 />} />
-              <Route path="/signup/step2" element={<SignUpStep2 />} />
               <Route path="/onboarding/wallet" element={<ConnectWallet />} />
               <Route path="/onboarding/tutorial" element={<Tutorial />} />
               <Route path="/reset-password" element={<ResetPassword />} />
