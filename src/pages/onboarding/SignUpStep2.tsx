@@ -50,6 +50,47 @@ export default function SignUpStep2() {
         });
 
       if (upsertError) throw upsertError;
+
+      // === REFERRAL CLAIM LOGIC (this is the missing piece) ===
+      const referralCode = localStorage.getItem('referralCode');
+      if (referralCode) {
+        try {
+          // Find the referrer by their referral_code
+          const { data: referrer, error: refError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('referral_code', referralCode)
+            .single();
+
+          if (refError || !referrer) {
+            console.warn('Referrer not found for code:', referralCode);
+          } else {
+            // Link the new user to the referrer
+            await supabase
+              .from('users')
+              .update({ referred_by: referrer.id })
+              .eq('id', user.id);
+
+            // Create escrow reward entry for the referrer (500 ENB)
+            await supabase.from('referral_escrow').insert({
+              referrer_id: referrer.id,
+              referred_id: user.id,
+              enb_amount: 500,
+              escrow_type: 'FIRST_ACTION',
+              release_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+              released: false,
+            });
+
+            console.log('Referral bonus awarded to referrer:', referrer.id);
+          }
+        } catch (claimErr) {
+          console.error('Referral claim failed:', claimErr);
+        }
+
+        // Clean up
+        localStorage.removeItem('referralCode');
+      }
+
       navigate('/onboarding/wallet');
     } catch (err: any) {
       setError(err.message || 'Failed to save profile. Please try again.');
