@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,6 +24,7 @@ const PROFESSIONS = [
 
 export default function SignUpStep2() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [name, setName] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [profession, setProfession] = useState('');
@@ -31,10 +32,16 @@ export default function SignUpStep2() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Debug: Check referral code as soon as Step 2 loads
+  // Get referral code — from URL param first, then storage fallback
+  const getReferralCode = (): string => {
+    const fromUrl = searchParams.get('ref');
+    if (fromUrl) return fromUrl.trim();
+    return sessionStorage.getItem('referralCode') || localStorage.getItem('referralCode') || '';
+  };
+
   useEffect(() => {
-    const code = localStorage.getItem('referralCode');
-    console.log('🔍 Step 2 loaded - referralCode from localStorage:', code);
+    const code = getReferralCode();
+    console.log('🔍 Step 2 loaded - referral code:', code || 'none');
   }, []);
 
   const handleNext = async () => {
@@ -59,47 +66,59 @@ export default function SignUpStep2() {
 
       if (upsertError) throw upsertError;
 
-      // === REFERRAL CLAIM (this is the critical part) ===
-      const referralCode = localStorage.getItem('referralCode');
-      console.log('🔍 Trying to claim referral code:', referralCode);
+      // === REFERRAL CLAIM ===
+      const referralCode = getReferralCode();
+      console.log('🔍 Claiming referral code:', referralCode || 'none');
 
       if (referralCode) {
-        const cleanCode = referralCode.trim();
-
         const { data: referrer, error: refError } = await supabase
           .from('users')
-          .select('id, referral_code')
-          .eq('referral_code', cleanCode)
+          .select('id, referral_code, full_name')
+          .eq('referral_code', referralCode)
           .single();
 
-        console.log('🔍 Referrer lookup result:', { referrer, error: refError });
+        console.log('🔍 Referrer lookup:', { referrer, error: refError?.message });
 
         if (refError || !referrer) {
-          console.warn('❌ Referrer not found for code:', cleanCode);
-          setError('Referral code not found — bonus not applied');
+          console.warn('❌ Referrer not found for code:', referralCode);
+          // Don't block signup — just skip the referral reward silently
+        } else if (referrer.id === user.id) {
+          console.warn('❌ User tried to refer themselves — skipping');
         } else {
-          // Link new user
-          await supabase
+          // Step 1: Link new user to referrer
+          const { error: updateError } = await supabase
             .from('users')
             .update({ referred_by: referrer.id })
             .eq('id', user.id);
 
-          // Create escrow reward
-          await supabase.from('referral_escrow').insert({
-            referrer_id: referrer.id,
-            referred_id: user.id,
-            enb_amount: 500,
-            escrow_type: 'FIRST_ACTION',
-            release_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-            released: false,
-          });
+          if (updateError) {
+            console.error('❌ Failed to set referred_by:', updateError.message);
+          } else {
+            console.log('✅ referred_by set to:', referrer.id);
+          }
 
-          console.log('✅ SUCCESS: 500 ENB escrow awarded to referrer', referrer.id);
+          // Step 2: Create escrow record (releases on first approved action)
+          const { error: escrowError } = await supabase
+            .from('referral_escrow')
+            .insert({
+              referrer_id: referrer.id,
+              referred_id: user.id,
+              enb_amount: 500,
+              escrow_type: 'FIRST_ACTION',
+              release_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+              released: false,
+            });
+
+          if (escrowError) {
+            console.error('❌ Failed to create escrow:', escrowError.message);
+          } else {
+            console.log('✅ 500 ENB escrow created for referrer:', referrer.full_name);
+          }
         }
 
+        // Clean up storage
         localStorage.removeItem('referralCode');
-      } else {
-        console.log('No referral code in localStorage');
+        sessionStorage.removeItem('referralCode');
       }
 
       navigate('/onboarding/wallet');
@@ -166,7 +185,7 @@ export default function SignUpStep2() {
             <label className="text-sm font-medium text-enb-text-primary flex items-center gap-2">
               <MessageCircle className="w-4 h-4 text-green-500" />
               WhatsApp Number
-              <span className="text-gray-400 font-normal text-xs">(Optional — for notifications)</span>
+              <span className="text-gray-400 font-normal text-xs">(Optional)</span>
             </label>
             <Input
               type="tel"

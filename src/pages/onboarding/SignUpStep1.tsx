@@ -18,29 +18,30 @@ export default function SignUpStep1() {
   const [resetSent, setResetSent] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState(false);
 
-  // ── Capture ?ref= from URL on load ──────────────────────────
+  // Capture ?ref= from URL on load — save to BOTH localStorage AND sessionStorage
   useEffect(() => {
     const refFromUrl = searchParams.get('ref');
     if (refFromUrl) {
-      const clean = refFromUrl.trim().toUpperCase();
+      const clean = refFromUrl.trim();
       setReferralCode(clean);
       localStorage.setItem('referralCode', clean);
-      console.log('✅ Referral code captured from URL:', clean);
+      sessionStorage.setItem('referralCode', clean);
     } else {
-      // Check if one was already saved (e.g. user refreshed the page)
-      const saved = localStorage.getItem('referralCode');
+      // Check storage (handles page refresh)
+      const saved = sessionStorage.getItem('referralCode') || localStorage.getItem('referralCode');
       if (saved) setReferralCode(saved);
     }
   }, []);
 
-  // ── Save referral code to localStorage whenever it changes ──
   const handleReferralChange = (val: string) => {
-    const clean = val.trim().toUpperCase();
+    const clean = val.trim();
     setReferralCode(clean);
     if (clean) {
       localStorage.setItem('referralCode', clean);
+      sessionStorage.setItem('referralCode', clean);
     } else {
       localStorage.removeItem('referralCode');
+      sessionStorage.removeItem('referralCode');
     }
   };
 
@@ -65,7 +66,9 @@ export default function SignUpStep1() {
         }
         return;
       }
-      navigate('/signup/step2');
+      // Pass referral code in URL to Step2 so it survives navigation
+      const ref = referralCode.trim();
+      navigate(ref ? `/signup/step2?ref=${ref}` : '/signup/step2');
     } catch (err: any) {
       setError(err.message || 'Sign up failed. Please try again.');
     } finally {
@@ -175,7 +178,7 @@ export default function SignUpStep1() {
                 </label>
                 <Input
                   type="text"
-                  placeholder="e.g. ENB-MUHA-A1B2"
+                  placeholder="e.g. 619b3048"
                   value={referralCode}
                   onChange={(e) => handleReferralChange(e.target.value)}
                   className={referralCode ? 'border-enb-green bg-enb-green/5 font-mono' : ''}
@@ -215,10 +218,7 @@ export default function SignUpStep1() {
 
               <p className="text-center text-sm text-gray-400">
                 Already have an account?{' '}
-                <button
-                  onClick={() => navigate('/login')}
-                  className="text-enb-green font-medium hover:underline"
-                >
+                <button onClick={() => navigate('/login')} className="text-enb-green font-medium hover:underline">
                   Log in
                 </button>
               </p>
