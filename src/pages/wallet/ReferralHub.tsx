@@ -16,35 +16,68 @@ interface EscrowItem {
 }
 
 export default function ReferralHub() {
-  const { user } = useUserStore();
+  const { user, setUser } = useUserStore();
   const [copied, setCopied] = useState(false);
   const [referrals, setReferrals] = useState<ReferredUser[]>([]);
   const [escrow, setEscrow] = useState<EscrowItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [referralCode, setReferralCode] = useState('');
 
   if (!user) return null;
 
-  // Use stored referral_code or generate from name+id
-  const referralCode = user.referral_code ||
-    `ENB-${(user.full_name || user.email || 'ENB').toUpperCase().replace(/\s+/g, '').slice(0, 4)}-${user.id.slice(0, 4).toUpperCase()}`;
-
-  const referralLink = `${window.location.origin}/signup/step1?ref=${referralCode}`;
-
+  // ── Generate code and SAVE to DB if not already stored ──────
   useEffect(() => {
-    fetchReferralData();
-  }, []);
+    const ensureReferralCode = async () => {
+      if (user.referral_code) {
+        // Already stored — use it
+        setReferralCode(user.referral_code);
+      } else {
+        // Generate one and save it to DB so lookups work
+        const generated = `ENB-${(user.full_name || user.email || 'ENB')
+          .toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 4)}-${user.id.slice(0, 4).toUpperCase()}`;
+
+        const { error } = await supabase
+          .from('users')
+          .update({ referral_code: generated })
+          .eq('id', user.id);
+
+        if (!error) {
+          setReferralCode(generated);
+          // Update local store so it persists for this session
+          setUser({ ...user, referral_code: generated });
+          console.log('✅ Referral code generated and saved to DB:', generated);
+        } else {
+          console.error('❌ Failed to save referral code:', error.message);
+          setReferralCode(generated); // Still show it even if save failed
+        }
+      }
+
+      fetchReferralData();
+    };
+
+    ensureReferralCode();
+  }, [user.id]);
 
   const fetchReferralData = async () => {
     setLoading(true);
     const [refRes, escrowRes] = await Promise.all([
-      supabase.from('users').select('id, full_name, email, tier, referral_reward_paid, referral_milestone_paid, created_at')
-        .eq('referred_by', user!.id).order('created_at', { ascending: false }),
-      supabase.from('referral_escrow').select('*').eq('referrer_id', user!.id).order('created_at', { ascending: false }),
+      supabase.from('users')
+        .select('id, full_name, email, tier, referral_reward_paid, referral_milestone_paid, created_at')
+        .eq('referred_by', user!.id)
+        .order('created_at', { ascending: false }),
+      supabase.from('referral_escrow')
+        .select('*')
+        .eq('referrer_id', user!.id)
+        .order('created_at', { ascending: false }),
     ]);
     if (refRes.data) setReferrals(refRes.data);
     if (escrowRes.data) setEscrow(escrowRes.data);
     setLoading(false);
   };
+
+  const referralLink = referralCode
+    ? `${window.location.origin}/signup/step1?ref=${referralCode}`
+    : '';
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -78,7 +111,7 @@ export default function ReferralHub() {
         </div>
       </header>
 
-      {/* Rewards Card */}
+      {/* Rewards Summary Card */}
       <Card className="bg-gradient-to-br from-enb-green/10 to-enb-teal/10 border-none shadow-sm">
         <CardContent className="p-6 text-center space-y-3">
           <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
@@ -106,18 +139,29 @@ export default function ReferralHub() {
       {/* Referral Code */}
       <div className="space-y-3">
         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Your Referral Code</label>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-          <div className="font-mono text-lg font-bold tracking-widest text-enb-text-primary">{referralCode}</div>
-          <Button variant="ghost" size="sm" onClick={() => handleCopy(referralCode)} className="text-enb-green hover:bg-enb-green/10">
-            {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          </Button>
-        </div>
-        <Button onClick={handleShare} className="w-full h-11 bg-enb-green hover:bg-enb-green/90 text-white shadow-lg shadow-enb-green/20">
-          <Share2 className="w-4 h-4 mr-2" /> Share Referral Link
-        </Button>
+        {referralCode ? (
+          <>
+            <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+              <div className="font-mono text-lg font-bold tracking-widest text-enb-text-primary">{referralCode}</div>
+              <Button variant="ghost" size="sm" onClick={() => handleCopy(referralCode)} className="text-enb-green hover:bg-enb-green/10">
+                {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
+            <Button onClick={handleShare} className="w-full h-11 bg-enb-green hover:bg-enb-green/90 text-white shadow-lg shadow-enb-green/20">
+              <Share2 className="w-4 h-4 mr-2" /> Share Referral Link
+            </Button>
+            <p className="text-xs text-gray-400 text-center">
+              Your link: <span className="font-mono text-enb-text-secondary">{referralLink}</span>
+            </p>
+          </>
+        ) : (
+          <div className="flex justify-center py-4">
+            <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+          </div>
+        )}
       </div>
 
-      {/* Escrow pending */}
+      {/* Pending Escrow */}
       {escrow.filter(e => !e.released).length > 0 && (
         <div className="space-y-2">
           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Escrow</label>
@@ -138,7 +182,7 @@ export default function ReferralHub() {
         </div>
       )}
 
-      {/* Your Referrals */}
+      {/* Your Referrals List */}
       <div className="space-y-3">
         <h3 className="font-bold text-enb-text-primary">Your Referrals ({referrals.length})</h3>
         {loading ? (
@@ -166,7 +210,7 @@ export default function ReferralHub() {
                 ) : r.referral_reward_paid ? (
                   <span className="text-xs bg-enb-gold/10 text-enb-gold px-2 py-0.5 rounded-full font-medium">500 ENB ✓</span>
                 ) : (
-                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Pending</span>
+                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Pending action</span>
                 )}
               </div>
             </div>

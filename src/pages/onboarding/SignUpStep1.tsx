@@ -1,20 +1,48 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Eye, EyeOff, Gift } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function SignUpStep1() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState(false);
+
+  // ── Capture ?ref= from URL on load ──────────────────────────
+  useEffect(() => {
+    const refFromUrl = searchParams.get('ref');
+    if (refFromUrl) {
+      const clean = refFromUrl.trim().toUpperCase();
+      setReferralCode(clean);
+      localStorage.setItem('referralCode', clean);
+      console.log('✅ Referral code captured from URL:', clean);
+    } else {
+      // Check if one was already saved (e.g. user refreshed the page)
+      const saved = localStorage.getItem('referralCode');
+      if (saved) setReferralCode(saved);
+    }
+  }, []);
+
+  // ── Save referral code to localStorage whenever it changes ──
+  const handleReferralChange = (val: string) => {
+    const clean = val.trim().toUpperCase();
+    setReferralCode(clean);
+    if (clean) {
+      localStorage.setItem('referralCode', clean);
+    } else {
+      localStorage.removeItem('referralCode');
+    }
+  };
 
   const handleSignUp = async () => {
     if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
@@ -25,7 +53,6 @@ export default function SignUpStep1() {
     try {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
-        // Supabase returns this when email exists (with or without password)
         if (
           error.message.toLowerCase().includes('already registered') ||
           error.message.toLowerCase().includes('already exists') ||
@@ -139,6 +166,27 @@ export default function SignUpStep1() {
                 />
               </div>
 
+              {/* Referral Code Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-enb-text-primary flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-enb-gold" />
+                  Referral Code
+                  <span className="text-gray-400 font-normal text-xs">(Optional)</span>
+                </label>
+                <Input
+                  type="text"
+                  placeholder="e.g. ENB-MUHA-A1B2"
+                  value={referralCode}
+                  onChange={(e) => handleReferralChange(e.target.value)}
+                  className={referralCode ? 'border-enb-green bg-enb-green/5 font-mono' : ''}
+                />
+                {referralCode && (
+                  <p className="text-xs text-enb-green font-medium">
+                    ✅ Referral code applied — you and your referrer earn 500 ENB after your first action!
+                  </p>
+                )}
+              </div>
+
               <Button
                 onClick={handleSignUp}
                 className="w-full mt-4 bg-enb-dark text-white"
@@ -148,7 +196,6 @@ export default function SignUpStep1() {
                 {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
               </Button>
 
-              {/* Show "Set Password" option when email already exists */}
               {isExistingUser && (
                 <Button
                   onClick={handleSetPassword}
