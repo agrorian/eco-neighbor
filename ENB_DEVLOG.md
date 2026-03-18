@@ -126,3 +126,128 @@
 
 ---
 
+
+---
+
+## 13 Mar 2026 — Session 11 — Afternoon PKT
+**Focus:** Full codebase review (src.zip), resolve double-reward investigation, fix 9 bugs across 4 files
+
+#### ✅ Completed
+| # | Action | Logic / Why |
+|---|--------|-------------|
+| 1 | Received and analysed full src.zip — all 60+ files mapped | First time complete codebase confirmed in one pass |
+| 2 | Resolved double MODERATOR_REWARD for Faisal Khan 2 | NOT a bug — he had no test airdrop; 2 mod rewards = correct |
+| 3 | Confirmed FounderSale, FounderHardship, PartnerFloat fully built | Screens existed but had no navigation entry points |
+| 4 | Fixed More.tsx — removed dead imports (useNavigate, Card) | Imported but never used |
+| 5 | Added Founder Sale Gate to More.tsx | Visible to admin/founder only — was unreachable |
+| 6 | Added Float Monitor to More.tsx | Visible to business/admin only — was unreachable |
+| 7 | Added My History to More.tsx | Visible to all — was only reachable from dashboard |
+| 8 | Fixed MemberDashboard campaign banner link | Was linking to /admin/campaigns — changed to /impact |
+| 9 | Fixed dashboard/AdminDashboard.tsx pending count | Excluded mod-assigned submissions (same fix as admin panel) |
+| 10 | Fixed Profile.tsx Edit button | Had no onClick — now navigates to /settings |
+| 11 | Fixed Profile.tsx logout | Was calling store logout() only without supabase.auth.signOut() |
+
+#### 🐛 Bugs Fixed
+| Bug | Root Cause | Fix Applied |
+|-----|-----------|-------------|
+| Founder Sale Gate unreachable | Not in More.tsx nav | Added with admin/founder role gate |
+| Float Monitor unreachable | Not in More.tsx nav | Added with business/admin role gate |
+| My History missing from More | Not in nav list | Added for all users |
+| Campaign banner wrong link | Hardcoded /admin/campaigns | Changed to /impact |
+| Home dashboard pending count wrong | No exclusion of mod-assigned submissions | Two-step exclusion applied |
+| Profile Edit button non-functional | No onClick handler | navigate('/settings') added |
+| Profile logout broken | Only called store logout, not auth.signOut | Now calls both |
+
+#### 🗄️ SQL Run
+| File | Purpose | Status |
+|------|---------|--------|
+| Manual query | Confirmed moderator_assignments columns | ✅ |
+| Manual query | Full transaction history for all mods | ✅ |
+| reporting_system_v2.sql | Full reporting system rebuild | ⏳ STILL PENDING |
+
+#### 📁 Files Changed
+| File | Repo Path | Change Type |
+|------|-----------|-------------|
+| More.tsx | src/pages/More.tsx | Fixed |
+| MemberDashboard.tsx | src/pages/dashboard/MemberDashboard.tsx | Fixed |
+| AdminDashboard.tsx (home) | src/pages/dashboard/AdminDashboard.tsx | Fixed |
+| Profile.tsx | src/pages/Profile.tsx | Fixed |
+
+#### ⏭️ Next Plan of Action
+1. Run reporting_system_v2.sql in Supabase
+2. Dual senior mod required to confirm reports
+3. CAPTCHA question pool rotation
+4. Mod pair rotation
+5. Responsibility Dashboard auto-reports (Whitepaper Section 26)
+
+#### 📝 Notes / Decisions Made
+- Complete src.zip received — all file paths and contents now confirmed for future sessions
+- ENB_BACKLOG.md and ENB_DEVLOG.md confirmed as primary cross-session context tools
+- Faisal Khan 2 balance discrepancy fully explained — optional equalisation airdrop available
+
+---
+
+## 19 Mar 2026 — Session 13 — ~2:00 AM to ~5:00 AM PKT
+**Focus:** Referral system complete fix, auto-approval trigger, marketing site updates, Fi.co pitch prep
+
+#### ✅ Completed
+| # | Action | Logic / Why |
+|---|--------|-------------|
+| 1 | Fixed SignUpStep1 — captures ?ref= from URL | Was never reading URL params — referral code never reached localStorage |
+| 2 | Fixed SignUpStep2 — reads ref from URL param directly | localStorage unreliable in incognito/different devices — ref now travels in URL |
+| 3 | Fixed ReferralHub — saves referral_code to DB on first visit | Code was generated on-the-fly but never persisted — lookups always failed |
+| 4 | Rebuilt release_referral_escrow() SQL function | Old version only released after 14-day wait — rebuilt to trigger on first approved action |
+| 5 | Created trg_auto_evaluate_mod_decision DB trigger | Race condition in frontend caused submissions to stay pending — trigger fires on DB update, guaranteed |
+| 6 | Reduced ModQueue timer from 30s to 10s | Testing convenience — to be reverted before public launch |
+| 7 | Marketing site — Fi.co badge added to hero | Acceptance not visible on site |
+| 8 | Marketing site — Whitepaper links → email request | Whitepaper not ready for public — request via email instead |
+| 9 | Marketing site — Cloudflare email protection fix | mailto links were being mangled by Cloudflare CDN — fixed with JS onclick |
+| 10 | Marketing site — Giveth links added throughout | Old Gitcoin links replaced with live Giveth listing |
+| 11 | Marketing site — 5B stat overflow fixed | 5,000,000,000 was breaking card layout — changed to 5B |
+| 12 | Marketing site — Fi.co investor card added | New card in investors section |
+| 13 | README.md replaced | Gemini AI Studio template replaced with proper ENB README |
+| 14 | Manually fixed test users referred_by and escrow | goldennexusadvisory and intuitionalised — pre-fix users patched |
+| 15 | Cleaned up duplicate referral payment | Ran release twice by mistake — duplicate escrow row and transaction deleted |
+| 16 | Fi.co VIP Pitch Lounge — pitch script prepared | Event Mar 24 2026 — 1-sentence, 60-second, 3-minute versions + Q&A prep |
+
+#### 🐛 Bugs Fixed
+| Bug | Root Cause | Fix Applied |
+|-----|-----------|-------------|
+| referred_by never saved | SignUpStep1 never read ?ref= URL param | useSearchParams + pass ref via navigate URL |
+| Referral lookup always failed | referral_code not in DB for most users | ReferralHub saves code to DB on first visit |
+| Submissions stayed pending after mod approval | Race condition — frontend re-fetch returned stale data | DB trigger fires evaluate_mod_decision automatically |
+| Whitepaper mailto links gave 404 | Cloudflare intercepts mailto links on proxy | JS onclick splits email string to bypass scanner |
+| 5B stat overflowing card | Full number too long for card width | Changed to 5B with subtitle |
+
+#### 🗄️ SQL Run
+| Query | Purpose | Status |
+|-------|---------|--------|
+| Rebuild release_referral_escrow() | Immediate payout on first action | ✅ |
+| Manual referred_by + escrow fixes | Patch pre-fix test users | ✅ |
+| CREATE TRIGGER trg_auto_evaluate_mod_decision | Auto-approval on both mod decisions | ✅ |
+| Balance/transaction cleanup for TEST user | Remove duplicate credit | ⏳ Run at next session start |
+
+#### 📁 Files Changed
+| File | Repo Path | Change Type |
+|------|-----------|-------------|
+| SignUpStep1.tsx | src/pages/onboarding/SignUpStep1.tsx | Fixed — URL param capture |
+| SignUpStep2.tsx | src/pages/onboarding/SignUpStep2.tsx | Fixed — URL param referral claim |
+| ReferralHub.tsx | src/pages/wallet/ReferralHub.tsx | Fixed — saves code to DB |
+| ModQueue.tsx | src/pages/admin/ModQueue.tsx | Timer 30s → 10s |
+| README.md | README.md | Replaced with proper ENB README |
+| index.html | enb-site repo | Fi.co badge, Giveth links, email fix, 5B stat, investor card |
+
+#### ⏭️ Next Plan of Action
+1. Run TEST user balance cleanup SQL (if not done)
+2. Test full referral cycle end-to-end with fresh account
+3. Get devnet SOL from faucet.quicknode.com/solana/devnet
+4. Complete Solana token deployment on devnet
+5. Set up Gitcoin Passport at passport.gitcoin.co
+6. Prepare for Fi.co VIP Pitch Lounge — Mar 24, 2026
+
+#### 📝 Notes / Decisions Made
+- Referral code format (ENB-XXXX-XXXX) deferred to pre-launch — current hex codes work fine
+- ModQueue timer set to 10s for testing — must be changed back to 30s before public launch
+- Marketing whitepaper link → email request flow (not public PDF) until SECP company registered
+- DB trigger is now primary approval mechanism — frontend RPC call is backup
+- Fi.co pitch event Mar 24 — online, 12:00–1:30 PM PKT

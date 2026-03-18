@@ -1,5 +1,5 @@
 # ENB Web App — Master Backlog
-*Last updated: 13 Mar 2026*
+*Last updated: 19 Mar 2026*
 *Rule: At the start of every session (2h+ gap), check this file first.*
 
 ---
@@ -23,10 +23,10 @@
 ---
 
 ## 🟡 NEXT SESSION (Important)
-- [ ] Dual senior mod required to confirm reports (not just admin)
-- [ ] CAPTCHA question rotation from larger pool
-- [ ] Mod pair rotation — same 2 mods never assigned together twice in a row
-- [ ] Moderator social circle problem — mods from same family/friend group can coordinate outside app via WhatsApp. Solution: onboarding process must select mods from DIFFERENT social circles + Neighbourhood Anchor elder acts as social accountability check. Also track mod agreement rate — if two mods agree 100% of the time across many reviews, flag for admin review (statistical anomaly detector)
+- [x] Dual senior mod — DROPPED: admin escalation queue handles this
+- [x] CAPTCHA pool expanded 3 → 15 questions with randomised answer positions
+- [x] Mod pair rotation — SQL trigger updated to prevent consecutive same-pair assignments
+- [x] Moderator social circle detection — get_mod_agreement_stats() SQL + Mod Collusion Watch card in admin dashboard — mods from same family/friend group can coordinate outside app via WhatsApp. Solution: onboarding process must select mods from DIFFERENT social circles + Neighbourhood Anchor elder acts as social accountability check. Also track mod agreement rate — if two mods agree 100% of the time across many reviews, flag for admin review (statistical anomaly detector)
 
 ---
 
@@ -71,11 +71,27 @@
 - [x] Admin UserManagement + Airdrop
 - [x] PWA icons updated with real logo
 - [x] Founder Sale / Hardship / Partner Float screens
+- [x] PartnerManager — Add Partner modal wired to Supabase (was mock data)
+- [x] BusinessDirectory — Leaflet map with clickable pins replacing placeholder
+- [x] PartnerFloat — Fixed wrong column names (owner_user_id, enb_float)
+- [x] More.tsx — Added Founder Sale Gate, Float Monitor, My History links
+- [x] Profile.tsx — Edit button navigates to settings, logout calls supabase.auth.signOut()
+- [x] MyLog — Reports tab with weekly/monthly PDF download (jsPDF)
+- [x] Admin AdminDashboard — Mod Collusion Watch card + agreement rate bars
+- [x] Referral system — complete end-to-end fix (URL param, DB save, escrow, payout)
+- [x] Auto-approval trigger — trg_auto_evaluate_mod_decision DB trigger
+- [x] ModQueue timer — 10s for testing (was 30s)
+- [x] README.md — proper ENB project README
+- [x] Marketing site — Fi.co badge, Giveth links, email protection, 5B stat, investor card
 
 ---
 
 ## 📋 KNOWN ISSUES (not yet investigated)
-- [ ] Faisal Khan 2 wallet showed 2x MODERATOR_REWARD entries (possible double-fire of evaluate_mod_decision)
+- [ ] ModQueue timer currently 10s — change back to 30s before public launch
+- [ ] TEST user (intuitionalised@gmail.com) balance cleanup SQL still needs to run
+
+## 📋 KNOWN ISSUES (not yet investigated) — original
+- [x] Faisal Khan 2 wallet showed 2x MODERATOR_REWARD entries — RESOLVED: not a bug, airdrop discrepancy
 - [ ] Approved submissions briefly still showed in admin Queue before page refresh
 - [ ] Report This button only shown on approved submissions — should also appear on others' submissions in a community feed (future feature)
 
