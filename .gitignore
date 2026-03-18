@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+*.json
+new-wallet-keypair*.json
+test-keypair.json
+*.keypair.json
