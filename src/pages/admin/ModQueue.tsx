@@ -31,13 +31,13 @@ export default function ModQueue() {
 
   useEffect(() => { fetchAssignments(); }, []);
 
-  // Start a 30s timer for each assignment when it appears
+  // Start a 10s timer for each assignment when it appears
   useEffect(() => {
     assignments.forEach(a => {
       if (!timerRefs.current[a.id]) {
         setTimers(t => ({ ...t, [a.id]: 0 }));
         timerRefs.current[a.id] = setInterval(() => {
-          setTimers(t => ({ ...t, [a.id]: Math.min((t[a.id] || 0) + 1, 30) }));
+          setTimers(t => ({ ...t, [a.id]: Math.min((t[a.id] || 0) + 1, 10) }));
         }, 1000);
       }
     });
@@ -233,26 +233,26 @@ export default function ModQueue() {
                     {dec.reason.length > 0 && dec.reason.length < 10 && (
                       <p className="text-xs text-red-500">{10 - dec.reason.length} more characters needed</p>
                     )}
-                    {/* 30s minimum review timer */}
-                    {(timers[a.id] || 0) < 30 && (
+                    {/* 10s minimum review timer */}
+                    {(timers[a.id] || 0) < 10 && (
                       <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                         <div className="flex-1 bg-amber-200 rounded-full h-1.5">
                           <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
-                            style={{ width: `${((timers[a.id] || 0) / 30) * 100}%` }} />
+                            style={{ width: `${((timers[a.id] || 0) / 10) * 100}%` }} />
                         </div>
                         <span className="text-xs text-amber-700 font-medium whitespace-nowrap">
-                          {30 - (timers[a.id] || 0)}s — review carefully
+                          {10 - (timers[a.id] || 0)}s — review carefully
                         </span>
                       </div>
                     )}
                     <Button
                       onClick={() => submitDecision(a)}
-                      disabled={dec.reason.length < 10 || isProcessing || (timers[a.id] || 0) < 30}
+                      disabled={dec.reason.length < 10 || isProcessing || (timers[a.id] || 0) < 10}
                       className="w-full bg-enb-text-primary text-white hover:bg-enb-text-primary/90 disabled:opacity-50">
                       {isProcessing
                         ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
-                        : (timers[a.id] || 0) < 30
-                          ? `Please review for ${30 - (timers[a.id] || 0)} more seconds`
+                        : (timers[a.id] || 0) < 10
+                          ? `Please review for ${10 - (timers[a.id] || 0)} more seconds`
                           : `Submit ${dec.decision === 'APPROVE' ? 'Approval' : 'Rejection'}`}
                     </Button>
                   </div>
