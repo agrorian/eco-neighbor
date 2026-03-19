@@ -195,8 +195,8 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-900">{stats.enbDistributedToday.toLocaleString()}</div>
-                <div className="text-xs text-blue-600 uppercase tracking-wider font-medium mt-1">ENB Distributed Today</div>
+                <div className="text-3xl font-bold text-blue-900">{stats.enbDistributedAllTime.toLocaleString()}</div>
+                <div className="text-xs text-blue-600 uppercase tracking-wider font-medium mt-1">ENB Distributed All Time</div>
               </CardContent>
             </Card>
           </div>
