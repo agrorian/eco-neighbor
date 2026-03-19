@@ -31,13 +31,13 @@ export default function ModQueue() {
 
   useEffect(() => { fetchAssignments(); }, []);
 
-  // Start a 10s timer for each assignment when it appears
+  // Start a 30s timer for each assignment when it appears
   useEffect(() => {
     assignments.forEach(a => {
       if (!timerRefs.current[a.id]) {
         setTimers(t => ({ ...t, [a.id]: 0 }));
         timerRefs.current[a.id] = setInterval(() => {
-          setTimers(t => ({ ...t, [a.id]: Math.min((t[a.id] || 0) + 1, 10) }));
+          setTimers(t => ({ ...t, [a.id]: Math.min((t[a.id] || 0) + 1, 30) }));
         }, 1000);
       }
     });
@@ -101,22 +101,32 @@ export default function ModQueue() {
       ? { decision1: dec.decision, reason1: dec.reason }
       : { decision2: dec.decision, reason2: dec.reason };
 
-    await supabase.from('moderator_assignments').update(update).eq('id', assignment.id);
-
-    // Check if both mods have now decided
-    const { data: updated } = await supabase
+    const { error: updateError } = await supabase
       .from('moderator_assignments')
-      .select('decision1, decision2')
-      .eq('id', assignment.id)
-      .single();
+      .update(update)
+      .eq('id', assignment.id);
 
-    if (updated?.decision1 && updated?.decision2) {
-      const { data: result } = await supabase.rpc('evaluate_mod_decision', { p_assignment_id: assignment.id });
-      if (result?.status === 'approved') showToast('✅ Both mods agreed — submission approved! +500 ENB earned.');
-      else if (result?.status === 'rejected') showToast('❌ Both mods agreed — submission rejected. +200 ENB earned.');
-      else if (result?.status === 'escalated_to_senior') showToast('⚠️ Disagreement recorded — escalated to Senior Moderator.');
-    } else {
+    if (updateError) {
+      showToast('❌ Failed to save decision. Please try again.');
+      setSubmitting(null);
+      return;
+    }
+
+    // Always call evaluate — the SQL function checks status=pending internally
+    // so double-processing is impossible. This eliminates the race condition
+    // where a re-fetch returns stale data and evaluate never gets called.
+    const { data: result } = await supabase.rpc('evaluate_mod_decision', { p_assignment_id: assignment.id });
+
+    if (result?.status === 'approved') {
+      showToast('✅ Both mods agreed — submission approved! +500 ENB earned.');
+    } else if (result?.status === 'rejected') {
+      showToast('❌ Both mods agreed — submission rejected. +200 ENB earned.');
+    } else if (result?.status === 'escalated_to_senior') {
+      showToast('⚠️ Disagreement recorded — escalated to Senior Moderator.');
+    } else if (result?.status === 'waiting_for_second_mod') {
       showToast('✅ Decision submitted. Waiting for second moderator.');
+    } else {
+      showToast('✅ Decision recorded.');
     }
 
     await fetchAssignments();
@@ -233,26 +243,26 @@ export default function ModQueue() {
                     {dec.reason.length > 0 && dec.reason.length < 10 && (
                       <p className="text-xs text-red-500">{10 - dec.reason.length} more characters needed</p>
                     )}
-                    {/* 10s minimum review timer */}
-                    {(timers[a.id] || 0) < 10 && (
+                    {/* 30s minimum review timer */}
+                    {(timers[a.id] || 0) < 30 && (
                       <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                         <div className="flex-1 bg-amber-200 rounded-full h-1.5">
                           <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
-                            style={{ width: `${((timers[a.id] || 0) / 10) * 100}%` }} />
+                            style={{ width: `${((timers[a.id] || 0) / 30) * 100}%` }} />
                         </div>
                         <span className="text-xs text-amber-700 font-medium whitespace-nowrap">
-                          {10 - (timers[a.id] || 0)}s — review carefully
+                          {30 - (timers[a.id] || 0)}s — review carefully
                         </span>
                       </div>
                     )}
                     <Button
                       onClick={() => submitDecision(a)}
-                      disabled={dec.reason.length < 10 || isProcessing || (timers[a.id] || 0) < 10}
+                      disabled={dec.reason.length < 10 || isProcessing || (timers[a.id] || 0) < 30}
                       className="w-full bg-enb-text-primary text-white hover:bg-enb-text-primary/90 disabled:opacity-50">
                       {isProcessing
                         ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
-                        : (timers[a.id] || 0) < 10
-                          ? `Please review for ${10 - (timers[a.id] || 0)} more seconds`
+                        : (timers[a.id] || 0) < 30
+                          ? `Please review for ${30 - (timers[a.id] || 0)} more seconds`
                           : `Submit ${dec.decision === 'APPROVE' ? 'Approval' : 'Rejection'}`}
                     </Button>
                   </div>
