@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Camera, MapPin, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Camera, MapPin, CheckCircle, Loader2, AlertCircle, X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -10,8 +9,9 @@ interface ActionFormProps {
   onBack: () => void;
 }
 
+const MAX_PHOTOS = 5;
+
 // Behavioural CAPTCHA — 15 questions, randomised correct answer positions
-// Mix of Urdu and English to serve all literacy levels
 const CAPTCHA_QUESTIONS = [
   { q: 'Kaunsa kaam ek achha shehri karta hai?', options: ['Kachra bin mein daalna', 'Sadak par phenkna'], correct: 0 },
   { q: 'Apne mohalle ki safai karna kaisi baat hai?', options: ['Galat hai, bekar kaam', 'Bahut achhi baat hai'], correct: 1 },
@@ -30,11 +30,15 @@ const CAPTCHA_QUESTIONS = [
   { q: 'Encouraging your neighbours to keep streets clean is:', options: ['A community responsibility', 'Not your concern'], correct: 0 },
 ];
 
+interface PhotoItem {
+  preview: string;       // base64 for display
+  cloudinaryUrl: string | null;  // uploaded URL
+  uploading: boolean;
+  file: File;
+}
+
 export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormProps) {
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const [cloudinaryUrl, setCloudinaryUrl] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [description, setDescription] = useState('');
   const [gpsLat, setGpsLat] = useState<number | null>(null);
   const [gpsLng, setGpsLng] = useState<number | null>(null);
@@ -46,21 +50,26 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   const [captchaFailed, setCaptchaFailed] = useState(false);
   const [formStartTime] = useState(Date.now());
   const [touchEvents, setTouchEvents] = useState(0);
+  const [cameraActive, setCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [cameraActive, setCameraActive] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
 
   const captcha = CAPTCHA_QUESTIONS[captchaIdx];
 
-  // Track touch events for behavioural CAPTCHA
   useEffect(() => {
     const handler = () => setTouchEvents(n => n + 1);
     window.addEventListener('touchstart', handler, { passive: true });
     return () => window.removeEventListener('touchstart', handler);
   }, []);
 
+  // Stop camera stream on unmount
+  useEffect(() => {
+    return () => { streamRef.current?.getTracks().forEach(t => t.stop()); };
+  }, []);
+
   const openCamera = async () => {
+    if (photos.length >= MAX_PHOTOS) return;
     setCameraError('');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -69,20 +78,13 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       });
       streamRef.current = stream;
       setCameraActive(true);
-      // Use setTimeout to ensure video element is mounted after state update
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.setAttribute('playsinline', 'true');
-          videoRef.current.setAttribute('muted', 'true');
           videoRef.current.muted = true;
-          const playPromise = videoRef.current.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(() => {
-              // Auto-play blocked — try again on user gesture
-              if (videoRef.current) videoRef.current.play();
-            });
-          }
+          const p = videoRef.current.play();
+          if (p !== undefined) p.catch(() => videoRef.current?.play());
         }
       }, 100);
     } catch (err: any) {
@@ -103,21 +105,26 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d')?.drawImage(video, 0, 0);
+
     canvas.toBlob((blob) => {
       if (!blob) return;
       const file = new File([blob], `action_${Date.now()}.jpg`, { type: 'image/jpeg' });
-      setPhotoFile(file);
-      setPhotoPreview(canvas.toDataURL('image/jpeg', 0.8));
-      // Stop camera
+      const preview = canvas.toDataURL('image/jpeg', 0.8);
+
+      // Add photo to list immediately
+      const newPhoto: PhotoItem = { preview, cloudinaryUrl: null, uploading: true, file };
+      setPhotos(prev => [...prev, newPhoto]);
+
+      // Stop camera after capture
       streamRef.current?.getTracks().forEach(t => t.stop());
       setCameraActive(false);
-      // Auto-upload to Cloudinary
-      uploadToCloudinary(file);
+
+      // Upload this photo
+      uploadPhoto(file, preview);
     }, 'image/jpeg', 0.85);
   };
 
-  const uploadToCloudinary = async (file: File) => {
-    setPhotoUploading(true);
+  const uploadPhoto = async (file: File, preview: string) => {
     try {
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dl86obm3b';
       const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'enb_photos';
@@ -129,18 +136,22 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         method: 'POST', body: formData,
       });
       const data = await res.json();
-      if (data.secure_url) {
-        setCloudinaryUrl(data.secure_url);
-      } else {
-        throw new Error('Upload failed');
-      }
+      // Update the photo item by matching on preview (unique per capture)
+      setPhotos(prev => prev.map(p =>
+        p.preview === preview
+          ? { ...p, cloudinaryUrl: data.secure_url || null, uploading: false }
+          : p
+      ));
     } catch (err) {
       console.error('Cloudinary upload failed:', err);
-      // Fall back to base64 if upload fails
-      setCloudinaryUrl(null);
-    } finally {
-      setPhotoUploading(false);
+      setPhotos(prev => prev.map(p =>
+        p.preview === preview ? { ...p, uploading: false } : p
+      ));
     }
+  };
+
+  const removePhoto = (preview: string) => {
+    setPhotos(prev => prev.filter(p => p.preview !== preview));
   };
 
   const handleGetLocation = () => {
@@ -158,22 +169,22 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   };
 
   const handleSubmit = () => {
-    if (!photoPreview || !description || !gpsLat) return;
-
-    // CAPTCHA validation
+    if (photos.length === 0 || !description || !gpsLat) return;
     if (captchaAnswer === null) { setCaptchaFailed(true); return; }
     if (captchaAnswer !== captcha.correct) { setCaptchaFailed(true); return; }
 
-    // Compute captcha score (0–1): time, touch variance, correct answer
     const timeMs = Date.now() - formStartTime;
-    const timeScore = Math.min(timeMs / 10000, 1); // at least 10s = score 1
+    const timeScore = Math.min(timeMs / 10000, 1);
     const touchScore = Math.min(touchEvents / 5, 1);
-    const captchaScore = (timeScore * 0.4 + touchScore * 0.3 + (captchaAnswer === captcha.correct ? 0.3 : 0));
+    const captchaScore = (timeScore * 0.4 + touchScore * 0.3 + 0.3);
+
+    const uploadedUrls = photos.filter(p => p.cloudinaryUrl).map(p => p.cloudinaryUrl as string);
 
     onSubmit({
       actionType,
-      photo: cloudinaryUrl || photoPreview, // Cloudinary URL preferred, base64 fallback
-      photoUrls: cloudinaryUrl ? [cloudinaryUrl] : [],
+      photo: uploadedUrls[0] || photos[0].preview,       // primary photo (backward compat)
+      photoUrls: uploadedUrls.length > 0 ? uploadedUrls : photos.map(p => p.preview),
+      photoCount: photos.length,
       description,
       gpsLat,
       gpsLng,
@@ -184,7 +195,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     });
   };
 
-  const canSubmit = photoPreview && !photoUploading && description.trim().length > 10 && gpsLat && captchaAnswer !== null;
+  const anyUploading = photos.some(p => p.uploading);
+  const canSubmit = photos.length > 0 && !anyUploading && description.trim().length > 10 && gpsLat && captchaAnswer !== null;
 
   return (
     <div className="space-y-5">
@@ -194,40 +206,86 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         <div className="w-10" />
       </div>
 
-      {/* Camera / Photo */}
+      {/* Photo Section */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-enb-text-primary">Live Photo Proof <span className="text-red-500">*</span></label>
-        
-        {cameraActive ? (
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-enb-text-primary">
+            Live Photo Proof <span className="text-red-500">*</span>
+          </label>
+          <span className="text-xs text-gray-400">{photos.length}/{MAX_PHOTOS} photos</span>
+        </div>
+
+        {/* Camera viewfinder */}
+        {cameraActive && (
           <div className="relative rounded-xl overflow-hidden bg-black">
-            <video ref={videoRef} autoPlay playsInline muted webkit-playsinline="true" className="w-full max-h-64 object-cover rounded-xl" onClick={() => videoRef.current?.play()} />
+            <video
+              ref={videoRef} autoPlay playsInline muted
+              className="w-full max-h-64 object-cover rounded-xl"
+              onClick={() => videoRef.current?.play()}
+            />
             <canvas ref={canvasRef} className="hidden" />
-            <Button onClick={capturePhoto}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white">
+            <Button
+              onClick={capturePhoto}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white"
+            >
               <Camera className="w-6 h-6" />
             </Button>
           </div>
-        ) : photoPreview ? (
-          <div className="relative rounded-xl overflow-hidden">
-            <img src={photoPreview} alt="Proof" className="w-full max-h-48 object-cover rounded-xl" />
-            {photoUploading && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-                <Loader2 className="w-8 h-8 text-white animate-spin" />
-                <span className="text-white ml-2 text-sm">Uploading...</span>
+        )}
+
+        {/* Photo thumbnails strip */}
+        {photos.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {photos.map((photo, idx) => (
+              <div key={photo.preview} className="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                <img src={photo.preview} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+
+                {/* Uploading overlay */}
+                {photo.uploading && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  </div>
+                )}
+
+                {/* Uploaded badge */}
+                {!photo.uploading && photo.cloudinaryUrl && (
+                  <div className="absolute bottom-1 left-1 bg-enb-green text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                    ✓
+                  </div>
+                )}
+
+                {/* Remove button */}
+                {!photo.uploading && (
+                  <button
+                    onClick={() => removePhoto(photo.preview)}
+                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
               </div>
+            ))}
+
+            {/* Add more button */}
+            {photos.length < MAX_PHOTOS && !cameraActive && (
+              <button
+                onClick={openCamera}
+                className="w-24 h-24 rounded-xl border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 flex flex-col items-center justify-center gap-1 text-enb-green transition-colors flex-shrink-0"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="text-xs font-medium">Add</span>
+              </button>
             )}
-            {!photoUploading && cloudinaryUrl && (
-              <div className="absolute top-2 right-2 bg-enb-green text-white text-xs px-2 py-1 rounded-full">✓ Uploaded</div>
-            )}
-            <Button variant="outline" size="sm" onClick={openCamera}
-              className="mt-2 w-full text-xs">
-              <Camera className="w-3 h-3 mr-1" /> Retake
-            </Button>
           </div>
-        ) : (
+        )}
+
+        {/* First photo — open camera button */}
+        {photos.length === 0 && !cameraActive && (
           <div>
-            <Button onClick={openCamera}
-              className="w-full h-24 border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 text-enb-green flex flex-col gap-2 rounded-xl">
+            <Button
+              onClick={openCamera}
+              className="w-full h-24 border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 text-enb-green flex flex-col gap-2 rounded-xl"
+            >
               <Camera className="w-8 h-8" />
               <span className="text-sm font-medium">Open Camera</span>
             </Button>
@@ -240,6 +298,14 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
             <p className="text-xs text-gray-400 mt-1 text-center">Gallery uploads not accepted — live photos only</p>
           </div>
         )}
+
+        {photos.length > 0 && (
+          <p className="text-xs text-gray-400">
+            {photos.length === MAX_PHOTOS
+              ? `Maximum ${MAX_PHOTOS} photos reached.`
+              : `Tap + to add more photos (up to ${MAX_PHOTOS} total)`}
+          </p>
+        )}
       </div>
 
       {/* GPS Location */}
@@ -250,7 +316,9 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${gpsAddress ? 'bg-enb-green/10 border-enb-green/20 text-enb-green' : 'bg-white border-gray-200 text-gray-500 cursor-pointer hover:bg-gray-50'}`}
         >
           {loadingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
-          <span className="text-sm font-medium">{gpsAddress ? `📍 ${gpsAddress}` : loadingLocation ? 'Detecting...' : 'Tap to detect GPS location'}</span>
+          <span className="text-sm font-medium">
+            {gpsAddress ? `📍 ${gpsAddress}` : loadingLocation ? 'Detecting...' : 'Tap to detect GPS location'}
+          </span>
           {gpsAddress && <CheckCircle className="w-4 h-4 ml-auto" />}
         </div>
       </div>
@@ -273,8 +341,11 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         <p className="text-sm text-enb-text-secondary">{captcha.q}</p>
         <div className="flex flex-col gap-2 mt-2">
           {captcha.options.map((opt, i) => (
-            <button key={i} onClick={() => { setCaptchaAnswer(i); setCaptchaFailed(false); }}
-              className={`text-left p-3 rounded-lg border text-sm font-medium transition-all ${captchaAnswer === i ? 'bg-enb-green text-white border-enb-green' : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green'}`}>
+            <button
+              key={i}
+              onClick={() => { setCaptchaAnswer(i); setCaptchaFailed(false); }}
+              className={`text-left p-3 rounded-lg border text-sm font-medium transition-all ${captchaAnswer === i ? 'bg-enb-green text-white border-enb-green' : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green'}`}
+            >
               {opt}
             </button>
           ))}
@@ -289,7 +360,9 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         disabled={!canSubmit}
         className="w-full h-12 text-lg shadow-lg shadow-enb-green/20 bg-enb-green hover:bg-enb-green/90 text-white"
       >
-        {photoUploading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Uploading photo...</> : 'Review Submission'}
+        {anyUploading
+          ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Uploading photos...</>
+          : 'Review Submission'}
       </Button>
     </div>
   );
