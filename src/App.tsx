@@ -24,6 +24,8 @@ import Settings from '@/pages/Settings';
 import More from '@/pages/More';
 import MyLog from '@/pages/MyLog';
 import ReportSubmission from '@/pages/ReportSubmission';
+import BugReport from '@/pages/BugReport';
+import AdminBugReports from '@/pages/admin/AdminBugReports';
 
 // --- Admin pages ---
 import AdminLayout from '@/pages/admin/AdminLayout';
@@ -169,6 +171,7 @@ export default function App() {
                 <Route path="bridge" element={<BridgeManager />} />
                 <Route path="mod-queue" element={<ModQueue />} />
                 <Route path="escalation" element={<EscalationQueue />} />
+                <Route path="bugs" element={<AdminBugReports />} />
               </Route>
               <Route path="/*" element={
                 <Layout>
@@ -194,6 +197,7 @@ export default function App() {
                       <Route path="/mod-queue" element={<ModQueue />} />
                       <Route path="/history" element={<MyHistory />} />
                       <Route path="/report" element={<ReportSubmission />} />
+                      <Route path="/bug-report" element={<BugReport />} />
                       <Route path="/founder-sale" element={<FounderSale />} />
                       <Route path="/founder-hardship" element={<FounderHardship />} />
                       <Route path="/partner-float" element={<PartnerFloat />} />

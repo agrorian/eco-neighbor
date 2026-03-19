@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History } from 'lucide-react';
+import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
@@ -26,6 +26,7 @@ export default function More() {
     { icon: TrendingUp, label: 'Founder Sale Gate', path: '/founder-sale', color: 'text-enb-gold', show: user?.role === 'admin' || user?.role === 'founder' },
     { icon: TrendingDown, label: 'Float Monitor', path: '/partner-float', color: 'text-enb-teal', show: user?.role === 'business' || user?.role === 'admin' },
     { icon: LayoutDashboard, label: 'Admin Panel', path: '/admin', color: 'text-purple-600', show: user?.role === 'admin' || user?.role === 'founder' },
+    { icon: Bug, label: 'Report a Bug', path: '/bug-report', color: 'text-red-500', show: true },
     { icon: Settings, label: 'Settings', path: '/settings', color: 'text-gray-600', show: true },
   ].filter(i => i.show);
 
