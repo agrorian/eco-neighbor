@@ -13,15 +13,14 @@ export default function MobileNav() {
     { path: '/', icon: Home, label: 'Home' },
     { path: '/submit', icon: PlusCircle, label: 'Action' },
     { path: '/wallet', icon: Wallet, label: 'Wallet' },
-    ...(user.role === 'moderator'
-      ? [
-          { path: '/mod-queue', icon: Shield, label: 'Mod Queue' },
-          { path: '/more', icon: MoreHorizontal, label: 'More' },
-        ]
-      : []),
     ...(user.role === 'admin'
       ? [
           { path: '/admin', icon: ShieldCheck, label: 'Admin' },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
+        ]
+      : user.role === 'moderator'
+      ? [
+          { path: '/mod-queue', icon: Shield, label: 'Mod Queue' },
           { path: '/more', icon: MoreHorizontal, label: 'More' },
         ]
       : [
