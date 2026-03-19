@@ -72,17 +72,27 @@ const ImpactCounter = () => {
   const [stats, setStats] = React.useState({ actions: 0, enb: 0 });
 
   React.useEffect(() => {
-    const fetch = async () => {
+    const fetchStats = async () => {
       try {
-        const [aRes, tRes] = await Promise.all([
-          supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
-          supabase.from('transactions').select('enb_amount').eq('type', 'credit'),
-        ]);
-        const totalEnb = (tRes.data || []).reduce((s: number, t: any) => s + (t.enb_amount || 0), 0);
-        setStats({ actions: aRes.count || 0, enb: totalEnb });
+        // Count ALL approved submissions across the community
+        const { count: approvedCount } = await supabase
+          .from('submissions')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'approved');
+
+        // Sum all ENB ever earned — use lifetime_earned column from users table
+        // This is the correct source — approve_submission updates lifetime_earned
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('lifetime_earned');
+        const totalEnb = (usersData || []).reduce(
+          (sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0
+        );
+
+        setStats({ actions: approvedCount || 0, enb: totalEnb });
       } catch (e) { /* silent */ }
     };
-    fetch();
+    fetchStats();
   }, []);
 
   return (

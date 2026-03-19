@@ -41,11 +41,11 @@ export default function ImpactDashboard() {
       const [usersRes, actionsRes, txRes, partnersRes] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
-        supabase.from('transactions').select('enb_amount').eq('type', 'credit'),
+        supabase.from('users').select('lifetime_earned'),
         supabase.from('business_partners').select('id', { count: 'exact', head: true }).eq('is_active', true),
       ]);
 
-      const totalEnb = (txRes.data || []).reduce((sum, t) => sum + (t.enb_amount || 0), 0);
+      const totalEnb = (txRes.data || []).reduce((sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0);
       setStats({
         totalUsers: usersRes.count || 0,
         totalActions: actionsRes.count || 0,
@@ -64,7 +64,7 @@ export default function ImpactDashboard() {
           supabase.from('submissions').select('id', { count: 'exact', head: true })
             .eq('status', 'approved').gte('reviewed_at', monthStart).lte('reviewed_at', monthEnd),
           supabase.from('transactions').select('enb_amount')
-            .eq('type', 'credit').gte('created_at', monthStart).lte('created_at', monthEnd),
+            .eq('type', 'earn').gte('created_at', monthStart).lte('created_at', monthEnd),
         ]);
         const monthEnb = (tRes.data || []).reduce((sum, t) => sum + (t.enb_amount || 0), 0);
         months.push({ month: label, actions: aRes.count || 0, enb: monthEnb });

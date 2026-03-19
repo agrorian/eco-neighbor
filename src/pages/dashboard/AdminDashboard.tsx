@@ -48,7 +48,7 @@ export default function AdminDashboard() {
       const [usersRes, pendingRes, txRes, recentSubsRes] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         pendingQuery,
-        supabase.from('transactions').select('enb_amount').eq('type', 'credit'),
+        supabase.from('users').select('lifetime_earned'),
         supabase.from('submissions')
           .select('id, user_id, action_type, status, reviewed_at, submitted_at')
           .in('status', ['approved', 'rejected'])
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
           .limit(5),
       ]);
 
-      const totalENB = txRes.data?.reduce((sum, t) => sum + (Number(t.enb_amount) || 0), 0) ?? 0;
+      const totalENB = txRes.data?.reduce((sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0) ?? 0;
 
       setStats({
         totalUsers: usersRes.count ?? 0,
