@@ -10,6 +10,7 @@ interface Stats {
   pendingQueue: number;
   escalationCount: number;
   bridgeRequests: number;
+  enbDistributedToday: number;
   enbDistributedAllTime: number;
 }
 
@@ -30,6 +31,7 @@ export default function AdminDashboard() {
     pendingQueue: 0,
     escalationCount: 0,
     bridgeRequests: 0,
+    enbDistributedToday: 0,
     enbDistributedAllTime: 0,
   });
   const [modPairs, setModPairs] = useState<ModPairStat[]>([]);
@@ -54,10 +56,17 @@ export default function AdminDashboard() {
         .filter(Boolean);
 
       // Step 2: fetch all stats in parallel
-      const [usersRes, bridgeRes, txRes, modStatsRes] = await Promise.all([
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const [usersRes, bridgeRes, allTimeRes, todayTxRes, modStatsRes] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('bridge_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('users').select('lifetime_earned'),
+        supabase.from('transactions')
+          .select('enb_amount')
+          .eq('type', 'earn')
+          .gte('created_at', todayStart.toISOString()),
         supabase.rpc('get_mod_agreement_stats'),
       ]);
 
@@ -73,8 +82,13 @@ export default function AdminDashboard() {
 
       const pendingRes = await pendingQuery;
 
-      const todayENB = (txRes.data || []).reduce(
+      const allTimeENB = (allTimeRes.data || []).reduce(
         (sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0),
+        0
+      );
+
+      const todayENB = (todayTxRes.data || []).reduce(
+        (sum: number, t: any) => sum + (Number(t.enb_amount) || 0),
         0
       );
 
@@ -83,7 +97,8 @@ export default function AdminDashboard() {
         pendingQueue: pendingRes.count ?? 0,
         escalationCount: escalatedIds.length,
         bridgeRequests: bridgeRes.count ?? 0,
-        enbDistributedAllTime: todayENB,
+        enbDistributedToday: todayENB,
+        enbDistributedAllTime: allTimeENB,
       });
 
       // Parse mod agreement stats
@@ -103,7 +118,7 @@ export default function AdminDashboard() {
     { icon: CheckSquare,    label: 'Pending Queue',        value: stats.pendingQueue.toString(),              color: 'bg-orange-100 text-orange-600' },
     { icon: AlertTriangle,  label: 'Escalations',          value: stats.escalationCount.toString(),           color: 'bg-red-100 text-red-600' },
     { icon: ArrowRightLeft, label: 'Bridge Requests',      value: stats.bridgeRequests.toString(),            color: 'bg-enb-teal/10 text-enb-teal' },
-    { icon: Activity,       label: 'ENB Distributed',      value: stats.enbDistributedAllTime.toLocaleString(), color: 'bg-enb-green/10 text-enb-green' },
+    { icon: Activity,       label: 'ENB Today',            value: stats.enbDistributedToday.toLocaleString(), color: 'bg-enb-green/10 text-enb-green' },
   ];
 
   return (
