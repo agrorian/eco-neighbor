@@ -193,14 +193,32 @@ export default function ModQueue() {
                     <h3 className="font-bold text-enb-text-primary capitalize text-lg">
                       {sub?.action_type?.replace(/_/g, ' ')}
                     </h3>
-                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                      <MapPin className="w-3 h-3" />
-                      {sub?.gps_address || 'GPS not recorded'}
-                    </p>
+                    {sub?.gps_lat && sub?.gps_lng ? (
+                      <a
+                        href={`https://maps.google.com/?q=${sub.gps_lat},${sub.gps_lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-enb-green flex items-center gap-1 mt-1 hover:underline"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <MapPin className="w-3 h-3" />
+                        {sub.gps_address || `${Number(sub.gps_lat).toFixed(5)}, ${Number(sub.gps_lng).toFixed(5)}`}
+                        <span className="text-[10px] text-gray-400">(tap to verify)</span>
+                      </a>
+                    ) : (
+                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3" />GPS not recorded
+                      </p>
+                    )}
                   </div>
-                  <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">
-                    {sub?.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('en-PK') : ''}
-                  </span>
+                  <div className="text-right">
+                    <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-lg block">
+                      {sub?.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                    </span>
+                    <span className="text-xs text-gray-400 mt-0.5 block">
+                      {sub?.submitted_at ? new Date(sub.submitted_at).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </span>
+                  </div>
                 </div>
 
                 {sub?.description && (

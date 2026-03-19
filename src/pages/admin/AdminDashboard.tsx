@@ -10,7 +10,7 @@ interface Stats {
   pendingQueue: number;
   escalationCount: number;
   bridgeRequests: number;
-  enbDistributedToday: number;
+  enbDistributedAllTime: number;
 }
 
 interface ModPairStat {
@@ -30,7 +30,7 @@ export default function AdminDashboard() {
     pendingQueue: 0,
     escalationCount: 0,
     bridgeRequests: 0,
-    enbDistributedToday: 0,
+    enbDistributedAllTime: 0,
   });
   const [modPairs, setModPairs] = useState<ModPairStat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,9 +57,7 @@ export default function AdminDashboard() {
       const [usersRes, bridgeRes, txRes, modStatsRes] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('bridge_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('transactions')
-          .select('enb_amount')
-          .gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
+        supabase.from('users').select('lifetime_earned'),
         supabase.rpc('get_mod_agreement_stats'),
       ]);
 
@@ -76,7 +74,7 @@ export default function AdminDashboard() {
       const pendingRes = await pendingQuery;
 
       const todayENB = (txRes.data || []).reduce(
-        (sum: number, t: any) => sum + (t.enb_amount > 0 ? t.enb_amount : 0),
+        (sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0),
         0
       );
 
@@ -85,7 +83,7 @@ export default function AdminDashboard() {
         pendingQueue: pendingRes.count ?? 0,
         escalationCount: escalatedIds.length,
         bridgeRequests: bridgeRes.count ?? 0,
-        enbDistributedToday: todayENB,
+        enbDistributedAllTime: todayENB,
       });
 
       // Parse mod agreement stats
@@ -105,7 +103,7 @@ export default function AdminDashboard() {
     { icon: CheckSquare,    label: 'Pending Queue',        value: stats.pendingQueue.toString(),              color: 'bg-orange-100 text-orange-600' },
     { icon: AlertTriangle,  label: 'Escalations',          value: stats.escalationCount.toString(),           color: 'bg-red-100 text-red-600' },
     { icon: ArrowRightLeft, label: 'Bridge Requests',      value: stats.bridgeRequests.toString(),            color: 'bg-enb-teal/10 text-enb-teal' },
-    { icon: Activity,       label: 'ENB Today',            value: stats.enbDistributedToday.toLocaleString(), color: 'bg-enb-green/10 text-enb-green' },
+    { icon: Activity,       label: 'ENB Distributed',      value: stats.enbDistributedAllTime.toLocaleString(), color: 'bg-enb-green/10 text-enb-green' },
   ];
 
   return (
@@ -193,7 +191,7 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-blue-800 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
-                  ENB Distribution Today
+                  ENB Distributed (All Time)
                 </CardTitle>
               </CardHeader>
               <CardContent>

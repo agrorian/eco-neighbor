@@ -14,6 +14,8 @@ interface Submission {
   description: string;
   photo_urls: string[];
   gps_address: string | null;
+  gps_lat: number | null;
+  gps_lng: number | null;
   status: string;
   enb_awarded: number;
   rep_awarded: number;
@@ -48,7 +50,7 @@ export default function SubmissionQueue() {
       // Step 2: fetch pending submissions excluding all mod-assigned ones
       let query = supabase
         .from('submissions')
-        .select('id, user_id, action_type, description, photo_urls, gps_address, status, enb_awarded, rep_awarded, submitted_at')
+        .select('id, user_id, action_type, description, photo_urls, gps_address, gps_lat, gps_lng, status, enb_awarded, rep_awarded, submitted_at')
         .eq('status', 'pending');
       if (assignedIds.length > 0) {
         query = query.not('id', 'in', `(${assignedIds.map((id: string) => `"${id}"`).join(',')})`);
@@ -207,7 +209,7 @@ export default function SubmissionQueue() {
                     <div className="relative h-48">
                       <img src={photoUrl} alt={item.action_type} className="w-full h-full object-cover" />
                       <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-                        {new Date(item.submitted_at).toLocaleDateString()}
+                        {new Date(item.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(item.submitted_at).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   ) : (
@@ -223,10 +225,21 @@ export default function SubmissionQueue() {
                           <User className="w-3 h-3" />{item.submitter_name}
                         </p>
                       </div>
-                      {item.gps_address && (
-                        <div className="flex items-center text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                          <MapPin className="w-3 h-3 mr-1" />GPS ✓
-                        </div>
+                      {item.gps_lat && item.gps_lng ? (
+                        <a
+                          href={`https://maps.google.com/?q=${item.gps_lat},${item.gps_lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center text-xs text-enb-green bg-enb-green/10 px-2 py-1 rounded-full hover:underline"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <MapPin className="w-3 h-3 mr-1" />
+                          {item.gps_address || `${Number(item.gps_lat).toFixed(4)}, ${Number(item.gps_lng).toFixed(4)}`}
+                        </a>
+                      ) : (
+                        <span className="flex items-center text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
+                          <MapPin className="w-3 h-3 mr-1" />No GPS
+                        </span>
                       )}
                     </div>
                     {item.description && (
@@ -235,7 +248,7 @@ export default function SubmissionQueue() {
                     <div className="flex gap-2 mb-4">
                       <span className="text-xs font-medium text-enb-green bg-enb-green/5 px-2 py-0.5 rounded-full">+{item.enb_awarded.toLocaleString()} ENB</span>
                       <span className="text-xs font-medium text-enb-gold bg-enb-gold/5 px-2 py-0.5 rounded-full">+{item.rep_awarded} Rep</span>
-                      <span className="text-xs text-gray-400 ml-auto">{new Date(item.submitted_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-gray-400 ml-auto">{new Date(item.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(item.submitted_at).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
 
                     {selectedItem === item.id ? (
