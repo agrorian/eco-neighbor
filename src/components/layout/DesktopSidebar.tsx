@@ -1,10 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, LogOut, ShieldCheck, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
+import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, ShieldCheck, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
 import { useUserStore } from '@/store/user';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import AccountSwitcher from '@/components/AccountSwitcher';
 
 export default function DesktopSidebar() {
   const location = useLocation();
@@ -45,12 +44,6 @@ export default function DesktopSidebar() {
 
   const isAdminSection = location.pathname.startsWith('/admin');
   const navItems = isAdminSection ? adminNav : [...memberNav, ...roleBasedNav, ...modNav];
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    logout();
-    window.location.href = '/';
-  };
 
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen bg-white border-r border-gray-200 fixed left-0 top-0 z-50">
@@ -99,24 +92,9 @@ export default function DesktopSidebar() {
         })}
       </nav>
 
-      {/* User footer */}
-      <div className="p-4 border-t border-gray-100">
-        <div className="flex items-center gap-3 px-4 py-3 mb-2">
-          <div className="w-8 h-8 rounded-full bg-enb-green/10 flex items-center justify-center text-enb-green font-bold text-sm flex-shrink-0">
-            {(user.full_name || user.email || 'U').charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <div className="text-sm font-bold text-gray-900 truncate">{user.full_name || user.email}</div>
-            <div className="text-xs text-gray-500 truncate capitalize flex items-center gap-1">
-              {user.role === 'admin' && <ShieldCheck className="w-3 h-3 text-enb-green" />}
-              {user.role}
-            </div>
-          </div>
-        </div>
-        <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleLogout}>
-          <LogOut className="w-4 h-4 mr-2" />
-          Log Out
-        </Button>
+      {/* User footer — account switcher */}
+      <div className="p-2 border-t border-gray-100">
+        <AccountSwitcher compact={false} />
       </div>
     </aside>
   );

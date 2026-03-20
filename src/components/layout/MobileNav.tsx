@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Home, PlusCircle, Wallet, Store, MoreHorizontal, ShieldCheck, Shield, AlertTriangle } from 'lucide-react';
+import { Home, PlusCircle, Wallet, Store, MoreHorizontal, ShieldCheck, Shield } from 'lucide-react';
 import { useUserStore } from '@/store/user';
+import AccountSwitcher from '@/components/AccountSwitcher';
 
 export default function MobileNav() {
   const location = useLocation();
@@ -57,6 +58,12 @@ export default function MobileNav() {
             </Link>
           );
         })}
+
+        {/* Account switcher — avatar at far right on mobile */}
+        <div className="relative flex flex-col items-center gap-1 w-16">
+          <AccountSwitcher compact={true} />
+          <span className="text-[10px] font-medium text-gray-400">Account</span>
+        </div>
       </div>
     </nav>
   );

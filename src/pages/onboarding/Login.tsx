@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, ArrowLeft, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { saveCurrentSession } from '@/components/AccountSwitcher';
 
 type Mode = 'login' | 'reset';
 
@@ -22,8 +23,20 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      // Save session for account switcher
+      if (data.session && data.user) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('full_name, role')
+          .eq('id', data.user.id)
+          .single();
+        saveCurrentSession(
+          { ...data.user, full_name: profile?.full_name, role: profile?.role },
+          data.session
+        );
+      }
       window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Invalid email or password. Please try again.');
