@@ -46,6 +46,7 @@ const MyHistory = lazy(() => import('@/pages/MyHistory'));
 
 // --- Onboarding ---
 import Welcome from '@/pages/onboarding/Welcome';
+import About from '@/pages/onboarding/About';
 import SignUpStep1 from '@/pages/onboarding/SignUpStep1';
 import SignUpStep2 from '@/pages/onboarding/SignUpStep2';
 import ConnectWallet from '@/pages/onboarding/ConnectWallet';
@@ -159,6 +160,7 @@ export default function App() {
           {/* Signup routes — always available (even when logged in) */}
           <Route path="/signup/step1" element={<SignUpStep1 />} />
           <Route path="/signup/step2" element={<SignUpStep2 />} />
+          <Route path="/about" element={<About />} />
 
           {user ? (
             <>

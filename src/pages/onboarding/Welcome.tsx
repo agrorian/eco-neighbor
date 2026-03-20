@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { Leaf, ArrowRight } from 'lucide-react';
+import { ArrowRight, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Welcome() {
@@ -24,7 +24,7 @@ export default function Welcome() {
       <h1 className="text-4xl md:text-5xl font-bold text-enb-text-primary mb-4 tracking-tight">
         Earn ENB for Community Actions
       </h1>
-      <p className="text-enb-text-secondary mb-12 max-w-md mx-auto text-lg leading-relaxed">
+      <p className="text-enb-text-secondary mb-10 max-w-md mx-auto text-lg leading-relaxed">
         Join the community, take action, and earn rewards for making a difference.
       </p>
 
@@ -40,16 +40,27 @@ export default function Welcome() {
         </Link>
 
         <Link to="/login">
-          <button 
-            className="w-full py-3 text-sm font-medium text-enb-text-secondary hover:text-enb-green hover:bg-enb-green/5 rounded-xl transition-colors"
-          >
+          <button className="w-full py-3 text-sm font-medium text-enb-text-secondary hover:text-enb-green hover:bg-enb-green/5 rounded-xl transition-colors">
             Log In
           </button>
         </Link>
-      </div>
-      
-      <div className="mt-8 text-xs text-gray-400">
-        <Link to="/about" className="hover:text-enb-green underline">What is ENB?</Link>
+
+        {/* What is ENB — prominent card */}
+        <Link to="/about">
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            className="w-full mt-2 flex items-center gap-3 bg-white border border-enb-green/20 rounded-xl px-4 py-3 hover:border-enb-green/50 hover:bg-enb-green/5 transition-all group shadow-sm"
+          >
+            <div className="w-9 h-9 bg-enb-green/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Info className="w-5 h-5 text-enb-green" />
+            </div>
+            <div className="text-left flex-1">
+              <div className="text-sm font-bold text-enb-green">What is ENB?</div>
+              <div className="text-xs text-gray-500">How it works, what you earn, where to spend</div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-enb-green/50 group-hover:text-enb-green group-hover:translate-x-0.5 transition-all" />
+          </motion.div>
+        </Link>
       </div>
     </div>
   );
