@@ -51,7 +51,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         transition={{ delay: 0.5 }}
         className="mt-2 text-enb-text-secondary font-medium"
       >
-        Your Good Work Has Value
+        Your Neighborhood Work Has Value!
       </motion.p>
 
       <div className="mt-12 w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden">
