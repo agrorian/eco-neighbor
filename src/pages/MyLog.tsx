@@ -19,6 +19,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   MARKETING: '📣 Marketing & Outreach',
 };
 
+// PKT-aware date — always returns today's date in Asia/Karachi timezone
+function getPKTDate(date: Date = new Date()): string {
+  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' }); // en-CA gives YYYY-MM-DD format
+}
+
 interface LogEntry {
   id: string; log_date: string; category: string; description: string; is_absence: boolean;
 }
@@ -43,7 +48,7 @@ function getWeekRange(offset = 0): { from: string; to: string; label: string } {
   monday.setDate(now.getDate() - ((day + 6) % 7) + offset * 7);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
-  const fmt = (d: Date) => d.toISOString().split('T')[0];
+  const fmt = (d: Date) => getPKTDate(d);
   const label = offset === 0 ? 'This Week'
     : offset === -1 ? 'Last Week'
     : `${monday.toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })} – ${sunday.toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}`;
@@ -545,7 +550,7 @@ export default function MyLog() {
 
   const fetchLogs = async () => {
     setLoading(true);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getPKTDate();
     const { data } = await supabase
       .from('daily_logs').select('*').eq('user_id', user!.id)
       .order('log_date', { ascending: false }).limit(14);
@@ -584,7 +589,7 @@ export default function MyLog() {
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to submit');
       setSubmitted(true);
-      setTodayLog({ id: 'new', log_date: new Date().toISOString().split('T')[0], category, description, is_absence: false });
+      setTodayLog({ id: 'new', log_date: getPKTDate(), category, description, is_absence: false });
       fetchLogs();
     } catch (err: any) {
       setError(err.message || 'Failed to submit log.');
