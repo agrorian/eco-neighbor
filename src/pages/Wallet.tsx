@@ -12,16 +12,41 @@ export default function Wallet() {
 
   useEffect(() => {
     if (!user) return;
+
+    // Initial fetch
     const refreshBalance = async () => {
       const { data } = await supabase
         .from('users')
-        .select('enb_local_bal, enb_global_bal, rep_score, tier')
+        .select('enb_local_bal, enb_global_bal, rep_score, tier, lifetime_earned')
         .eq('id', user.id)
         .single();
       if (data) setUser({ ...user, ...data });
     };
     refreshBalance();
-  }, []);
+
+    // Real-time subscription — updates balance instantly when DB changes
+    const channel = supabase
+      .channel(`wallet-user-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setUser({ ...user, ...payload.new });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   if (!user) return null;
 
@@ -50,7 +75,7 @@ export default function Wallet() {
         </Link>
       </div>
 
-      {/* Token Cards — stack on mobile, side by side on md+ */}
+      {/* Token Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* ENB.LOCAL Card */}

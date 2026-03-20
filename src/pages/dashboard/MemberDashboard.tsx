@@ -195,7 +195,31 @@ const getTierIcon = (repScore: number) => {
 };
 
 export default function MemberDashboard() {
-  const { user } = useUserStore();
+  const { user, setUser } = useUserStore();
+
+  // Real-time subscription — balance and rep update instantly when DB changes
+  React.useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`dashboard-user-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new) setUser({ ...user, ...payload.new });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
   if (!user) return null;
   const tier = getTier(user.rep_score);
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Shield, ArrowDownLeft, RefreshCw, Leaf } from 'lucide-react';
+import { Shield, ArrowDownLeft, RefreshCw, Leaf, Gift, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
@@ -19,32 +19,60 @@ export default function TransactionHistory() {
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const fetchTransactions = async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data } = await supabase
+      .from('transactions')
+      .select('id, type, enb_amount, rep_change, description, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (data) setTransactions(data);
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (!user) return;
-    const fetchTransactions = async () => {
-      setLoading(true);
-      const { data } = await supabase
-        .from('transactions')
-        .select('id, type, enb_amount, rep_change, description, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (data) setTransactions(data);
-      setLoading(false);
-    };
     fetchTransactions();
+
+    // Real-time subscription — new transactions appear instantly
+    const channel = supabase
+      .channel(`transactions-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setTransactions(prev => [payload.new as Transaction, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   const displayed = showAll ? transactions : transactions.slice(0, 4);
 
   const getIcon = (type: string) => {
     if (type === 'MODERATOR_REWARD') return Shield;
+    if (type === 'REFERRAL_REWARD') return Users;
     if (type === 'bridge') return RefreshCw;
     if (type === 'spend') return ArrowDownLeft;
-    return Leaf;
+    if (type === 'earn') return Leaf;
+    return Gift;
   };
 
   const getColors = (type: string) => {
     if (type === 'MODERATOR_REWARD') return { color: 'text-blue-600', bg: 'bg-blue-50' };
+    if (type === 'REFERRAL_REWARD') return { color: 'text-purple-600', bg: 'bg-purple-50' };
     if (type === 'bridge') return { color: 'text-enb-gold', bg: 'bg-enb-gold/10' };
     if (type === 'spend') return { color: 'text-red-500', bg: 'bg-red-50' };
     return { color: 'text-enb-green', bg: 'bg-enb-green/10' };
@@ -59,7 +87,7 @@ export default function TransactionHistory() {
     if (diffHrs < 1) return 'Just now';
     if (diffHrs < 24) return `Today, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     if (diffDays === 1) return 'Yesterday';
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   if (loading) {
@@ -101,7 +129,7 @@ export default function TransactionHistory() {
                   </div>
                   <div className="text-right">
                     <div className={`font-bold ${tx.enb_amount >= 0 ? 'text-enb-green' : 'text-red-500'}`}>
-                      {tx.enb_amount >= 0 ? '+' : ''}{tx.enb_amount} ENB
+                      {tx.enb_amount >= 0 ? '+' : ''}{tx.enb_amount.toLocaleString()} ENB
                     </div>
                     {tx.rep_change !== 0 && (
                       <div className="text-xs text-enb-gold">
@@ -120,7 +148,7 @@ export default function TransactionHistory() {
               onClick={() => setShowAll(!showAll)}
               className="text-sm text-enb-green font-medium hover:underline"
             >
-              {showAll ? 'Show Less' : 'View All Transactions'}
+              {showAll ? 'Show Less' : `View All ${transactions.length} Transactions`}
             </button>
           </div>
         )}
