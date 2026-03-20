@@ -464,7 +464,7 @@ export default function AdminDashboard() {
             </Card>
           )}
 
-          {/* Mod Collusion Watch */}}
+          {/* Mod Collusion Watch */}
           {flaggedPairs.length > 0 && (
             <Card className="border-purple-200 bg-purple-50/50 shadow-sm">
               <CardHeader>
