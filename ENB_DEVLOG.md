@@ -251,3 +251,88 @@
 - Marketing whitepaper link → email request flow (not public PDF) until SECP company registered
 - DB trigger is now primary approval mechanism — frontend RPC call is backup
 - Fi.co pitch event Mar 24 — online, 12:00–1:30 PM PKT
+
+---
+
+## 20 Mar 2026 — Session 14 — ~2:00 AM to ~8:00 AM PKT
+**Focus:** Deep audit, root cause fix for all submission approvals, bug reports, real-time updates, PDF fix
+
+#### ✅ Completed
+| # | Action | Detail |
+|---|--------|--------|
+| 1 | ROOT CAUSE FIXED — approve_submission | 3 wrong column names (start_date→starts_at, end_date→ends_at, reviewed_by→moderator_id) silently failing since day one |
+| 2 | evaluate_mod_decision rebuilt | PERFORM→SELECT INTO, captures result, checks success, added already_processed guard |
+| 3 | auto_evaluate_mod_decision trigger rebuilt | Escalation guard — won't re-escalate when senior mod clears flag |
+| 4 | Duplicate function resolved | Dropped INTEGER version, kept NUMERIC |
+| 5 | lifetime_earned backfilled | All users: SET lifetime_earned = enb_local_bal |
+| 6 | All 13 stuck submissions approved | Batch evaluate_mod_decision call |
+| 7 | Escalated submission approved | Direct approve_submission call |
+| 8 | Bug Report System | Marketing site modal + /bug-report app page + /admin/bugs panel + bug_reports table |
+| 9 | Multi-photo submissions | Up to 5 live photos, parallel Cloudinary upload, thumbnail strip |
+| 10 | Real-time balance updates | Supabase subscriptions on Wallet, MemberDashboard, TransactionHistory |
+| 11 | REFERRAL_REWARD transaction styling | Purple/Users icon |
+| 12 | PDF Daily Log Report fixed | jsPDF namespace fix, section parsing regex fix, error handling |
+| 13 | Clickable GPS map links | Google Maps link in ModQueue and SubmissionQueue |
+| 14 | Full datetime on submissions | Date + time not just date |
+| 15 | ENB Today vs All Time | Admin dashboard two separate metrics |
+| 16 | Escalation loop fixed | Trigger guard prevents re-escalation after senior mod resolves |
+| 17 | Duplicate More nav fixed | Mobile nav logic corrected for moderator role |
+| 18 | Admin panel white screen fixed | Stale TypeScript reference enbDistributedToday |
+| 19 | EscalationQueue payment fix | Removed broken supabase.rpc as any, added lifetime_earned update |
+| 20 | External code review analysis | Audited 9 claims — 3 genuine, 6 wrong/already fixed |
+
+#### 🐛 Root Causes Fixed
+| Bug | Root Cause | Fix |
+|-----|-----------|-----|
+| All submissions stayed pending | Wrong column names in approve_submission + PERFORM ignores errors | Fixed column names + SELECT INTO |
+| ENB distributed showed wrong values | transactions type='credit' doesn't exist | Changed to SUM(lifetime_earned) |
+| Escalation kept reappearing | Trigger re-evaluated after senior mod cleared flag | Added OLD.escalation_flag guard |
+| Admin panel white screen | enbDistributedToday referenced but renamed to enbDistributedAllTime | Fixed stale reference |
+| PDF showed no log content | Wrong regex for parsing sections | Use same \n\n(?=[A-Z ]+:) as UI |
+| jsPDF undefined error | window.jsPDF.jsPDF vs window.jspdf.jsPDF | Try both namespaces |
+
+#### 🗄️ SQL Run
+| Query | Status |
+|-------|--------|
+| Rebuild approve_submission (correct columns + lifetime_earned) | ✅ |
+| Rebuild evaluate_mod_decision (SELECT INTO) | ✅ |
+| Rebuild auto_evaluate_mod_decision trigger | ✅ |
+| Drop duplicate INTEGER approve_submission | ✅ |
+| Backfill lifetime_earned = enb_local_bal | ✅ |
+| CREATE TABLE bug_reports | ✅ |
+
+#### 📁 Files Changed
+| File | Change |
+|------|--------|
+| src/pages/admin/AdminDashboard.tsx | ENB Today + All Time separate metrics |
+| src/pages/admin/ModQueue.tsx | GPS map links, full datetime, race condition fix |
+| src/pages/admin/SubmissionQueue.tsx | GPS map links, full datetime |
+| src/pages/admin/EscalationQueue.tsx | Fixed broken payment code, lifetime_earned |
+| src/pages/admin/AdminBugReports.tsx | NEW — bug reports admin panel |
+| src/pages/admin/AdminLayout.tsx | Bug Reports nav item |
+| src/pages/BugReport.tsx | NEW — bug report form page |
+| src/pages/More.tsx | Bug Report link added |
+| src/pages/submit/ActionForm.tsx | Multi-photo (up to 5) |
+| src/pages/submit/SubmissionReview.tsx | Photo grid display |
+| src/pages/Wallet.tsx | Real-time Supabase subscription |
+| src/pages/wallet/TransactionHistory.tsx | Real-time + REFERRAL_REWARD styling |
+| src/pages/dashboard/MemberDashboard.tsx | Real-time subscription, live stats |
+| src/pages/dashboard/AdminDashboard.tsx | Live stats from correct source |
+| src/pages/community/ImpactDashboard.tsx | Live stats from correct source |
+| src/pages/MyLog.tsx | PDF error handling, jsPDF namespace, section parsing |
+| src/components/layout/MobileNav.tsx | Duplicate More nav fixed |
+| src/App.tsx | Bug report routes added |
+| index.html (enb-site) | Bug report modal, Fi.co badge, 5B stat, email fix |
+
+#### ⏭️ Next Session Priorities
+1. Multi-account switcher (tap user avatar → switch accounts — admin/mod only)
+2. Devnet SOL from faucet (24h+ passed)
+3. Sale gate enforcement logic
+4. Daily Log absence alerts
+5. Float auto-replenishment
+
+#### 📝 Key Decisions
+- Multi-account switcher: store Supabase session tokens in localStorage, switch via setSession() — never store passwords
+- lifetime_earned tracks total ever earned (never decreases on spend) — correct by design for Maturation Bridge
+- Ramzan Cleanup Drive 1.5x multiplier is why ENB awards show 750 instead of 500
+- External code review was partially correct — real-time subscriptions were genuine gap, most other claims were wrong

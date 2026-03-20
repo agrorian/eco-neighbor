@@ -1,5 +1,5 @@
 # ENB Web App — Master Backlog
-*Last updated: 19 Mar 2026*
+*Last updated: 20 Mar 2026*
 *Rule: At the start of every session (2h+ gap), check this file first.*
 
 ---
@@ -80,6 +80,20 @@
 - [x] Admin AdminDashboard — Mod Collusion Watch card + agreement rate bars
 - [x] Referral system — complete end-to-end fix (URL param, DB save, escrow, payout)
 - [x] Auto-approval trigger — trg_auto_evaluate_mod_decision DB trigger
+- [x] ROOT CAUSE FIX — approve_submission wrong column names (starts_at, ends_at, moderator_id)
+- [x] evaluate_mod_decision — PERFORM→SELECT INTO, result checking, no silent failures
+- [x] lifetime_earned — backfilled + updated on every approval going forward
+- [x] Bug Report System — marketing modal + /bug-report + /admin/bugs + bug_reports table
+- [x] Multi-photo submissions — up to 5 live photos per action
+- [x] Real-time balance updates — Wallet, MemberDashboard, TransactionHistory subscriptions
+- [x] REFERRAL_REWARD transaction styling — purple/Users icon
+- [x] PDF Daily Log — jsPDF namespace fix, section parsing regex, error handling
+- [x] GPS map links clickable — opens Google Maps from mod queue and submission queue
+- [x] Full datetime on submissions — date + time
+- [x] ENB Today vs All Time — admin dashboard two separate metrics
+- [x] Escalation loop fixed — trigger guard prevents re-escalation
+- [x] Duplicate More nav fixed — mobile nav moderator logic
+- [x] EscalationQueue payment — fixed broken code, lifetime_earned updated
 - [x] ModQueue timer — 10s for testing (was 30s)
 - [x] README.md — proper ENB project README
 - [x] Marketing site — Fi.co badge, Giveth links, email protection, 5B stat, investor card
@@ -87,7 +101,7 @@
 ---
 
 ## 📋 KNOWN ISSUES (not yet investigated)
-- [ ] ModQueue timer currently 10s — change back to 30s before public launch
+- [x] ModQueue timer — confirmed 30s in live code ✅
 - [ ] TEST user (intuitionalised@gmail.com) balance cleanup SQL still needs to run
 
 ## 📋 KNOWN ISSUES (not yet investigated) — original
