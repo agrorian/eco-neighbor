@@ -291,13 +291,15 @@ function ReportTab({ userId }: { userId: string }) {
       report.entries.forEach((entry) => {
         // Parse sections
       const sections: Record<string, string> = {};
-      const parts = entry.description.split(/(?=[A-Z ]+:)/);
-
+      // Use same parsing as UI parseLog — split on double newline before UPPERCASE KEY:
+      const parts = entry.description.split(/\n\n(?=[A-Z ]+:)/);
       parts.forEach(part => {
-       const colonIdx = part.indexOf(':');
-       if (colonIdx > -1) {
-        sections[part.slice(0, colonIdx).trim()] = part.slice(colonIdx + 1).trim();
-       }
+        const colonIdx = part.indexOf(':');
+        if (colonIdx > -1) {
+          const key = part.slice(0, colonIdx).trim();
+          const val = part.slice(colonIdx + 1).trim();
+          if (key) sections[key] = val;
+        }
       });
 
         // Estimate height needed
@@ -329,17 +331,28 @@ function ReportTab({ userId }: { userId: string }) {
 
         y += 11;
 
-        // Sections
-        Object.entries(sectionLabels).forEach(([key, label]) => {
-          const val = sections[key];
-          if (!val) return;
-          const lines = doc.splitTextToSize(val, contentW - 28);
-          setFont('bold', 8, GREEN);
-          doc.text(`${label}:`, margin + 4, y + 3.5);
+        // Check if any structured sections exist
+        const hasSections = Object.keys(sectionLabels).some(k => sections[k]);
+
+        if (hasSections) {
+          // Render structured sections (SUMMARY, COMPLETED, etc.)
+          Object.entries(sectionLabels).forEach(([key, label]) => {
+            const val = sections[key];
+            if (!val) return;
+            const lines = doc.splitTextToSize(val, contentW - 28);
+            setFont('bold', 8, GREEN);
+            doc.text(`${label}:`, margin + 4, y + 3.5);
+            setFont('normal', 8, DARK);
+            doc.text(lines, margin + 28, y + 3.5);
+            y += lines.length * 4.5 + 3;
+          });
+        } else {
+          // Plain text log — render description directly
+          const lines = doc.splitTextToSize(entry.description || '(No description)', contentW - 12);
           setFont('normal', 8, DARK);
-          doc.text(lines, margin + 28, y + 3.5);
+          doc.text(lines, margin + 4, y + 3.5);
           y += lines.length * 4.5 + 3;
-        });
+        }
 
         y += 5;
       });
