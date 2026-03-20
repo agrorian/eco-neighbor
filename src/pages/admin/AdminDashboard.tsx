@@ -25,6 +25,17 @@ interface ModPairStat {
   flagged: boolean;
 }
 
+interface AbsenceAlert {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  consecutive_absences: number;
+  last_log_date: string | null;
+  formal_absence_flagged: boolean;
+  absence_status: 'WARNING' | 'FORMAL_ABSENCE';
+}
+
 interface PendingSubmission {
   id: string;
   action_type: string;
@@ -66,6 +77,7 @@ export default function AdminDashboard() {
   });
   const [modPairs, setModPairs] = useState<ModPairStat[]>([]);
   const [pendingSubmissions, setPendingSubmissions] = useState<PendingSubmission[]>([]);
+  const [absenceAlerts, setAbsenceAlerts] = useState<AbsenceAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -162,6 +174,13 @@ export default function AdminDashboard() {
     });
 
     setModPairs(Array.isArray(modStatsRes.data) ? modStatsRes.data : []);
+
+    // Fetch absence alerts
+    const { data: absences } = await supabase
+      .from('absence_alerts')
+      .select('*');
+    setAbsenceAlerts(absences || []);
+
     setLoading(false);
   };
 
@@ -387,12 +406,9 @@ export default function AdminDashboard() {
                             </div>
                           )}
 
-                          <div className="flex gap-2 pt-1">
-                            <Link to="/admin/queue" className="flex-1">
-                              <Button size="sm" className="w-full bg-enb-green text-white text-xs">Go to Queue</Button>
-                            </Link>
-                            <button onClick={() => setExpandedId(null)} className="p-2 rounded-lg hover:bg-gray-200 transition-colors">
-                              <X className="w-4 h-4 text-gray-400" />
+                          <div className="flex justify-end pt-1">
+                            <button onClick={() => setExpandedId(null)} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors">
+                              <X className="w-3.5 h-3.5" /> Close
                             </button>
                           </div>
                         </div>
@@ -404,7 +420,51 @@ export default function AdminDashboard() {
             </Card>
           )}
 
-          {/* Mod Collusion Watch */}
+          {/* Absence Alerts */}
+          {absenceAlerts.length > 0 && (
+            <Card className="border-red-100 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-500" />
+                  Daily Log Absence Alerts
+                  <span className="ml-1 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
+                    {absenceAlerts.length}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 p-0">
+                <div className="divide-y divide-gray-100">
+                  {absenceAlerts.map((alert) => (
+                    <div key={alert.id} className="flex items-center justify-between px-6 py-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm text-enb-text-primary">{alert.full_name || alert.email}</span>
+                          <span className="text-xs text-gray-500 capitalize">{alert.role}</span>
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          Last log: {alert.last_log_date ? new Date(alert.last_log_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Never'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-sm font-bold ${alert.absence_status === 'FORMAL_ABSENCE' ? 'text-red-600' : 'text-orange-500'}`}>
+                          {alert.consecutive_absences} days
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          alert.absence_status === 'FORMAL_ABSENCE'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-orange-100 text-orange-700'
+                        }`}>
+                          {alert.absence_status === 'FORMAL_ABSENCE' ? '🚨 Formal Absence' : '⚠️ Warning'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Mod Collusion Watch */}}
           {flaggedPairs.length > 0 && (
             <Card className="border-purple-200 bg-purple-50/50 shadow-sm">
               <CardHeader>
