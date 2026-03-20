@@ -119,7 +119,8 @@ function ReportTab({ userId }: { userId: string }) {
       });
     }
 
-    const { jsPDF } = (window as any).jsPDF;
+    const jsPDFModule = (window as any).jspdf || (window as any).jsPDF;
+    const { jsPDF } = jsPDFModule;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
     const pageW = 210;
