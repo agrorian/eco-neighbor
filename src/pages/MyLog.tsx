@@ -81,6 +81,7 @@ function ReportTab({ userId }: { userId: string }) {
   const [offset, setOffset] = useState(0);
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState('');
 
   const range = mode === 'weekly' ? getWeekRange(offset) : getMonthRange(offset);
@@ -105,7 +106,8 @@ function ReportTab({ userId }: { userId: string }) {
 
   const handleDownload = async () => {
     if (!report) return;
-
+    setDownloading(true);
+    try {
     // Load jsPDF from CDN if not already loaded
     if (!(window as any).jsPDF) {
       await new Promise<void>((resolve, reject) => {
@@ -354,6 +356,12 @@ function ReportTab({ userId }: { userId: string }) {
     }
 
     doc.save(`ENB_Report_${report.user_name.replace(/\s+/g, '_')}_${range.from}_${range.to}.pdf`);
+    } catch (err: any) {
+      console.error('PDF generation failed:', err);
+      alert('PDF download failed: ' + (err?.message || 'Unknown error'));
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const attendancePct = report ? Math.round((report.logged_days / Math.max(report.total_days, 1)) * 100) : 0;
@@ -487,9 +495,11 @@ function ReportTab({ userId }: { userId: string }) {
           )}
 
           {/* Download */}
-          <Button onClick={handleDownload} variant="outline" className="w-full border-enb-green/30 text-enb-green hover:bg-enb-green/5">
-            <Download className="w-4 h-4 mr-2" />
-            Download PDF Report
+          <Button onClick={handleDownload} disabled={downloading} variant="outline" className="w-full border-enb-green/30 text-enb-green hover:bg-enb-green/5">
+            {downloading
+              ? <><span className="w-4 h-4 mr-2 border-2 border-enb-green border-t-transparent rounded-full animate-spin inline-block" />Generating PDF...</>
+              : <><Download className="w-4 h-4 mr-2" />Download PDF Report</>
+            }
           </Button>
         </>
       ) : null}
