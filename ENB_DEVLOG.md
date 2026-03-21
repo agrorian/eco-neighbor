@@ -336,3 +336,84 @@
 - lifetime_earned tracks total ever earned (never decreases on spend) — correct by design for Maturation Bridge
 - Ramzan Cleanup Drive 1.5x multiplier is why ENB awards show 750 instead of 500
 - External code review was partially correct — real-time subscriptions were genuine gap, most other claims were wrong
+
+---
+
+## 21 Mar 2026 — Session 15 — ~8:00 AM to ~5:30 AM PKT
+**Focus:** Multi-account switcher, admin dashboard improvements, email notifications, absence tracking, i18n
+
+#### ✅ Completed
+| # | Action | Detail |
+|---|--------|--------|
+| 1 | Multi-account switcher | Tap avatar → switch accounts, localStorage session tokens, all roles |
+| 2 | Admin pending submissions list | Expandable rows, photo, GPS, mod decisions, submitter details |
+| 3 | Queue removed from admin sidebar | Dead feature removed, AdminLayout.tsx updated |
+| 4 | Go to Queue button removed | Replaced with close button in pending detail |
+| 5 | notify-mods Edge Function | Deployed, webhook on moderator_assignments INSERT, HTML email |
+| 6 | notify-absence Edge Function | Deployed, 3-day warning + 7-day FORMAL_ABSENCE emails |
+| 7 | Daily absence cron job | pg_cron enabled, runs 19:05 UTC daily |
+| 8 | check_daily_log_absences() SQL | Fixed joined_at column, date arithmetic |
+| 9 | Absence alerts card on admin dashboard | Shows users with 3+ consecutive absences |
+| 10 | Daily Log timezone fix | getPKTDate() helper, submit_daily_log uses Asia/Karachi |
+| 11 | Volunteer profession added | SignUpStep2 dropdown |
+| 12 | About / What is ENB page | New /about route, comprehensive mobile-first page |
+| 13 | Welcome screen — prominent What is ENB link | Card with icon replacing tiny footer text |
+| 14 | Urdu/English language switch Phase 1 | translations.ts, LanguageContext, LanguageToggle, RTL, Noto Nastaliq font |
+| 15 | Resend domain analysis | Free tier only sends to signup email — domain purchase needed |
+| 16 | Scoop + Supabase CLI installed | PowerShell, scoop install supabase |
+| 17 | econeighbor.org domain recommendation | Spaceship.com, PKR 1,809/yr, .org better for grants than .com |
+
+#### 🐛 Fixes
+| Bug | Fix |
+|-----|-----|
+| AdminDashboard build failure | Extra `}}` at line 467 — removed |
+| Daily log showing yesterday as today | UTC vs PKT timezone — fixed with getPKTDate() |
+| check_daily_log_absences error | `created_at` doesn't exist → use `joined_at` |
+| EXTRACT() error in SQL | Date subtraction returns integer directly — removed EXTRACT |
+| submit_daily_log return type error | DROP FUNCTION first then recreate |
+| Git push rejected | Remote had changes — git stash + pull --rebase + stash pop |
+
+#### 🗄️ SQL Run
+| Query | Status |
+|-------|--------|
+| absence_alerts.sql — full system install | ✅ |
+| check_daily_log_absences() — fixed joined_at | ✅ |
+| check_daily_log_absences() — fixed EXTRACT | ✅ |
+| DROP + recreate submit_daily_log (PKT timezone) | ✅ |
+| SELECT cron.schedule('daily-absence-check'...) | ✅ |
+| SELECT check_daily_log_absences() — test run | ✅ 5 processed, 0 alerts |
+
+#### 📁 Files Changed
+| File | Change |
+|------|--------|
+| src/components/AccountSwitcher.tsx | NEW — multi-account switcher |
+| src/components/layout/DesktopSidebar.tsx | Uses AccountSwitcher + LanguageToggle |
+| src/components/layout/MobileNav.tsx | Account tab added |
+| src/pages/onboarding/Login.tsx | Saves session on login |
+| src/pages/admin/AdminDashboard.tsx | Pending list + absence alerts card |
+| src/pages/admin/AdminLayout.tsx | Queue nav item removed |
+| src/pages/onboarding/SignUpStep2.tsx | Volunteer added to professions |
+| src/pages/onboarding/About.tsx | NEW — What is ENB page |
+| src/pages/onboarding/Welcome.tsx | Prominent What is ENB card + i18n |
+| src/App.tsx | /about route + LanguageProvider |
+| src/pages/Settings.tsx | Language card added |
+| src/pages/MyLog.tsx | PKT timezone fix |
+| src/lib/translations.ts | NEW — 438 lines EN+UR translations |
+| src/contexts/LanguageContext.tsx | NEW — language context + useT() hook |
+| src/components/LanguageToggle.tsx | NEW — toggle button |
+| src/index.css | Noto Nastaliq Urdu font + RTL CSS |
+| supabase/functions/notify-mods/index.ts | NEW — mod email notifications |
+| supabase/functions/notify-absence/index.ts | NEW — absence alert emails |
+
+#### ⏭️ Next Session Priorities
+1. Urdu Phase 2 — wire useT() into Login, Signup, Dashboard, Submit, Wallet
+2. Domain purchase — econeighbor.org on Spaceship, then Vercel + Resend DNS setup
+3. Float auto-replenishment
+4. Real WhatsApp number in Settings
+
+#### 📝 Key Decisions
+- Urdu translations done once with Claude (high quality, zero ongoing cost) vs AI per page load
+- Language toggle shows for all roles — no restriction needed
+- .org domain recommended over .com for grant credibility
+- Resend free tier limitation — emails only to signup address until domain verified
+- Multi-account switcher available to all users (not restricted to admin/mod)
