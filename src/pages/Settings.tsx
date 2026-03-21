@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Bell, Shield, HelpCircle, LogOut, MessageCircle, Save, User, ChevronRight, KeyRound } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
+import LanguageToggle from '@/components/LanguageToggle';
+import { useLang } from '@/contexts/LanguageContext';
 
 const NEIGHBOURHOODS = [
   'Chaklala Scheme 3','Airport Housing Society','Gulrez Housing Society',
@@ -103,6 +105,29 @@ export default function Settings() {
         <h1 className="text-2xl font-bold text-enb-text-primary">Settings</h1>
         <p className="text-enb-text-secondary">Manage your account and preferences</p>
       </header>
+
+      {/* Language Card */}
+      <Card className="border-gray-100 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
+            <span className="text-lg">🌐</span>
+            Language / زبان
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-enb-text-primary">
+                {lang === 'en' ? 'English' : 'اردو'}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {lang === 'en' ? 'Tap to switch to Urdu' : 'انگریزی پر جائیں'}
+              </p>
+            </div>
+            <LanguageToggle />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Profile Card */}
       <Card className="border-gray-100 shadow-sm">

@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { useUserStore } from '@/store/user';
 import Layout from '@/components/layout/Layout';
@@ -154,6 +155,7 @@ export default function App() {
   }
 
   return (
+    <LanguageProvider>
     <Router>
       <div className="font-sans text-enb-text-primary selection:bg-enb-green/20">
         <Routes>
@@ -222,5 +224,6 @@ export default function App() {
         </Routes>
       </div>
     </Router>
+    </LanguageProvider>
   );
 }

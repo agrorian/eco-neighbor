@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -196,4 +196,24 @@ body {
   html {
     @apply font-sans;
   }
+}
+/* Urdu / RTL support */
+.font-urdu {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  line-height: 2;
+}
+
+[dir="rtl"] .rotate-rtl {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .space-y-4 > * + * {
+  margin-top: 1rem;
+}
+
+/* Ensure Urdu text renders correctly */
+:lang(ur) {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  direction: rtl;
+  line-height: 2;
 }

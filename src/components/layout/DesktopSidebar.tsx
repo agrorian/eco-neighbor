@@ -4,6 +4,7 @@ import ENBLeaf from '@/components/ENBLeaf';
 import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, ShieldCheck, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
+import LanguageToggle from '@/components/LanguageToggle';
 
 export default function DesktopSidebar() {
   const location = useLocation();
@@ -92,8 +93,11 @@ export default function DesktopSidebar() {
         })}
       </nav>
 
-      {/* User footer — account switcher */}
+      {/* User footer — language toggle + account switcher */}
       <div className="p-2 border-t border-gray-100">
+        <div className="px-2 pb-1">
+          <LanguageToggle className="w-full justify-center" />
+        </div>
         <AccountSwitcher compact={false} />
       </div>
     </aside>
