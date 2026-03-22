@@ -1,67 +1,95 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Store, QrCode, PlusCircle, ArrowRight, History } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUserStore } from '@/store/user';
+import { QrCode, TrendingDown, History, Store, Tag, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { useUserStore } from '@/store/user';
 
-const RecentRedemptions = () => (
-  <div className="space-y-4">
-    <h3 className="font-bold text-enb-text-primary text-lg">Recent Redemptions</h3>
-    {[
-      { user: "eco_warrior", amount: "15 ENB", time: "10m ago", item: "Coffee" },
-      { user: "green_thumb", amount: "25 ENB", time: "1h ago", item: "Lunch Special" },
-      { user: "recycling_pro", amount: "10 ENB", time: "3h ago", item: "Pastry" },
-    ].map((item, i) => (
-      <div key={i} className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-enb-teal/10 flex items-center justify-center text-enb-teal font-bold">
-            {item.user.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div className="font-medium text-enb-text-primary">{item.user}</div>
-            <div className="text-xs text-enb-text-secondary">{item.item} • {item.time}</div>
-          </div>
-        </div>
-        <div className="font-bold text-enb-green">
-          -{item.amount}
-        </div>
-      </div>
-    ))}
-  </div>
-);
+interface BusinessStats {
+  today_redemptions: number;
+  today_enb: number;
+  total_redemptions: number;
+  total_enb: number;
+  float_balance: number;
+  active_offers: number;
+}
 
 export default function BusinessDashboard() {
   const { user } = useUserStore();
+  const [stats, setStats] = useState<BusinessStats | null>(null);
+  const [businessName, setBusinessName] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  if (!user) return null;
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    if (!user) return;
+    setLoading(true);
+
+    // Step 1: Get business name
+    const { data: partner } = await supabase
+      .from('business_partners')
+      .select('name, category')
+      .eq('owner_user_id', user.id)
+      .single();
+    if (partner) setBusinessName(partner.name);
+
+    // Step 2: Get stats
+    const { data } = await supabase.rpc('get_business_stats', { p_user_id: user.id });
+    if (data?.success) setStats(data);
+
+    setLoading(false);
+  };
+
+  const floatPct = stats ? Math.min(100, Math.round((stats.float_balance / 150000) * 100)) : 0;
+  const floatColor = floatPct <= 30 ? 'bg-red-500' : floatPct <= 40 ? 'bg-orange-400' : 'bg-enb-green';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 pb-24">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold text-enb-text-primary flex items-center gap-2">
-            {user.username}
-            <span className="bg-enb-teal/10 text-enb-teal text-xs px-2 py-0.5 rounded-full font-medium border border-enb-teal/20">Verified Partner</span>
-          </h1>
-          <p className="text-sm text-enb-text-secondary mt-1">Green Leaf Cafe • Eco City</p>
+      <div className="bg-enb-green rounded-2xl p-5 text-white">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-white/70 text-sm font-medium">Partner Dashboard</p>
+            <h1 className="text-xl font-bold mt-0.5">{businessName || 'My Business'}</h1>
+          </div>
+          <div className="bg-white/10 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+            <CheckCircle className="w-3 h-3" /> Verified Partner
+          </div>
         </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-enb-green">{user.balance.local}</div>
-          <div className="text-xs text-enb-text-secondary uppercase tracking-wider font-medium">Float Balance</div>
+
+        {/* Float bar */}
+        <div className="bg-white/10 rounded-xl p-3">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-white/80 text-xs font-medium">ENB Float Balance</span>
+            <span className="text-white font-bold text-sm">
+              {loading ? '—' : stats?.float_balance.toLocaleString()} ENB
+            </span>
+          </div>
+          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+            <div className={`h-full rounded-full transition-all ${floatColor}`} style={{ width: `${floatPct}%` }} />
+          </div>
+          {stats && floatPct <= 40 && (
+            <p className="text-yellow-300 text-xs mt-1.5 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {floatPct <= 30 ? 'Critical — auto top-up initiated' : 'Float running low'}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Main Action: Scan QR */}
+      {/* Primary action — Scan QR */}
       <Link to="/scan">
-        <motion.div 
+        <motion.div
           whileTap={{ scale: 0.98 }}
-          className="bg-enb-teal text-white rounded-2xl p-6 flex items-center justify-between shadow-lg shadow-enb-teal/20 cursor-pointer hover:bg-enb-teal/90 transition-colors"
+          className="bg-enb-teal text-white rounded-2xl p-5 flex items-center justify-between shadow-lg shadow-enb-teal/20"
         >
           <div>
-            <h2 className="text-xl font-bold mb-1">Scan Customer QR</h2>
-            <p className="text-white/80 text-sm">Process a redemption instantly</p>
+            <h2 className="text-lg font-bold">Scan Customer QR</h2>
+            <p className="text-white/80 text-sm mt-0.5">Confirm ENB redemption instantly</p>
           </div>
           <div className="bg-white/20 p-3 rounded-xl">
             <QrCode className="w-8 h-8" />
@@ -69,35 +97,55 @@ export default function BusinessDashboard() {
         </motion.div>
       </Link>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-enb-text-primary mb-1">12</div>
-            <div className="text-xs text-enb-text-secondary uppercase tracking-wider">Today's Redemptions</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-enb-text-primary mb-1">450</div>
-            <div className="text-xs text-enb-text-secondary uppercase tracking-wider">Total ENB Redeemed</div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats grid */}
+      {loading ? (
+        <div className="flex justify-center py-6">
+          <Loader2 className="w-6 h-6 animate-spin text-enb-green" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="border-gray-100 shadow-sm">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-enb-text-primary">{stats?.today_redemptions ?? 0}</div>
+              <div className="text-xs text-enb-text-secondary uppercase tracking-wider mt-1">Today's Redemptions</div>
+            </CardContent>
+          </Card>
+          <Card className="border-gray-100 shadow-sm">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-enb-green">{(stats?.today_enb ?? 0).toLocaleString()}</div>
+              <div className="text-xs text-enb-text-secondary uppercase tracking-wider mt-1">ENB Today</div>
+            </CardContent>
+          </Card>
+          <Card className="border-gray-100 shadow-sm">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-enb-text-primary">{stats?.total_redemptions ?? 0}</div>
+              <div className="text-xs text-enb-text-secondary uppercase tracking-wider mt-1">All Time</div>
+            </CardContent>
+          </Card>
+          <Card className="border-gray-100 shadow-sm">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-enb-teal">{stats?.active_offers ?? 0}</div>
+              <div className="text-xs text-enb-text-secondary uppercase tracking-wider mt-1">Active Offers</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      {/* Secondary Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" className="w-full justify-start">
-          <PlusCircle className="w-4 h-4 mr-2 text-enb-green" />
-          Add New Offer
-        </Button>
-        <Button variant="outline" className="w-full justify-start">
-          <History className="w-4 h-4 mr-2 text-gray-500" />
-          View History
-        </Button>
+      {/* Quick links */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { to: '/business/offers', icon: Tag, label: 'My Offers', color: 'bg-amber-50 text-amber-700' },
+          { to: '/business/history', icon: History, label: 'History', color: 'bg-blue-50 text-blue-700' },
+          { to: '/partner-float', icon: TrendingDown, label: 'Float', color: 'bg-enb-green/5 text-enb-green' },
+        ].map(item => (
+          <Link key={item.to} to={item.to}>
+            <div className={`rounded-2xl p-4 flex flex-col items-center gap-2 ${item.color} border border-current/10`}>
+              <item.icon className="w-6 h-6" />
+              <span className="text-xs font-semibold">{item.label}</span>
+            </div>
+          </Link>
+        ))}
       </div>
-
-      <RecentRedemptions />
     </div>
   );
 }
