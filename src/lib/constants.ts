@@ -10,6 +10,7 @@ export const PROFESSIONS = [
   'Pharmacist',
   // Trades & Services  
   'Electrician',
+  'Electronics Technician',
   'Plumber',
   'Carpenter',
   'Mechanic / Auto Technician',
@@ -53,6 +54,9 @@ export const PROFESSIONS = [
   'Contractor',
   'Security Guard / Watchman',
   'Retired',
+  'Electrical Shop (Wires, Lights, Fittings)',
+  'Electronic Appliances Shop',
+  'Dry Fruit Merchant',
   'Other',
 ];
 
@@ -85,6 +89,9 @@ export const BUSINESS_CATEGORIES = [
   'School / Academy',
   'Tuition Centre',
   // Other
+  'Electrical Shop (Wires, Lights, Fittings)',
+  'Electronic Appliances Shop',
+  'Dry Fruit Merchant',
   'Other',
 ];
 
@@ -111,5 +118,8 @@ export const BUSINESS_TYPE_EMOJI: Record<string, string> = {
   'Laundry / Dry Cleaner': '👕',
   'School / Academy': '🏫',
   'Tuition Centre': '📚',
+  'Electrical Shop (Wires, Lights, Fittings)': '💡',
+  'Electronic Appliances Shop': '📱',
+  'Dry Fruit Merchant': '🥜',
   'Other': '🏬',
 };

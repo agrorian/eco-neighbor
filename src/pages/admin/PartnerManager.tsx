@@ -9,8 +9,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { supabase } from '@/lib/supabase';
 import { BUSINESS_CATEGORIES as CATEGORIES } from '@/lib/constants';
 
-import { BUSINESS_CATEGORIES as CATEGORIES } from '@/lib/constants';
-
 interface Partner {
   id: string;
   business_name: string;
@@ -23,6 +21,8 @@ interface Partner {
   is_active: boolean;
   is_verified: boolean;
   created_at: string;
+  gps_lat: number | null;
+  gps_lng: number | null;
 }
 
 interface NewPartnerForm {
@@ -55,6 +55,14 @@ export default function PartnerManager() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<NewPartnerForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [editEmail, setEditEmail] = useState('');
+  const [editFloat, setEditFloat] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editSuccess, setEditSuccess] = useState('');
+  const [editGpsLat, setEditGpsLat] = useState('');
+  const [editGpsLng, setEditGpsLng] = useState('');
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
@@ -76,6 +84,59 @@ export default function PartnerManager() {
       .update({ is_verified: true, is_active: true })
       .eq('id', id);
     fetchPartners();
+  };
+
+  const handleViewDetails = (partner: Partner) => {
+    setSelectedPartner(partner);
+    setEditEmail('');
+    setEditFloat(partner.enb_float?.toString() || '5000');
+    setEditSuccess('');
+    setEditGpsLat(partner.gps_lat?.toString() || '');
+    setEditGpsLng(partner.gps_lng?.toString() || '');
+    setShowDetailModal(true);
+  };
+
+  const handleSaveEdits = async () => {
+    if (!selectedPartner) return;
+    setEditSaving(true);
+    setEditSuccess('');
+
+    // Update float
+    const { error: floatError } = await supabase
+      .from('business_partners')
+      .update({
+        enb_float: parseInt(editFloat) || selectedPartner.enb_float,
+        gps_lat: editGpsLat ? parseFloat(editGpsLat) : selectedPartner.gps_lat,
+        gps_lng: editGpsLng ? parseFloat(editGpsLng) : selectedPartner.gps_lng,
+      })
+      .eq('id', selectedPartner.id);
+
+    // Update email if provided (admin only action)
+    if (editEmail.trim() && editEmail.includes('@')) {
+      // Update in users table
+      const { data: ownerData } = await supabase
+        .from('business_partners')
+        .select('owner_user_id')
+        .eq('id', selectedPartner.id)
+        .single();
+
+      if (ownerData?.owner_user_id) {
+        await supabase
+          .from('users')
+          .update({ email: editEmail.trim().toLowerCase() })
+          .eq('id', ownerData.owner_user_id);
+      }
+    }
+
+    if (!floatError) {
+      setEditSuccess('Changes saved successfully.');
+      fetchPartners();
+      setTimeout(() => {
+        setShowDetailModal(false);
+        setEditSuccess('');
+      }, 1500);
+    }
+    setEditSaving(false);
   };
 
   const handleSuspend = async (id: string) => {
@@ -258,7 +319,7 @@ export default function PartnerManager() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewDetails(partner)}>
                           <FileText className="w-4 h-4 mr-2" /> View Details
                         </DropdownMenuItem>
                         {partner.is_active ? (
@@ -340,6 +401,86 @@ export default function PartnerManager() {
               {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</> : 'Create Partner Account'}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+
+      {/* Partner Detail Modal */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Store className="w-5 h-5 text-enb-green" />
+              {selectedPartner?.business_name}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPartner && (
+            <div className="space-y-4 pt-2">
+              {/* Read-only info */}
+              <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 rounded-xl p-4">
+                <div><p className="text-xs text-gray-400 uppercase">Category</p><p className="font-medium">{selectedPartner.category}</p></div>
+                <div><p className="text-xs text-gray-400 uppercase">Status</p><p className={`font-medium ${selectedPartner.is_active ? 'text-enb-green' : 'text-red-500'}`}>{selectedPartner.is_active ? 'Active' : 'Suspended'}</p></div>
+                <div><p className="text-xs text-gray-400 uppercase">Phone</p><p className="font-medium">{selectedPartner.phone || '—'}</p></div>
+                <div><p className="text-xs text-gray-400 uppercase">WhatsApp</p><p className="font-medium">{selectedPartner.whatsapp || '—'}</p></div>
+                <div className="col-span-2"><p className="text-xs text-gray-400 uppercase">Address</p><p className="font-medium">{selectedPartner.address || '—'}</p></div>
+                <div className="col-span-2"><p className="text-xs text-gray-400 uppercase">Discount Offer</p><p className="font-medium">{selectedPartner.discount_offer || '—'}</p></div>
+                {selectedPartner.gps_lat && selectedPartner.gps_lng && (
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-400 uppercase">GPS Location</p>
+                    <a href={`https://maps.google.com/?q=${selectedPartner.gps_lat},${selectedPartner.gps_lng}`} target="_blank" rel="noopener noreferrer" className="text-sm text-enb-green hover:underline">
+                      {selectedPartner.gps_lat.toFixed(5)}, {selectedPartner.gps_lng.toFixed(5)} (Open in Maps)
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Editable fields — admin only */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Admin Editable</p>
+
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-enb-text-primary">ENB Float</label>
+                  <Input
+                    type="number"
+                    value={editFloat}
+                    onChange={e => setEditFloat(e.target.value)}
+                    placeholder="Float amount"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-enb-text-primary">GPS Latitude</label>
+                    <Input type="number" step="any" value={editGpsLat} onChange={e => setEditGpsLat(e.target.value)} placeholder="33.58141" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-enb-text-primary">GPS Longitude</label>
+                    <Input type="number" step="any" value={editGpsLng} onChange={e => setEditGpsLng(e.target.value)} placeholder="73.10346" />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-enb-text-primary flex items-center gap-2">
+                    Change Login Email
+                    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Admin Only</span>
+                  </label>
+                  <Input
+                    type="email"
+                    value={editEmail}
+                    onChange={e => setEditEmail(e.target.value)}
+                    placeholder="Leave blank to keep current email"
+                  />
+                  <p className="text-xs text-gray-400">Only fill this to change the business login email.</p>
+                </div>
+
+                {editSuccess && <p className="text-sm text-enb-green font-medium">{editSuccess}</p>}
+
+                <Button onClick={handleSaveEdits} disabled={editSaving} className="w-full bg-enb-green text-white">
+                  {editSaving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Saving...</> : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
