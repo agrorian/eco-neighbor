@@ -10,6 +10,43 @@ export default function MobileNav() {
 
   if (!user) return null;
 
+  const isBusinessSection = location.pathname.startsWith('/business') || 
+    location.pathname === '/scan' || location.pathname === '/partner-float';
+
+  // Business role in Business Admin mode gets different nav
+  if (user.role === 'business' && isBusinessSection) {
+    const businessNavItems = [
+      { path: '/scan', icon: Store, label: 'Scan' },
+      { path: '/business/offers', icon: MoreHorizontal, label: 'Offers' },
+      { path: '/business/history', icon: Wallet, label: 'History' },
+      { path: '/partner-float', icon: Shield, label: 'Float' },
+      { path: '/', icon: Home, label: 'Member' },
+    ];
+    return (
+      <nav className="fixed bottom-0 w-full bg-white border-t border-enb-teal/20 pb-safe pt-2 px-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 md:hidden">
+        <div className="flex justify-around items-center h-16">
+          {businessNavItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link key={item.path} to={item.path} className="relative flex flex-col items-center gap-1 w-16 group">
+                {isActive && (
+                  <motion.div layoutId="business-mobile-indicator"
+                    className="absolute -top-2 w-8 h-1 bg-enb-teal rounded-full"
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-enb-teal/10' : 'group-hover:bg-gray-50'}`}>
+                  <item.icon className={`w-6 h-6 transition-colors ${isActive ? 'text-enb-teal' : 'text-gray-400'}`} strokeWidth={isActive ? 2.5 : 2} />
+                </div>
+                <span className={`text-[10px] font-medium transition-colors ${isActive ? 'text-enb-teal' : 'text-gray-400'}`}>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    );
+  }
+
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/submit', icon: PlusCircle, label: 'Action' },
@@ -22,6 +59,11 @@ export default function MobileNav() {
       : user.role === 'moderator'
       ? [
           { path: '/mod-queue', icon: Shield, label: 'Mod Queue' },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
+        ]
+      : user.role === 'business'
+      ? [
+          { path: '/directory', icon: Store, label: 'Directory' },
           { path: '/more', icon: MoreHorizontal, label: 'More' },
         ]
       : [

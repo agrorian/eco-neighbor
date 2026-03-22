@@ -34,7 +34,6 @@ export default function DesktopSidebar() {
 
   const adminNav = [
     { path: '/admin', icon: Home, label: 'Overview' },
-    { path: '/admin/queue', icon: CheckSquare, label: 'Review Queue' },
     { path: '/admin/users', icon: Users, label: 'Members' },
     { path: '/admin/campaigns', icon: Megaphone, label: 'Campaigns' },
     { path: '/admin/partners', icon: Store, label: 'Partners' },
@@ -43,8 +42,22 @@ export default function DesktopSidebar() {
     { path: '/admin/escalation', icon: AlertTriangle, label: 'Escalations' },
   ];
 
+  const businessNav = [
+    { path: '/', icon: Home, label: 'Dashboard' },
+    { path: '/scan', icon: Store, label: 'Scan QR' },
+    { path: '/business/offers', icon: Megaphone, label: 'My Offers' },
+    { path: '/business/history', icon: BarChart2, label: 'Redemption History' },
+    { path: '/partner-float', icon: ArrowRightLeft, label: 'Float Monitor' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
+  ];
+
   const isAdminSection = location.pathname.startsWith('/admin');
-  const navItems = isAdminSection ? adminNav : [...memberNav, ...roleBasedNav, ...modNav];
+  const isBusinessSection = location.pathname.startsWith('/business') || location.pathname === '/scan' || location.pathname === '/partner-float';
+  const isBusiness = user?.role === 'business';
+
+  const navItems = isAdminSection ? adminNav 
+    : (isBusiness && isBusinessSection) ? businessNav
+    : [...memberNav, ...roleBasedNav, ...modNav];
 
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen bg-white border-r border-gray-200 fixed left-0 top-0 z-50">
@@ -66,6 +79,18 @@ export default function DesktopSidebar() {
           </Link>
           <Link to="/admin" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${isAdminSection ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Admin Panel
+          </Link>
+        </div>
+      )}
+
+      {/* Business Member / Business Admin toggle — only shown for business role */}
+      {user.role === 'business' && (
+        <div className="px-4 pt-4 pb-1 flex gap-2">
+          <Link to="/" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${!isBusinessSection ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            Member View
+          </Link>
+          <Link to="/business/offers" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${isBusinessSection ? 'bg-enb-teal text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            Business Admin
           </Link>
         </div>
       )}

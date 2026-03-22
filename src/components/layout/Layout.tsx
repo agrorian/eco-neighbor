@@ -9,7 +9,6 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const { user } = useUserStore();
-
   if (!user) return <>{children}</>;
 
   return (

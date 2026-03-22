@@ -18,7 +18,7 @@ const PROFESSIONS = [
   'Teacher','Doctor','Nurse','Engineer','Electrician','Plumber',
   'Carpenter','Mechanic','Artist','Student','Business Owner','Developer',
   'Chef','Driver','Farmer','Shopkeeper','Tailor','Contractor',
-  'Social Worker','Volunteer','Religious Scholar','Street Vendor','Food Runner',
+  'Social Worker','Religious Scholar','Street Vendor','Food Runner',
   'Community Food Guardian','Milkman','Painter / Mason','Retired','Other'
 ];
 

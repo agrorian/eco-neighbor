@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/lib/supabase';
+import { BUSINESS_CATEGORIES as CATEGORIES } from '@/lib/constants';
 
-const CATEGORIES = ['Food', 'Retail', 'Trades', 'Health', 'Education', 'Services', 'Other'];
+import { BUSINESS_CATEGORIES as CATEGORIES } from '@/lib/constants';
 
 interface Partner {
   id: string;
