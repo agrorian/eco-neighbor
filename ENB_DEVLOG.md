@@ -339,81 +339,62 @@
 
 ---
 
-## 21 Mar 2026 — Session 15 — ~8:00 AM to ~5:30 AM PKT
-**Focus:** Multi-account switcher, admin dashboard improvements, email notifications, absence tracking, i18n
+## 22-23 Mar 2026 — Session 16
+**Focus:** Business partner UI, onboarding team system, partner manager fixes, directory improvements
 
 #### ✅ Completed
 | # | Action | Detail |
 |---|--------|--------|
-| 1 | Multi-account switcher | Tap avatar → switch accounts, localStorage session tokens, all roles |
-| 2 | Admin pending submissions list | Expandable rows, photo, GPS, mod decisions, submitter details |
-| 3 | Queue removed from admin sidebar | Dead feature removed, AdminLayout.tsx updated |
-| 4 | Go to Queue button removed | Replaced with close button in pending detail |
-| 5 | notify-mods Edge Function | Deployed, webhook on moderator_assignments INSERT, HTML email |
-| 6 | notify-absence Edge Function | Deployed, 3-day warning + 7-day FORMAL_ABSENCE emails |
-| 7 | Daily absence cron job | pg_cron enabled, runs 19:05 UTC daily |
-| 8 | check_daily_log_absences() SQL | Fixed joined_at column, date arithmetic |
-| 9 | Absence alerts card on admin dashboard | Shows users with 3+ consecutive absences |
-| 10 | Daily Log timezone fix | getPKTDate() helper, submit_daily_log uses Asia/Karachi |
-| 11 | Volunteer profession added | SignUpStep2 dropdown |
-| 12 | About / What is ENB page | New /about route, comprehensive mobile-first page |
-| 13 | Welcome screen — prominent What is ENB link | Card with icon replacing tiny footer text |
-| 14 | Urdu/English language switch Phase 1 | translations.ts, LanguageContext, LanguageToggle, RTL, Noto Nastaliq font |
-| 15 | Resend domain analysis | Free tier only sends to signup email — domain purchase needed |
-| 16 | Scoop + Supabase CLI installed | PowerShell, scoop install supabase |
-| 17 | econeighbor.org domain recommendation | Spaceship.com, PKR 1,809/yr, .org better for grants than .com |
+| 1 | Business Admin toggle | Same pattern as Member/Admin Panel, sidebar top |
+| 2 | BusinessDashboard | Real Supabase data, float bar, stats |
+| 3 | BusinessOffers | Discount + ENB Swap, photo upload, pause/resume |
+| 4 | BusinessHistory | Redemption history with totals |
+| 5 | Business mobile/desktop nav | Separate nav for business role |
+| 6 | Onboarding tab in sidebar | For onboarding_team role |
+| 7 | partner_applications table | Business signup workflow |
+| 8 | volunteer_applications table | DOB + CNIC columns |
+| 9 | business_offers table | photo_url column added |
+| 10 | PartnerSignup | Saves to Supabase, no discount at signup |
+| 11 | VolunteerApply | DOB, CNIC formatter, 1,000 ENB reward |
+| 12 | OnboardingQueue | 3-tab workflow |
+| 13 | AdminOnboarding | Partner + volunteer approval |
+| 14 | PartnerManager session fix | Admin stays logged in when creating business |
+| 15 | PartnerManager View Details | Float, GPS, email change modal |
+| 16 | Map panel overlay | Mini panel on pin click, stays on map |
+| 17 | Share button | navigator.share / clipboard |
+| 18 | Business category filters | From constants.ts |
+| 19 | constants.ts | 47 professions + 25 categories, both sorted A→Z |
+| 20 | New professions/categories | Allopathic/Homeopathic Doctor, Cobbler, Pansar, Electrical Shop, Electronic Appliances, Dry Fruit Merchant |
+| 21 | Settings white screen fix | useLang() never called in component |
+| 22 | Account switcher mobile overflow | Anchored to right edge |
+| 23 | Account switcher stale avatar | Always derived fresh from name |
+| 24 | Float Monitor visibility | Only for business role in More |
+| 25 | BusinessOffers Save button | Direct partner_id fetch |
+| 26 | Profession list scrollable | max-h increased |
 
-#### 🐛 Fixes
+#### 🐛 Root Causes Fixed
 | Bug | Fix |
 |-----|-----|
-| AdminDashboard build failure | Extra `}}` at line 467 — removed |
-| Daily log showing yesterday as today | UTC vs PKT timezone — fixed with getPKTDate() |
-| check_daily_log_absences error | `created_at` doesn't exist → use `joined_at` |
-| EXTRACT() error in SQL | Date subtraction returns integer directly — removed EXTRACT |
-| submit_daily_log return type error | DROP FUNCTION first then recreate |
-| Git push rejected | Remote had changes — git stash + pull --rebase + stash pop |
+| Admin session hijacked by business creation | Save + restore session tokens around signUp() |
+| business_name vs name column confusion | Confirmed: column IS business_name |
+| Test Dhaba wrong owner_user_id | Deleted, recreated correctly |
+| Test Electrical Shop missing from business_partners | Inserted with correct owner_user_id |
+| Settings white screen | useLang imported but not called |
+| Account switcher off-screen mobile | right-0 instead of left-0 |
 
 #### 🗄️ SQL Run
 | Query | Status |
 |-------|--------|
-| absence_alerts.sql — full system install | ✅ |
-| check_daily_log_absences() — fixed joined_at | ✅ |
-| check_daily_log_absences() — fixed EXTRACT | ✅ |
-| DROP + recreate submit_daily_log (PKT timezone) | ✅ |
-| SELECT cron.schedule('daily-absence-check'...) | ✅ |
-| SELECT check_daily_log_absences() — test run | ✅ 5 processed, 0 alerts |
+| business_offers.sql | ✅ |
+| partner_applications.sql | ✅ |
+| onboarding_team.sql | ✅ |
+| volunteer_dob_cnic.sql | ✅ |
+| add_offer_photo.sql | ✅ |
+| DELETE Test Dhaba + INSERT Test Electrical Shop | ✅ |
 
-#### 📁 Files Changed
-| File | Change |
-|------|--------|
-| src/components/AccountSwitcher.tsx | NEW — multi-account switcher |
-| src/components/layout/DesktopSidebar.tsx | Uses AccountSwitcher + LanguageToggle |
-| src/components/layout/MobileNav.tsx | Account tab added |
-| src/pages/onboarding/Login.tsx | Saves session on login |
-| src/pages/admin/AdminDashboard.tsx | Pending list + absence alerts card |
-| src/pages/admin/AdminLayout.tsx | Queue nav item removed |
-| src/pages/onboarding/SignUpStep2.tsx | Volunteer added to professions |
-| src/pages/onboarding/About.tsx | NEW — What is ENB page |
-| src/pages/onboarding/Welcome.tsx | Prominent What is ENB card + i18n |
-| src/App.tsx | /about route + LanguageProvider |
-| src/pages/Settings.tsx | Language card added |
-| src/pages/MyLog.tsx | PKT timezone fix |
-| src/lib/translations.ts | NEW — 438 lines EN+UR translations |
-| src/contexts/LanguageContext.tsx | NEW — language context + useT() hook |
-| src/components/LanguageToggle.tsx | NEW — toggle button |
-| src/index.css | Noto Nastaliq Urdu font + RTL CSS |
-| supabase/functions/notify-mods/index.ts | NEW — mod email notifications |
-| supabase/functions/notify-absence/index.ts | NEW — absence alert emails |
-
-#### ⏭️ Next Session Priorities
-1. Urdu Phase 2 — wire useT() into Login, Signup, Dashboard, Submit, Wallet
-2. Domain purchase — econeighbor.org on Spaceship, then Vercel + Resend DNS setup
-3. Float auto-replenishment
-4. Real WhatsApp number in Settings
-
-#### 📝 Key Decisions
-- Urdu translations done once with Claude (high quality, zero ongoing cost) vs AI per page load
-- Language toggle shows for all roles — no restriction needed
-- .org domain recommended over .com for grant credibility
-- Resend free tier limitation — emails only to signup address until domain verified
-- Multi-account switcher available to all users (not restricted to admin/mod)
+#### ⏭️ Next Session
+1. Urdu Phase 2
+2. Domain setup (econeighbor.org)
+3. Business signup on marketing website
+4. Float auto-replenishment
+5. Fi.co pitch prep (March 24)

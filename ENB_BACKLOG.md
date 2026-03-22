@@ -1,5 +1,5 @@
 # ENB Web App — Master Backlog
-*Last updated: 21 Mar 2026*
+*Last updated: 20 Mar 2026*
 *Rule: At the start of every session (2h+ gap), check this file first.*
 
 ---
@@ -93,22 +93,19 @@
 - [x] ENB Today vs All Time — admin dashboard two separate metrics
 - [x] Escalation loop fixed — trigger guard prevents re-escalation
 - [x] Duplicate More nav fixed — mobile nav moderator logic
+- [x] Business Admin toggle — sidebar, same pattern as Member/Admin Panel
+- [x] BusinessDashboard, BusinessOffers (ENB Swap + photos), BusinessHistory
+- [x] Business mobile/desktop nav
+- [x] Onboarding team system — VolunteerApply, OnboardingQueue, AdminOnboarding
+- [x] partner_applications, volunteer_applications, business_offers tables
+- [x] PartnerManager — session fix, View Details with GPS + email change
+- [x] Map panel overlay — stays on map when clicking pin
+- [x] Share button wired in BusinessProfile
+- [x] constants.ts — 47 professions + 25 categories, A→Z sorted
+- [x] Settings white screen — useLang() fix
+- [x] Account switcher mobile overflow + stale avatar fixes
+- [x] Float Monitor — only shows for business role
 - [x] EscalationQueue payment — fixed broken code, lifetime_earned updated
-- [x] Multi-account switcher — tap avatar, switch accounts, localStorage session tokens
-- [x] Admin pending submissions list — expandable rows with full detail
-- [x] Queue removed from admin sidebar — dead feature
-- [x] notify-mods Edge Function — email to mods on assignment
-- [x] notify-absence Edge Function — 3-day warning + 7-day FORMAL_ABSENCE emails
-- [x] Daily absence cron job — pg_cron, 19:05 UTC daily
-- [x] check_daily_log_absences() SQL — absence tracking system
-- [x] Absence alerts card on admin dashboard
-- [x] Daily Log timezone fix — getPKTDate() PKT-aware
-- [x] submit_daily_log SQL — PKT timezone
-- [x] Volunteer profession added to signup dropdown
-- [x] About / What is ENB page — /about route
-- [x] Welcome screen — prominent What is ENB card
-- [x] Urdu/English language switch Phase 1 — infrastructure built
-- [x] Noto Nastaliq Urdu font + RTL CSS
 - [x] ModQueue timer — 10s for testing (was 30s)
 - [x] README.md — proper ENB project README
 - [x] Marketing site — Fi.co badge, Giveth links, email protection, 5B stat, investor card
