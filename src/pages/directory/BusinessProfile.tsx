@@ -33,6 +33,19 @@ const BUSINESS_DATA = {
 };
 
 export default function BusinessProfile() {
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = document.title;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      alert('Link copied to clipboard!');
+    }
+  };
+
   const { id } = useParams();
   // In a real app, use `id` to fetch data.
   const business = BUSINESS_DATA; 
@@ -50,7 +63,7 @@ export default function BusinessProfile() {
           </Link>
         </div>
         <div className="absolute top-4 right-4">
-          <Button variant="ghost" size="icon" className="bg-white/80 hover:bg-white rounded-full backdrop-blur-sm">
+          <Button variant="ghost" size="icon" className="bg-white/80 hover:bg-white rounded-full backdrop-blur-sm" onClick={handleShare}>
             <Share2 className="w-5 h-5 text-enb-text-primary" />
           </Button>
         </div>

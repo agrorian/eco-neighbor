@@ -16,6 +16,7 @@ interface Offer {
   valid_until: string | null;
   enb_cost: number | null;
   is_active: boolean;
+  photo_url: string | null;
 }
 
 export default function BusinessOffers() {
@@ -35,6 +36,8 @@ export default function BusinessOffers() {
   const [discountPct, setDiscountPct] = useState('');
   const [validUntil, setValidUntil] = useState('');
   const [enbCost, setEnbCost] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   useEffect(() => { fetchOffers(); }, []);
 
@@ -64,8 +67,23 @@ export default function BusinessOffers() {
     setLoading(false);
   };
 
+  const uploadPhoto = async (file: File) => {
+    setPhotoUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'enb_photos');
+    try {
+      const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', {
+        method: 'POST', body: formData,
+      });
+      const data = await res.json();
+      setPhotoUrl(data.secure_url || '');
+    } catch { /* silent fail */ }
+    setPhotoUploading(false);
+  };
+
   const resetForm = () => {
-    setItemName(''); setDescription(''); setDiscountPct('');
+    setItemName(''); setDescription(''); setDiscountPct(''); setPhotoUrl('');
     setValidUntil(''); setEnbCost(''); setShowForm(false);
   };
 
@@ -85,6 +103,7 @@ export default function BusinessOffers() {
       valid_until: formType === 'discount' && validUntil ? validUntil : null,
       enb_cost: formType === 'swap' ? parseInt(enbCost) : null,
       is_active: true,
+      photo_url: photoUrl || null,
     });
 
     if (!error) { resetForm(); fetchOffers(); }
@@ -151,6 +170,22 @@ export default function BusinessOffers() {
 
             <Input placeholder="Item name (e.g. Bread, Oil Change, Paracetamol)" value={itemName} onChange={e => setItemName(e.target.value)} />
             <Input placeholder="Description (optional)" value={description} onChange={e => setDescription(e.target.value)} />
+
+            {/* Photo upload */}
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">Photo (optional)</label>
+              {photoUrl ? (
+                <div className="relative">
+                  <img src={photoUrl} alt="offer" className="w-full h-32 object-cover rounded-xl border border-gray-200" />
+                  <button onClick={() => setPhotoUrl('')} className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-lg">Remove</button>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl p-4 cursor-pointer hover:border-enb-green/40 transition-colors">
+                  {photoUploading ? <><span className="text-xs text-gray-400">Uploading...</span></> : <><span className="text-xs text-gray-400">Tap to add photo</span></>}
+                  <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadPhoto(e.target.files[0])} disabled={photoUploading} />
+                </label>
+              )}
+            </div>
 
             {formType === 'discount' ? (
               <div className="grid grid-cols-2 gap-2">
@@ -231,6 +266,7 @@ function OfferCard({ offer, onToggle, onDelete }: { offer: Offer; onToggle: (id:
         </div>
         {offer.description && <p className="text-xs text-gray-500 mt-0.5">{offer.description}</p>}
         {offer.valid_until && <p className="text-xs text-orange-500 mt-0.5">Until {new Date(offer.valid_until).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}</p>}
+        {offer.photo_url && <img src={offer.photo_url} alt={offer.item_name} className="w-full h-24 object-cover rounded-lg mt-2 border border-gray-100" />}
       </div>
       <div className="flex items-center gap-1 ml-2 flex-shrink-0">
         <button onClick={() => onToggle(offer.id, offer.is_active)} className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${offer.is_active ? 'text-orange-600 hover:bg-orange-50' : 'text-enb-green hover:bg-enb-green/5'}`}>

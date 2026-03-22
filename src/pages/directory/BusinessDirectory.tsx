@@ -5,7 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
-const CATEGORIES = ['All', 'Food', 'Trades', 'Health', 'Retail', 'Education', 'Services', 'Other'];
+import { BUSINESS_CATEGORIES } from '@/lib/constants';
+const CATEGORIES = ['All', ...BUSINESS_CATEGORIES];
 
 interface Business {
   id: string;
@@ -138,6 +139,7 @@ function LeafletMap({ businesses, onSelect }: { businesses: Business[]; onSelect
 export default function BusinessDirectory() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [mapSelectedBusiness, setMapSelectedBusiness] = useState<Business | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState<'name' | 'category'>('name');
@@ -282,10 +284,41 @@ export default function BusinessDirectory() {
           ))}
         </div>
       ) : (
-        <LeafletMap
-          businesses={filtered}
-          onSelect={(id) => navigate(`/directory/${id}`)}
-        />
+        <>
+          <LeafletMap
+            businesses={filtered}
+            onSelect={(id) => setMapSelectedBusiness(businesses.find(b => b.id === id) || null)}
+          />
+          {/* Map business mini-panel */}
+          {mapSelectedBusiness && (
+            <div className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[1000] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-enb-text-primary">{mapSelectedBusiness.business_name}</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">{mapSelectedBusiness.category}</p>
+                  {mapSelectedBusiness.discount_offer && (
+                    <span className="inline-block bg-enb-green/10 text-enb-green text-xs font-bold px-2 py-1 rounded-md mt-1">
+                      {mapSelectedBusiness.discount_offer}
+                    </span>
+                  )}
+                  {mapSelectedBusiness.address && (
+                    <p className="text-xs text-gray-400 mt-1">{mapSelectedBusiness.address}</p>
+                  )}
+                </div>
+                <button onClick={() => setMapSelectedBusiness(null)} className="p-1 rounded-lg hover:bg-gray-100 flex-shrink-0">
+                  <span className="text-gray-400 text-lg leading-none">×</span>
+                </button>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <Link to={`/directory/${mapSelectedBusiness.id}`} className="flex-1">
+                  <button className="w-full bg-enb-green text-white text-sm font-semibold py-2 rounded-xl hover:bg-enb-green/90 transition-colors">
+                    View Full Details →
+                  </button>
+                </Link>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
