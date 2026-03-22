@@ -403,7 +403,6 @@ export default function PartnerManager() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
 
       {/* Partner Detail Modal */}
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
