@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
-import { AlertTriangle, LayoutDashboard, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList, Bug } from 'lucide-react';
+import { AlertTriangle, LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
+  { icon: CheckSquare,     label: 'Queue',     path: '/admin/queue' },
   { icon: Users,           label: 'Users',     path: '/admin/users' },
   { icon: Megaphone,       label: 'Campaigns', path: '/admin/campaigns' },
   { icon: Store,           label: 'Partners',  path: '/admin/partners' },
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
   { icon: Shield,          label: 'Mod Queue', path: '/admin/mod-queue' },
   { icon: AlertTriangle,   label: 'Escalations', path: '/admin/escalation' },
   { icon: Bug,             label: 'Bug Reports', path: '/admin/bugs' },
+  { icon: Store,           label: 'Onboarding',  path: '/admin/onboarding' },
   { icon: ClipboardList,   label: 'Daily Log', path: '/my-log' },
 ];
 

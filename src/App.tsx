@@ -48,6 +48,12 @@ const MyHistory = lazy(() => import('@/pages/MyHistory'));
 // --- Onboarding ---
 import Welcome from '@/pages/onboarding/Welcome';
 import About from '@/pages/onboarding/About';
+import BusinessOffers from '@/pages/business/BusinessOffers';
+import AdminOnboarding from '@/pages/admin/AdminOnboarding';
+import OnboardingQueue from '@/pages/onboarding-team/OnboardingQueue';
+import VolunteerApply from '@/pages/onboarding-team/VolunteerApply';
+import BusinessHistory from '@/pages/business/BusinessHistory';
+import PartnerSignup from '@/pages/directory/PartnerSignup';
 import SignUpStep1 from '@/pages/onboarding/SignUpStep1';
 import SignUpStep2 from '@/pages/onboarding/SignUpStep2';
 import ConnectWallet from '@/pages/onboarding/ConnectWallet';
@@ -176,6 +182,7 @@ export default function App() {
                 <Route path="mod-queue" element={<ModQueue />} />
                 <Route path="escalation" element={<EscalationQueue />} />
                 <Route path="bugs" element={<AdminBugReports />} />
+                <Route path="onboarding" element={<AdminOnboarding />} />
               </Route>
               <Route path="/*" element={
                 <Layout>
@@ -202,6 +209,10 @@ export default function App() {
                       <Route path="/history" element={<MyHistory />} />
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/bug-report" element={<BugReport />} />
+                      <Route path="/onboarding-queue" element={<OnboardingQueue />} />
+                      <Route path="/volunteer-apply" element={<VolunteerApply />} />
+                      <Route path="/business/offers" element={<BusinessOffers />} />
+                      <Route path="/business/history" element={<BusinessHistory />} />
                       <Route path="/founder-sale" element={<FounderSale />} />
                       <Route path="/founder-hardship" element={<FounderHardship />} />
                       <Route path="/partner-float" element={<PartnerFloat />} />
