@@ -201,8 +201,8 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
 
       {/* Dropdown */}
       {open && (
-        <div className={`absolute ${compact ? 'left-0 bottom-12' : 'bottom-full left-0 right-0 mb-1'} bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden`}
-          style={{ minWidth: compact ? '220px' : undefined }}>
+        <div className={`absolute ${compact ? 'right-0 bottom-12' : 'bottom-full left-0 right-0 mb-1'} bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden`}
+          style={{ minWidth: compact ? '220px' : undefined, maxWidth: compact ? 'calc(100vw - 16px)' : undefined }}>
 
           {/* Current account */}
           <div className="px-3 py-2 bg-enb-green/5 border-b border-gray-100">
