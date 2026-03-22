@@ -26,10 +26,12 @@ function getSavedAccounts(): SavedAccount[] {
 function saveAccount(account: SavedAccount) {
   const accounts = getSavedAccounts();
   const existing = accounts.findIndex(a => a.email === account.email);
+  // Always recompute avatar_initial from fresh name
+  const fresh = { ...account, avatar_initial: (account.full_name || account.email || 'U').charAt(0).toUpperCase() };
   if (existing >= 0) {
-    accounts[existing] = account;
+    accounts[existing] = fresh;
   } else {
-    accounts.push(account);
+    accounts.push(fresh);
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
 }
@@ -231,7 +233,7 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
                   className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs flex-shrink-0">
-                    {account.avatar_initial}
+                    {(account.full_name || account.email || 'U').charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 overflow-hidden text-left">
                     <div className="text-sm font-medium text-gray-900 truncate">{account.full_name || account.email}</div>
