@@ -145,7 +145,7 @@ export default function PartnerManager() {
       // Step 3: Insert business_partners row
       const { error: partnerError } = await supabase.from('business_partners').insert({
         owner_user_id: userId,
-        name: form.business_name.trim(),
+        business_name: form.business_name.trim(),
         category: form.category,
         address: form.address.trim() || null,
         phone: form.phone.trim() || null,
