@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Bell, Shield, HelpCircle, LogOut, MessageCircle, Save, User, ChevronRight, KeyRound } from 'lucide-react';
 import { useUserStore } from '@/store/user';
+import { PROFESSIONS } from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLang } from '@/contexts/LanguageContext';
@@ -17,14 +18,11 @@ const NEIGHBOURHOODS = [
   'Yusuf Colony','Ayub Colony','Dhok Choudhrian','Car Chowk Area','Other'
 ];
 
-const PROFESSIONS = [
-  'Teacher','Doctor','Engineer','Shopkeeper','Plumber','Electrician',
-  'Driver','Farmer','Student','Homemaker','Street Vendor','Milkman',
-  'Painter / Mason','Community Food Guardian','Food Runner','Other'
-];
+
 
 export default function Settings() {
   const { user, setUser, logout } = useUserStore();
+  const { lang } = useLang();
 
   // Profile fields
   const [fullName, setFullName] = useState(user?.full_name || '');

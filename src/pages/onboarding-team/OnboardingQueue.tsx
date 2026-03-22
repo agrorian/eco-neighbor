@@ -257,7 +257,7 @@ export default function OnboardingQueue() {
 
                       <Button onClick={() => submitOnboarding(app.id)} disabled={saving === app.id || !ownerName.trim() || !whatsapp.trim() || !discountDesc.trim()} className="w-full bg-enb-green text-white">
                         {saving === app.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                        Submit for Admin Approval — Earn 2,000 ENB
+                        Submit for Admin Approval — Earn 1,000 ENB
                       </Button>
                       <p className="text-xs text-gray-400 text-center">You earn ENB only after admin approves and business goes live.</p>
                     </div>
@@ -267,7 +267,7 @@ export default function OnboardingQueue() {
                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
                       <CheckCircle className="w-6 h-6 text-blue-500 mx-auto mb-1" />
                       <p className="text-sm font-medium text-blue-700">Submitted — awaiting admin review</p>
-                      <p className="text-xs text-blue-500 mt-1">You'll earn 2,000 ENB once approved</p>
+                      <p className="text-xs text-blue-500 mt-1">You'll earn 1,000 ENB once approved</p>
                     </div>
                   )}
                 </div>

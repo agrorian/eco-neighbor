@@ -24,11 +24,11 @@ export default function MobileNav() {
     ];
     return (
       <nav className="fixed bottom-0 w-full bg-white border-t border-enb-teal/20 pb-safe pt-2 px-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 md:hidden">
-        <div className="flex justify-around items-center h-16">
+        <div className="flex items-center h-16 gap-1">
           {businessNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link key={item.path} to={item.path} className="relative flex flex-col items-center gap-1 w-16 group">
+              <Link key={item.path} to={item.path} className="relative flex flex-col items-center gap-0.5 flex-1 min-w-0 group">
                 {isActive && (
                   <motion.div layoutId="business-mobile-indicator"
                     className="absolute -top-2 w-8 h-1 bg-enb-teal rounded-full"
@@ -66,6 +66,11 @@ export default function MobileNav() {
           { path: '/directory', icon: Store, label: 'Directory' },
           { path: '/more', icon: MoreHorizontal, label: 'More' },
         ]
+      : user.role === 'onboarding_team'
+      ? [
+          { path: '/onboarding-queue', icon: Store, label: 'Onboarding' },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
+        ]
       : [
           { path: '/directory', icon: Store, label: 'Directory' },
           { path: '/more', icon: MoreHorizontal, label: 'More' },
@@ -75,12 +80,12 @@ export default function MobileNav() {
 
   return (
     <nav className="fixed bottom-0 w-full bg-white border-t border-gray-200 pb-safe pt-2 px-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 md:hidden">
-      <div className="flex justify-around items-center h-16">
+      <div className="flex items-center h-16 gap-1">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path ||
             (item.path === '/admin' && location.pathname.startsWith('/admin'));
           return (
-            <Link key={item.path} to={item.path} className="relative flex flex-col items-center gap-1 w-16 group">
+            <Link key={item.path} to={item.path} className="relative flex flex-col items-center gap-0.5 flex-1 min-w-0 group">
               {isActive && (
                 <motion.div
                   layoutId="mobile-nav-indicator"

@@ -17,10 +17,19 @@ export default function VolunteerApply() {
   const [motivation, setMotivation] = useState('');
   const [experience, setExperience] = useState('');
   const [availability, setAvailability] = useState('');
+  const [dob, setDob] = useState('');
+  const [cnic, setCnic] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+
+  const formatCnic = (val: string) => {
+    const digits = val.replace(/\D/g, '').slice(0, 13);
+    if (digits.length <= 5) return digits;
+    if (digits.length <= 12) return digits.slice(0,5) + '-' + digits.slice(5);
+    return digits.slice(0,5) + '-' + digits.slice(5,12) + '-' + digits.slice(12);
+  };
   const handleSubmit = async () => {
     if (!motivation.trim()) { setError('Please tell us why you want to join.'); return; }
     setLoading(true); setError('');
@@ -31,6 +40,8 @@ export default function VolunteerApply() {
       motivation: motivation.trim(),
       experience: experience.trim() || null,
       availability: availability.trim() || null,
+      dob: dob || null,
+      cnic: cnic || null,
       status: 'pending',
     });
 
@@ -75,7 +86,7 @@ export default function VolunteerApply() {
             { icon: Users, text: 'Contact businesses that apply to join ENB' },
             { icon: Star, text: 'Complete their profile — offers, discounts, float' },
             { icon: CheckCircle, text: 'Submit for admin approval when ready' },
-            { icon: Clock, text: 'Earn 2,000 ENB for every business that goes live' },
+            { icon: Clock, text: 'Earn 1,000 ENB for every business that goes live' },
           ].map((item, i) => (
             <div key={i} className="flex items-center gap-2">
               <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -125,6 +136,30 @@ export default function VolunteerApply() {
               className="resize-none h-16"
               maxLength={200}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-enb-text-primary">Date of Birth</label>
+              <input
+                type="date"
+                value={dob}
+                onChange={e => setDob(e.target.value)}
+                max={new Date(Date.now() - 16*365*24*60*60*1000).toISOString().split('T')[0]}
+                className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-enb-green/30"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-enb-text-primary">CNIC</label>
+              <input
+                type="text"
+                value={cnic}
+                onChange={e => setCnic(formatCnic(e.target.value))}
+                placeholder="XXXXX-XXXXXXX-X"
+                maxLength={15}
+                className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-enb-green/30"
+              />
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-3">{error}</p>}

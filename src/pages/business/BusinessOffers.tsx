@@ -9,7 +9,7 @@ import { Navigate } from 'react-router-dom';
 
 interface Offer {
   id: string;
-  category: 'discount' | 'redemption';
+  category: 'discount' | 'swap';
   item_name: string;
   description: string;
   discount_pct: number | null;
@@ -26,7 +26,7 @@ export default function BusinessOffers() {
   const [partnerId, setPartnerId] = useState('');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [formType, setFormType] = useState<'discount' | 'redemption'>('discount');
+  const [formType, setFormType] = useState<'discount' | 'swap'>('discount');
   const [saving, setSaving] = useState(false);
 
   // Form state
@@ -40,10 +40,26 @@ export default function BusinessOffers() {
 
   const fetchOffers = async () => {
     setLoading(true);
-    const { data } = await supabase.rpc('get_my_offers', { p_user_id: user!.id });
-    if (data?.success) {
-      setPartnerId(data.partner_id);
-      setOffers(data.offers || []);
+
+    // Step 1: Get partner_id directly (reliable even if no offers exist yet)
+    const { data: partnerData } = await supabase
+      .from('business_partners')
+      .select('id')
+      .eq('owner_user_id', user!.id)
+      .single();
+
+    if (partnerData?.id) {
+      setPartnerId(partnerData.id);
+
+      // Step 2: Fetch offers for this partner
+      const { data: offersData } = await supabase
+        .from('business_offers')
+        .select('*')
+        .eq('partner_id', partnerData.id)
+        .order('category')
+        .order('created_at', { ascending: false });
+
+      setOffers(offersData || []);
     }
     setLoading(false);
   };
@@ -56,7 +72,7 @@ export default function BusinessOffers() {
   const handleSave = async () => {
     if (!itemName.trim() || !partnerId) return;
     if (formType === 'discount' && !discountPct) return;
-    if (formType === 'redemption' && !enbCost) return;
+    if (formType === 'swap' && !enbCost) return;
 
     setSaving(true);
     const { error } = await supabase.from('business_offers').insert({
@@ -67,7 +83,7 @@ export default function BusinessOffers() {
       description: description.trim() || null,
       discount_pct: formType === 'discount' ? parseInt(discountPct) : null,
       valid_until: formType === 'discount' && validUntil ? validUntil : null,
-      enb_cost: formType === 'redemption' ? parseInt(enbCost) : null,
+      enb_cost: formType === 'swap' ? parseInt(enbCost) : null,
       is_active: true,
     });
 
@@ -86,7 +102,7 @@ export default function BusinessOffers() {
   };
 
   const discountOffers = offers.filter(o => o.category === 'discount');
-  const redemptionOffers = offers.filter(o => o.category === 'redemption');
+  const redemptionOffers = offers.filter(o => o.category === 'swap');
 
   return (
     <div className="space-y-5 pb-24 max-w-lg mx-auto">
@@ -120,10 +136,10 @@ export default function BusinessOffers() {
                 <Tag className="w-4 h-4 inline mr-1" /> Discount
               </button>
               <button
-                onClick={() => setFormType('redemption')}
-                className={`py-2 rounded-lg text-sm font-semibold border transition-all ${formType === 'redemption' ? 'bg-enb-green/10 border-enb-green/30 text-enb-green' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                onClick={() => setFormType('swap')}
+                className={`py-2 rounded-lg text-sm font-semibold border transition-all ${formType === 'swap' ? 'bg-enb-green/10 border-enb-green/30 text-enb-green' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
               >
-                <Coins className="w-4 h-4 inline mr-1" /> ENB Redemption
+                <Coins className="w-4 h-4 inline mr-1" /> ENB Swap
               </button>
             </div>
 
@@ -175,11 +191,11 @@ export default function BusinessOffers() {
             )}
           </section>
 
-          {/* Redemption Items */}
+          {/* ENB Swap Items */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Coins className="w-4 h-4 text-enb-green" />
-              <h2 className="font-bold text-enb-text-primary text-sm uppercase tracking-wide">ENB Redemption Items</h2>
+              <h2 className="font-bold text-enb-text-primary text-sm uppercase tracking-wide">ENB Swap Items</h2>
               <span className="text-xs bg-enb-green/10 text-enb-green px-2 py-0.5 rounded-full">{redemptionOffers.length}</span>
             </div>
             <p className="text-xs text-gray-400 mb-3">Only list items you can reliably honour. Customers will see these in your directory listing.</p>
@@ -208,7 +224,7 @@ function OfferCard({ offer, onToggle, onDelete }: { offer: Offer; onToggle: (id:
           {offer.category === 'discount' && offer.discount_pct && (
             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">{offer.discount_pct}% off</span>
           )}
-          {offer.category === 'redemption' && offer.enb_cost && (
+          {offer.category === 'swap' && offer.enb_cost && (
             <span className="text-xs bg-enb-green/10 text-enb-green px-2 py-0.5 rounded-full font-bold">{offer.enb_cost.toLocaleString()} ENB</span>
           )}
           {!offer.is_active && <span className="text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Paused</span>}

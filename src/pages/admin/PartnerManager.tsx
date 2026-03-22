@@ -104,7 +104,11 @@ export default function PartnerManager() {
         ? { data: null, error: { message: 'Use service role' } }
         : { data: null, error: null };
 
-      // Use signUp instead — admin creates account, user can reset password later
+      // Save current admin session before signUp replaces it
+      const { data: adminSession } = await supabase.auth.getSession();
+      const adminAccessToken = adminSession.session?.access_token;
+      const adminRefreshToken = adminSession.session?.refresh_token;
+
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: form.email.trim().toLowerCase(),
         password: form.password,
@@ -115,6 +119,14 @@ export default function PartnerManager() {
       if (!signUpData.user) throw new Error('User creation failed.');
 
       const userId = signUpData.user.id;
+
+      // Immediately restore admin session so admin stays logged in
+      if (adminAccessToken && adminRefreshToken) {
+        await supabase.auth.setSession({
+          access_token: adminAccessToken,
+          refresh_token: adminRefreshToken,
+        });
+      }
 
       // Step 2: Upsert users row with business role
       await supabase.from('users').upsert({
@@ -133,7 +145,7 @@ export default function PartnerManager() {
       // Step 3: Insert business_partners row
       const { error: partnerError } = await supabase.from('business_partners').insert({
         owner_user_id: userId,
-        business_name: form.business_name.trim(),
+        name: form.business_name.trim(),
         category: form.category,
         address: form.address.trim() || null,
         phone: form.phone.trim() || null,

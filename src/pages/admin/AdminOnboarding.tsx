@@ -106,7 +106,7 @@ export default function AdminOnboarding() {
       p_application_id: appId,
       p_admin_id: user!.id,
       p_admin_note: adminNote || null,
-      p_enb_reward: 2000,
+      p_enb_reward: 1000,
     });
     setSaving(null); setExpandedId(null); setAdminNote('');
     fetchAll();
@@ -207,7 +207,7 @@ export default function AdminOnboarding() {
                     <div className="flex gap-2">
                       <Button onClick={() => approvePartner(app.id)} disabled={saving === app.id} className="flex-1 bg-enb-green text-white text-sm">
                         {saving === app.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
-                        Approve — Pay 2,000 ENB
+                        Approve — Pay 1,000 ENB
                       </Button>
                       <Button onClick={() => returnPartner(app.id)} disabled={saving === app.id} variant="outline" className="flex-1 border-orange-300 text-orange-700 text-sm">
                         <AlertCircle className="w-4 h-4 mr-1" /> Return with Query

@@ -163,7 +163,7 @@ export default function SignUpStep2() {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select your neighbourhood" />
               </SelectTrigger>
-              <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectContent className="max-h-72 overflow-y-auto">
                 {NEIGHBOURHOODS.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -175,7 +175,7 @@ export default function SignUpStep2() {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select your profession" />
               </SelectTrigger>
-              <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectContent className="max-h-72 overflow-y-auto">
                 {PROFESSIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
               </SelectContent>
             </Select>
