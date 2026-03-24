@@ -64,6 +64,10 @@ export default function DesktopSidebar() {
   const isBusinessSection = location.pathname.startsWith('/business') || location.pathname === '/scan' || location.pathname === '/partner-float';
   const isBusiness = user?.role === 'business';
 
+  const partnerNav = !['business', 'admin'].includes(user?.role || '') ? [
+    { path: '/partner-signup', icon: Store, label: 'Become a Partner' },
+  ] : [];
+
   const navItems = isAdminSection ? adminNav 
     : (isBusiness && isBusinessSection) ? businessNav
     : [...memberNav, ...roleBasedNav, ...modNav, ...onboardingNav, ...volunteerNav, ...partnerNav];
