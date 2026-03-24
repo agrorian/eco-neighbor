@@ -165,7 +165,7 @@ export default function Login() {
               {mode === 'login' ? (
                 <Button
                   onClick={handleLogin}
-                  className="w-full mt-2 bg-enb-dark text-white"
+                  className="w-full mt-2 bg-enb-green text-white"
                   disabled={!email || !password || loading}
                 >
                   {loading ? 'Logging in...' : 'Log In'}

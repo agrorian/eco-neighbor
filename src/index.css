@@ -6,51 +6,71 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── ENB Brand Tokens ─────────────────────────────────────────────────── */
-@theme {
-  /* Core palette */
-  --color-enb-green:          #1A6B3C;
-  --color-enb-green-light:    #22854A;   /* hover state */
-  --color-enb-green-dark:     #134F2C;   /* pressed state */
-  --color-enb-teal:           #00796B;
-  --color-enb-teal-light:     #00897B;
-  --color-enb-gold:           #F9A825;
-  --color-enb-gold-light:     #FBC02D;
-  --color-enb-dark:           #1B2B1E;
-  --color-enb-white:          #FFFFFF;
-  --color-enb-surface:        #F4F6F4;   /* slightly warm grey, not pure cool grey */
-  --color-enb-surface-card:   #FFFFFF;
-  --color-enb-border:         #E2E8E4;   /* green-tinted border */
+/* ═══════════════════════════════════════════════════════════════════════
+   ENB DESIGN SYSTEM — v2
+   Single source of truth for all visual tokens.
+   Changes here cascade to every screen automatically.
+   ═══════════════════════════════════════════════════════════════════════ */
 
-  /* Typography */
-  --color-enb-text-primary:   #1B2B1E;
-  --color-enb-text-secondary: #4A5E50;   /* slightly green-tinted grey */
-  --color-enb-text-muted:     #7A9182;
+@theme {
+  /* ── Palette ── */
+  --color-enb-green:         #1A6B3C;
+  --color-enb-green-light:   #22854A;
+  --color-enb-green-dark:    #134F2C;
+  --color-enb-green-faint:   #F0F7F2;   /* card tints, hover surfaces */
+
+  --color-enb-teal:          #00796B;
+  --color-enb-teal-light:    #00897B;
+  --color-enb-teal-faint:    #E8F5F4;
+
+  --color-enb-gold:          #F9A825;
+  --color-enb-gold-dark:     #E08D00;
+  --color-enb-gold-faint:    #FFF8E6;
+
+  --color-enb-dark:          #1B2B1E;
+  --color-enb-white:         #FFFFFF;
+
+  /* Page & card surfaces */
+  --color-enb-surface:       #F3F6F3;   /* warm green-grey page bg */
+  --color-enb-surface-raised:#FFFFFF;   /* cards sit above the surface */
+  --color-enb-border:        #DDE8DE;   /* green-tinted border */
+  --color-enb-border-light:  #EBF2EC;   /* subtle dividers */
+
+  /* Text */
+  --color-enb-text-primary:  #1B2B1E;
+  --color-enb-text-secondary:#4D6352;
+  --color-enb-text-muted:    #80997F;
+  --color-enb-text-inverse:  #FFFFFF;
 
   /* Semantic */
-  --color-enb-success:        #2E7D32;
-  --color-enb-warning:        #E65100;
-  --color-enb-error:          #C62828;
+  --color-enb-success:       #2E7D32;
+  --color-enb-warning:       #E65100;
+  --color-enb-error:         #C62828;
 
-  /* Fonts */
+  /* ── Typography ── */
   --font-sans: 'Geist Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* Radii — consistent scale */
-  --radius-sm:  0.375rem;   /*  6px */
-  --radius-md:  0.625rem;   /* 10px */
-  --radius-lg:  0.875rem;   /* 14px */
-  --radius-xl:  1.125rem;   /* 18px */
-  --radius-2xl: 1.5rem;     /* 24px */
-  --radius-3xl: 2rem;       /* 32px */
+  /* ── Spacing / Radius ── */
+  --radius-xs:  0.25rem;   /*  4px */
+  --radius-sm:  0.5rem;    /*  8px */
+  --radius-md:  0.75rem;   /* 12px */
+  --radius-lg:  1rem;      /* 16px */
+  --radius-xl:  1.25rem;   /* 20px */
+  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-3xl: 2rem;      /* 32px */
+  --radius-full: 9999px;
 }
 
-/* ─── Shadcn Variable Override — wire ENB colours in ───────────────────── */
-/* This is the key change: shadcn reads these variables for ALL components.  */
-/* Buttons, inputs, focus rings, badges — all now use ENB green by default. */
+/* ═══════════════════════════════════════════════════════════════════════
+   SHADCN VARIABLE OVERRIDE
+   shadcn reads --primary, --ring, --border etc for ALL components.
+   Wiring these to ENB values means every Button, Input, Badge, Select,
+   Dialog — everything — automatically uses the ENB brand.
+   ═══════════════════════════════════════════════════════════════════════ */
 :root {
-  --background:              #F4F6F4;      /* enb-surface — warm page bg */
-  --foreground:              #1B2B1E;      /* enb-text-primary */
+  --background:              #F3F6F3;
+  --foreground:              #1B2B1E;
 
   --card:                    #FFFFFF;
   --card-foreground:         #1B2B1E;
@@ -58,72 +78,45 @@
   --popover:                 #FFFFFF;
   --popover-foreground:      #1B2B1E;
 
-  /* Primary = ENB green — affects Button default, links */
   --primary:                 #1A6B3C;
   --primary-foreground:      #FFFFFF;
 
-  /* Secondary = light green-grey surface */
-  --secondary:               #EEF3EE;
+  --secondary:               #EDF3EE;
   --secondary-foreground:    #1B2B1E;
 
-  --muted:                   #EEF3EE;
-  --muted-foreground:        #4A5E50;
+  --muted:                   #EDF3EE;
+  --muted-foreground:        #4D6352;
 
-  /* Accent = ENB teal */
   --accent:                  #E0F2F0;
   --accent-foreground:       #00796B;
 
   --destructive:             #C62828;
   --destructive-foreground:  #FFFFFF;
 
-  /* Borders and inputs — green-tinted */
-  --border:                  #E2E8E4;
-  --input:                   #E2E8E4;
-
-  /* Focus ring = ENB green */
+  --border:                  #DDE8DE;
+  --input:                   #DDE8DE;
   --ring:                    #1A6B3C;
 
-  --radius:                  0.875rem;     /* base radius — 14px */
+  /* Base radius — shadcn multiplies this for variants */
+  --radius:                  0.75rem;
 
   /* Sidebar */
   --sidebar:                 #FFFFFF;
   --sidebar-foreground:      #1B2B1E;
   --sidebar-primary:         #1A6B3C;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent:          #F0F5F1;
+  --sidebar-accent:          #F0F7F2;
   --sidebar-accent-foreground: #1A6B3C;
-  --sidebar-border:          #E2E8E4;
+  --sidebar-border:          #DDE8DE;
   --sidebar-ring:            #1A6B3C;
 }
 
-/* ─── Base styles ──────────────────────────────────────────────────────── */
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    /* Slightly larger base font than before — less "blunt" */
-    font-size: 15px;
-    line-height: 1.6;
-  }
-  html {
-    @apply font-sans;
-  }
-  /* Headings get slightly tighter tracking */
-  h1, h2, h3, h4 {
-    letter-spacing: -0.01em;
-    line-height: 1.25;
-  }
-}
-
-/* ─── shadcn theme inline map ──────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════
+   SHADCN THEME INLINE MAP
+   ═══════════════════════════════════════════════════════════════════════ */
 @theme inline {
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans:  'Geist Variable', sans-serif;
+
   --color-background:              var(--background);
   --color-foreground:              var(--foreground);
   --color-card:                    var(--card);
@@ -142,13 +135,15 @@
   --color-border:                  var(--border);
   --color-input:                   var(--input);
   --color-ring:                    var(--ring);
-  --radius-sm:  calc(var(--radius) * 0.6);
-  --radius-md:  calc(var(--radius) * 0.8);
+
+  --radius-sm:  calc(var(--radius) * 0.67);
+  --radius-md:  calc(var(--radius) * 0.83);
   --radius-lg:  var(--radius);
-  --radius-xl:  calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.4);
-  --radius-4xl: calc(var(--radius) * 3);
+  --radius-xl:  calc(var(--radius) * 1.33);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.67);
+  --radius-4xl: calc(var(--radius) * 3.33);
+
   --color-sidebar:                 var(--sidebar);
   --color-sidebar-foreground:      var(--sidebar-foreground);
   --color-sidebar-primary:         var(--sidebar-primary);
@@ -159,27 +154,108 @@
   --color-sidebar-ring:            var(--sidebar-ring);
 }
 
-/* ─── Component utilities ──────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════════════ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    font-size: 15px;             /* up from 14px — removes the "blunt" feeling */
+    line-height: 1.6;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Subtle dot-grid texture on the page surface — very faint */
+    background-image: radial-gradient(circle, #1A6B3C0D 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Heading defaults — tighter tracking, proper weight progression */
+  h1 { @apply text-3xl font-bold tracking-tight;   }
+  h2 { @apply text-2xl font-semibold tracking-tight; }
+  h3 { @apply text-xl font-semibold;  }
+  h4 { @apply text-base font-semibold; }
+
+  /* Selection colour — ENB green */
+  ::selection {
+    background-color: #1A6B3C30;
+    color: #1B2B1E;
+  }
+
+  /* Scrollbar — thin, green-tinted (webkit only) */
+  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: #1A6B3C40;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #1A6B3C80; }
+
+  /* Focus — consistent ring across all interactive elements */
+  :focus-visible {
+    outline: 2px solid #1A6B3C;
+    outline-offset: 2px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SHADOW SCALE
+   Three levels — use consistently:
+   shadow-enb-sm  → inline elements, badges
+   shadow-enb     → cards, panels
+   shadow-enb-lg  → modals, dropdowns, hero cards
+   ═══════════════════════════════════════════════════════════════════════ */
+.shadow-enb-sm { box-shadow: 0 1px 3px 0 #1B2B1E14, 0 1px 2px -1px #1B2B1E0D; }
+.shadow-enb    { box-shadow: 0 2px 8px 0  #1B2B1E12, 0 1px 3px -1px #1B2B1E0A; }
+.shadow-enb-lg { box-shadow: 0 8px 24px 0 #1B2B1E14, 0 2px 8px  -2px #1B2B1E10; }
+.shadow-enb-green { box-shadow: 0 4px 16px 0 #1A6B3C25; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   COMPONENT UTILITIES
+   Reusable classes — use across page files for consistency.
+   ═══════════════════════════════════════════════════════════════════════ */
 
 /* Cards */
 .card-standard {
-  @apply bg-white rounded-2xl shadow-sm border border-enb-border p-4 md:p-6;
+  @apply bg-enb-surface-raised rounded-2xl border border-enb-border p-4 md:p-5;
+  box-shadow: 0 2px 8px 0 #1B2B1E10;
 }
 .card-highlight {
-  @apply bg-white rounded-2xl shadow-sm border-l-4 border-enb-green p-4 md:p-6;
+  @apply bg-enb-surface-raised rounded-2xl border-l-4 border-l-enb-green border-t border-r border-b border-enb-border-light p-4 md:p-5;
+  box-shadow: 0 2px 8px 0 #1B2B1E10;
+}
+.card-green {
+  @apply bg-enb-green-faint rounded-2xl border border-enb-green/20 p-4 md:p-5;
+}
+.card-gold {
+  @apply bg-enb-gold-faint rounded-2xl border border-enb-gold/20 p-4 md:p-5;
 }
 
 /* Buttons */
 .btn-primary {
-  @apply bg-enb-green text-white rounded-xl min-h-[44px] px-6 font-semibold
+  @apply bg-enb-green text-white rounded-xl min-h-[48px] px-6 font-semibold text-[15px]
          hover:bg-enb-green-light active:bg-enb-green-dark active:scale-[0.98]
          transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
-         flex items-center justify-center shadow-sm;
+         flex items-center justify-center;
+  box-shadow: 0 2px 8px 0 #1A6B3C30;
 }
 .btn-secondary {
-  @apply bg-enb-teal text-white rounded-xl min-h-[44px] px-6 font-semibold
+  @apply bg-enb-teal text-white rounded-xl min-h-[48px] px-6 font-semibold text-[15px]
          hover:bg-enb-teal-light active:scale-[0.98]
-         transition-all duration-150 flex items-center justify-center shadow-sm;
+         transition-all duration-150 flex items-center justify-center;
+  box-shadow: 0 2px 8px 0 #00796B30;
 }
 .btn-ghost {
   @apply bg-transparent text-enb-text-primary rounded-xl min-h-[44px] px-4 font-medium
@@ -187,75 +263,91 @@
          flex items-center justify-center;
 }
 .btn-outline {
-  @apply bg-white text-enb-green border border-enb-green/30 rounded-xl min-h-[44px] px-5 font-semibold
-         hover:bg-enb-green/5 active:scale-[0.98] transition-all duration-150
-         flex items-center justify-center;
+  @apply bg-white text-enb-green border border-enb-green/30 rounded-xl min-h-[48px] px-5 font-semibold text-[15px]
+         hover:bg-enb-green-faint hover:border-enb-green/60 active:scale-[0.98]
+         transition-all duration-150 flex items-center justify-center;
 }
 
 /* Inputs */
 .input-standard {
   @apply h-[48px] rounded-xl border border-enb-border px-4 bg-white text-enb-text-primary
-         placeholder:text-enb-text-muted
-         focus:outline-none focus:ring-2 focus:ring-enb-green/30 focus:border-enb-green/60
-         transition-all duration-150 w-full text-[15px];
+         placeholder:text-enb-text-muted text-[15px]
+         focus:outline-none focus:ring-2 focus:ring-enb-green/25 focus:border-enb-green/50
+         transition-all duration-150 w-full;
 }
 
 /* Typography scale */
-.text-hero {
-  @apply font-bold text-3xl md:text-5xl text-enb-text-primary tracking-tight;
-}
-.text-section {
-  @apply font-semibold text-xl md:text-2xl text-enb-text-primary tracking-tight;
-}
-.text-body {
-  @apply font-normal text-[15px] leading-relaxed text-enb-text-primary;
-}
-.text-body-sm {
-  @apply font-normal text-sm leading-relaxed text-enb-text-primary;
-}
-.text-label {
-  @apply font-medium text-xs uppercase tracking-wide text-enb-text-secondary;
-}
-.text-amount {
-  @apply font-bold text-xl md:text-2xl text-enb-gold tabular-nums;
-}
-.text-amount-lg {
-  @apply font-bold text-3xl md:text-4xl text-enb-gold tabular-nums;
-}
-.text-code {
-  @apply font-mono text-xs text-enb-text-secondary;
-}
+.text-hero      { @apply font-bold text-3xl md:text-5xl text-enb-text-primary tracking-tight leading-tight; }
+.text-section   { @apply font-semibold text-xl md:text-2xl text-enb-text-primary tracking-tight; }
+.text-body      { @apply text-[15px] leading-relaxed text-enb-text-primary; }
+.text-body-sm   { @apply text-sm leading-relaxed text-enb-text-primary; }
+.text-label     { @apply font-semibold text-xs uppercase tracking-wide text-enb-text-secondary; }
+.text-muted     { @apply text-sm text-enb-text-muted; }
+.text-amount    { @apply font-bold text-xl md:text-2xl text-enb-gold tabular-nums tracking-tight; }
+.text-amount-lg { @apply font-bold text-3xl md:text-4xl text-enb-gold tabular-nums tracking-tight; }
+.text-code      { @apply font-mono text-xs text-enb-text-secondary bg-enb-surface px-1.5 py-0.5 rounded-md; }
 
-/* ENB badge */
-.badge-enb {
-  @apply inline-flex items-center gap-1 bg-enb-green/10 text-enb-green
-         text-xs font-semibold px-2.5 py-1 rounded-full;
-}
-.badge-gold {
-  @apply inline-flex items-center gap-1 bg-enb-gold/10 text-enb-gold
-         text-xs font-semibold px-2.5 py-1 rounded-full;
-}
-.badge-teal {
-  @apply inline-flex items-center gap-1 bg-enb-teal/10 text-enb-teal
-         text-xs font-semibold px-2.5 py-1 rounded-full;
-}
+/* Badges / chips */
+.badge-enb  { @apply inline-flex items-center gap-1 bg-enb-green/10  text-enb-green  text-xs font-semibold px-2.5 py-1 rounded-full; }
+.badge-gold { @apply inline-flex items-center gap-1 bg-enb-gold/10   text-enb-gold-dark text-xs font-semibold px-2.5 py-1 rounded-full; }
+.badge-teal { @apply inline-flex items-center gap-1 bg-enb-teal/10   text-enb-teal   text-xs font-semibold px-2.5 py-1 rounded-full; }
+.badge-gray { @apply inline-flex items-center gap-1 bg-gray-100      text-gray-600   text-xs font-semibold px-2.5 py-1 rounded-full; }
 
-/* Stat card — for dashboard numbers */
+/* Stat cards — dashboard numbers */
 .stat-card {
-  @apply bg-white rounded-2xl border border-enb-border shadow-sm p-4;
+  @apply bg-white rounded-2xl border border-enb-border p-4;
+  box-shadow: 0 1px 4px 0 #1B2B1E0C;
+}
+.stat-card-green {
+  @apply bg-enb-green-faint rounded-2xl border border-enb-green/15 p-4;
+}
+.stat-card-gold {
+  @apply bg-enb-gold-faint rounded-2xl border border-enb-gold/15 p-4;
 }
 
-/* ─── Urdu / RTL support ───────────────────────────────────────────────── */
+/* Page section header */
+.section-header {
+  @apply font-bold text-lg text-enb-text-primary mb-3 flex items-center gap-2;
+}
+
+/* Divider */
+.divider { @apply border-t border-enb-border-light my-4; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ANIMATION UTILITIES
+   ═══════════════════════════════════════════════════════════════════════ */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out both;
+}
+.animate-slide-up {
+  animation: slideUp 0.25s ease-out both;
+}
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   URDU / RTL SUPPORT
+   ═══════════════════════════════════════════════════════════════════════ */
 .font-urdu {
   font-family: 'Noto Nastaliq Urdu', serif;
   line-height: 2;
 }
-[dir="rtl"] .rotate-rtl {
-  transform: scaleX(-1);
-}
-[dir="rtl"] .space-y-4 > * + * {
-  margin-top: 1rem;
-}
+[dir="rtl"] .rotate-rtl  { transform: scaleX(-1); }
+[dir="rtl"] .space-y-4 > * + * { margin-top: 1rem; }
 :lang(ur) {
   font-family: 'Noto Nastaliq Urdu', serif;
   direction: rtl;
