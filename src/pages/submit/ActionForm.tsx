@@ -1,3 +1,4 @@
+import { useT } from '@/contexts/LanguageContext';
 import { useState, useRef, useEffect } from 'react';
 import { Camera, MapPin, CheckCircle, Loader2, AlertCircle, X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,9 @@ interface PhotoItem {
   file: File;
 }
 
-export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormProps) {
+export default function ActionForm({
+  actionType, onSubmit, onBack }: ActionFormProps) {
+  const { l } = useT();
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [description, setDescription] = useState('');
   const [gpsLat, setGpsLat] = useState<number | null>(null);
