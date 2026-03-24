@@ -4,13 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, ArrowLeft, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useT } from '@/contexts/LanguageContext';
 import { saveCurrentSession } from '@/components/AccountSwitcher';
 
 type Mode = 'login' | 'reset';
 
 export default function Login() {
-  const { l } = useT();
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
@@ -81,7 +79,7 @@ export default function Login() {
             <ArrowLeft className="w-5 h-5 text-gray-500" />
           </button>
           <h2 className="text-2xl font-bold text-enb-text-primary ml-2">
-            {mode === 'login' ? l('common', 'logIn') : l('login', 'resetTitle')}
+            {mode === 'login' ? 'Log In' : 'Reset Password'}
           </h2>
         </div>
 
@@ -112,7 +110,7 @@ export default function Login() {
             <div className="space-y-4">
               {/* Email field — shared between both modes */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-enb-text-primary">{l('login', 'email')}</label>
+                <label className="text-sm font-medium text-enb-text-primary">Email Address</label>
                 <Input
                   type="email"
                   placeholder="you@example.com"
@@ -126,7 +124,7 @@ export default function Login() {
               {mode === 'login' && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-enb-text-primary">{l('login', 'password')}</label>
+                    <label className="text-sm font-medium text-enb-text-primary">Password</label>
                     <button
                       type="button"
                       onClick={() => { setMode('reset'); setError(''); }}

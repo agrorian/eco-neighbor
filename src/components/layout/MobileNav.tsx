@@ -2,11 +2,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Home, PlusCircle, Wallet, Store, MoreHorizontal, ShieldCheck, Shield } from 'lucide-react';
 import { useUserStore } from '@/store/user';
-import { useT } from '@/contexts/LanguageContext';
 import AccountSwitcher from '@/components/AccountSwitcher';
 
 export default function MobileNav() {
-  const { l } = useT();
   const location = useLocation();
   const { user } = useUserStore();
 
@@ -50,32 +48,32 @@ export default function MobileNav() {
   }
 
   const navItems = [
-    { path: '/', icon: Home, label: l('nav', 'dashboard') },
-    { path: '/submit', icon: PlusCircle, label: l('nav', 'submitAction') },
-    { path: '/wallet', icon: Wallet, label: l('nav', 'wallet') },
+    { path: '/', icon: Home, label: 'Home' },
+    { path: '/submit', icon: PlusCircle, label: 'Action' },
+    { path: '/wallet', icon: Wallet, label: 'Wallet' },
     ...(user.role === 'admin'
       ? [
           { path: '/admin', icon: ShieldCheck, label: 'Admin' },
-          { path: '/more', icon: MoreHorizontal, label: l('nav', 'more') },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
         ]
       : user.role === 'moderator'
       ? [
-          { path: '/mod-queue', icon: Shield, label: l('nav', 'modQueue') },
-          { path: '/more', icon: MoreHorizontal, label: l('nav', 'more') },
+          { path: '/mod-queue', icon: Shield, label: 'Mod Queue' },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
         ]
       : user.role === 'business'
       ? [
-          { path: '/directory', icon: Store, label: l('nav', 'directory') },
-          { path: '/more', icon: MoreHorizontal, label: l('nav', 'more') },
+          { path: '/directory', icon: Store, label: 'Directory' },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
         ]
       : user.role === 'onboarding_team'
       ? [
           { path: '/onboarding-queue', icon: Store, label: 'Onboarding' },
-          { path: '/more', icon: MoreHorizontal, label: l('nav', 'more') },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
         ]
       : [
-          { path: '/directory', icon: Store, label: l('nav', 'directory') },
-          { path: '/more', icon: MoreHorizontal, label: l('nav', 'more') },
+          { path: '/directory', icon: Store, label: 'Directory' },
+          { path: '/more', icon: MoreHorizontal, label: 'More' },
         ]
     ),
   ];

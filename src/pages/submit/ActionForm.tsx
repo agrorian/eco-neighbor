@@ -1,4 +1,3 @@
-import { useT } from '@/contexts/LanguageContext';
 import { useState, useRef, useEffect } from 'react';
 import { Camera, MapPin, CheckCircle, Loader2, AlertCircle, X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,9 +37,7 @@ interface PhotoItem {
   file: File;
 }
 
-export default function ActionForm({
-  actionType, onSubmit, onBack }: ActionFormProps) {
-  const { l } = useT();
+export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormProps) {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [description, setDescription] = useState('');
   const [gpsLat, setGpsLat] = useState<number | null>(null);
@@ -290,7 +287,7 @@ export default function ActionForm({
               className="w-full h-24 border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 text-enb-green flex flex-col gap-2 rounded-xl"
             >
               <Camera className="w-8 h-8" />
-              <span className="text-sm font-medium">{l('submit', 'takePhoto')}</span>
+              <span className="text-sm font-medium">Open Camera</span>
             </Button>
             {cameraError && (
               <div className="mt-2 p-3 bg-red-50 rounded-lg flex items-start gap-2 text-sm text-red-600">

@@ -3,13 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowUpRight, ArrowDownLeft, RefreshCw, QrCode, Users } from 'lucide-react';
 import { useUserStore } from '@/store/user';
-import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
 import TransactionHistory from './wallet/TransactionHistory';
 
 export default function Wallet() {
-  const { l } = useT();
   const { user, setUser } = useUserStore();
 
   useEffect(() => {
@@ -55,7 +53,7 @@ export default function Wallet() {
   return (
     <div className="space-y-6 pb-24">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-enb-text-primary">{l('wallet', 'title')}</h1>
+        <h1 className="text-2xl font-bold text-enb-text-primary">My Wallet</h1>
         <p className="text-enb-text-secondary">Manage your ENB tokens and transactions</p>
       </header>
 

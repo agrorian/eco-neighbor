@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, ArrowLeft, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useT } from '@/contexts/LanguageContext';
 
 const NEIGHBOURHOODS = [
   'Chaklala Scheme 3','Airport Housing Society','Gulrez Housing Society',
@@ -24,7 +23,6 @@ const PROFESSIONS = [
 ];
 
 export default function SignUpStep2() {
-  const { l, isUrdu } = useT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [name, setName] = useState('');
@@ -203,7 +201,7 @@ export default function SignUpStep2() {
             className="w-full mt-4"
             disabled={!name || !neighborhood || !profession || loading}
           >
-            {loading ? 'Saving...' : l('common', 'continue')}
+            {loading ? 'Saving...' : 'Continue'}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>

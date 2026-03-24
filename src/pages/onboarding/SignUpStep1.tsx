@@ -4,10 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, ArrowLeft, Eye, EyeOff, Gift } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useT } from '@/contexts/LanguageContext';
 
 export default function SignUpStep1() {
-  const { l, isUrdu } = useT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
@@ -197,7 +195,7 @@ export default function SignUpStep1() {
                 className="w-full mt-4 bg-enb-dark text-white"
                 disabled={!email || !password || !confirmPassword || loading}
               >
-                {loading ? l('common', 'loading') : l('common', 'continue')}
+                {loading ? 'Creating account...' : 'Continue'}
                 {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
               </Button>
 
