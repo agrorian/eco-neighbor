@@ -21,8 +21,8 @@ interface Offer {
 
 export default function BusinessOffers() {
   const { user } = useUserStore();
-  if (!user || user.role !== 'business') return <Navigate to="/" replace />;
 
+  // ALL hooks must come before any conditional returns — React rules of hooks
   const [offers, setOffers] = useState<Offer[]>([]);
   const [partnerId, setPartnerId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -45,16 +45,21 @@ export default function BusinessOffers() {
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoUploading, setPhotoUploading] = useState(false);
 
-  useEffect(() => { fetchOffers(); }, []);
+  useEffect(() => {
+    if (user?.role === 'business') fetchOffers();
+  }, [user?.id]);
+
+  // Role guard AFTER all hooks
+  if (!user || user.role !== 'business') return <Navigate to="/" replace />;
 
   const fetchOffers = async () => {
     setLoading(true);
 
-    // Step 1: Get partner_id directly (reliable even if no offers exist yet)
+    // Step 1: Get partner_id
     const { data: partnerData } = await supabase
       .from('business_partners')
       .select('id')
-      .eq('owner_user_id', user!.id)
+      .eq('owner_user_id', user.id)
       .single();
 
     if (partnerData?.id) {
@@ -101,7 +106,7 @@ export default function BusinessOffers() {
     setSaving(true);
     const { error } = await supabase.from('business_offers').insert({
       partner_id: partnerId,
-      owner_user_id: user!.id,
+      owner_user_id: user.id,
       category: formType,
       item_name: itemName.trim(),
       description: description.trim() || null,
@@ -209,7 +214,9 @@ export default function BusinessOffers() {
                 </div>
               ) : (
                 <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl p-4 cursor-pointer hover:border-enb-green/40 transition-colors">
-                  {photoUploading ? <><span className="text-xs text-gray-400">Uploading...</span></> : <><span className="text-xs text-gray-400">Tap to add photo</span></>}
+                  {photoUploading
+                    ? <span className="text-xs text-gray-400">Uploading...</span>
+                    : <span className="text-xs text-gray-400">Tap to add photo</span>}
                   <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && uploadPhoto(e.target.files[0])} disabled={photoUploading} />
                 </label>
               )}
@@ -274,6 +281,7 @@ export default function BusinessOffers() {
           </section>
         </>
       )}
+
       {/* Edit Offer Modal */}
       {editingOffer && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4" onClick={() => setEditingOffer(null)}>
@@ -300,7 +308,12 @@ export default function BusinessOffers() {
   );
 }
 
-function OfferCard({ offer, onToggle, onDelete, onEdit }: { offer: Offer; onToggle: (id: string, current: boolean) => void; onDelete: (id: string) => void; onEdit?: (offer: Offer) => void }) {
+function OfferCard({ offer, onToggle, onDelete, onEdit }: {
+  offer: Offer;
+  onToggle: (id: string, current: boolean) => void;
+  onDelete: (id: string) => void;
+  onEdit?: (offer: Offer) => void;
+}) {
   return (
     <div className={`flex items-start justify-between p-4 rounded-xl border transition-all ${offer.is_active ? 'bg-white border-gray-100 shadow-sm' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
       <div className="flex-1 min-w-0">
@@ -315,14 +328,23 @@ function OfferCard({ offer, onToggle, onDelete, onEdit }: { offer: Offer; onTogg
           {!offer.is_active && <span className="text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Paused</span>}
         </div>
         {offer.description && <p className="text-xs text-gray-500 mt-0.5">{offer.description}</p>}
-        {offer.valid_until && <p className="text-xs text-orange-500 mt-0.5">Until {new Date(offer.valid_until).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}</p>}
-        {offer.photo_url && <img src={offer.photo_url} alt={offer.item_name} className="w-full h-24 object-cover rounded-lg mt-2 border border-gray-100" />}
+        {offer.valid_until && (
+          <p className="text-xs text-orange-500 mt-0.5">
+            Until {new Date(offer.valid_until).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}
+          </p>
+        )}
+        {offer.photo_url && (
+          <img src={offer.photo_url} alt={offer.item_name} className="w-full h-24 object-cover rounded-lg mt-2 border border-gray-100" />
+        )}
       </div>
       <div className="flex items-center gap-1 ml-2 flex-shrink-0">
         <button onClick={() => onEdit && onEdit(offer)} className="p-1 text-blue-400 hover:bg-blue-50 rounded-lg" title="Edit">
           <Edit2 className="w-3.5 h-3.5" />
         </button>
-        <button onClick={() => onToggle(offer.id, offer.is_active)} className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${offer.is_active ? 'text-orange-600 hover:bg-orange-50' : 'text-enb-green hover:bg-enb-green/5'}`}>
+        <button
+          onClick={() => onToggle(offer.id, offer.is_active)}
+          className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${offer.is_active ? 'text-orange-600 hover:bg-orange-50' : 'text-enb-green hover:bg-enb-green/5'}`}
+        >
           {offer.is_active ? 'Pause' : 'Resume'}
         </button>
         <button onClick={() => onDelete(offer.id)} className="p-1 text-red-400 hover:bg-red-50 rounded-lg transition-colors">

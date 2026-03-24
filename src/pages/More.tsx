@@ -5,6 +5,9 @@ import { supabase } from '@/lib/supabase';
 
 const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
 
+// Roles that are staff/special — should NOT see member-only CTAs
+const STAFF_ROLES = ['admin', 'moderator', 'founder', 'organiser', 'onboarding_team', 'business'];
+
 export default function More() {
   const { user, logout } = useUserStore();
 
@@ -13,6 +16,8 @@ export default function More() {
     logout();
     window.location.href = '/';
   };
+
+  const isMemberOnly = user?.role === 'member';
 
   const allItems = [
     { icon: Trophy, label: 'Leaderboard', path: '/leaderboard', color: 'text-enb-gold', show: true },
@@ -26,9 +31,11 @@ export default function More() {
     { icon: TrendingUp, label: 'Founder Sale Gate', path: '/founder-sale', color: 'text-enb-gold', show: user?.role === 'admin' || user?.role === 'founder' },
     { icon: TrendingDown, label: 'Float Monitor', path: '/partner-float', color: 'text-enb-teal', show: user?.role === 'business' || user?.role === 'admin' },
     { icon: LayoutDashboard, label: 'Admin Panel', path: '/admin', color: 'text-purple-600', show: user?.role === 'admin' || user?.role === 'founder' },
-    { icon: Store, label: 'Become a Partner', path: '/partner-signup', color: 'text-enb-teal', show: user?.role !== 'business' },
-    { icon: Users, label: 'Join Onboarding Team', path: '/volunteer-apply', color: 'text-blue-600', show: !['onboarding_team','admin'].includes(user?.role || '') },
-    { icon: ClipboardList, label: 'Onboarding Queue', path: '/onboarding-queue', color: 'text-enb-green', show: ['onboarding_team','admin'].includes(user?.role || '') },
+    // Only show "Become a Partner" to regular members — not to any staff/role users
+    { icon: Store, label: 'Become a Partner', path: '/partner-signup', color: 'text-enb-teal', show: isMemberOnly },
+    // Only show "Join Onboarding Team" to regular members — not staff who already have roles
+    { icon: Users, label: 'Join Onboarding Team', path: '/volunteer-apply', color: 'text-blue-600', show: isMemberOnly },
+    { icon: ClipboardList, label: 'Onboarding Queue', path: '/onboarding-queue', color: 'text-enb-green', show: ['onboarding_team', 'admin'].includes(user?.role || '') },
     { icon: Bug, label: 'Report a Bug', path: '/bug-report', color: 'text-red-500', show: true },
     { icon: Settings, label: 'Settings', path: '/settings', color: 'text-gray-600', show: true },
   ].filter(i => i.show);

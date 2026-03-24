@@ -47,6 +47,11 @@ export default function Profile() {
   const progress = Math.min((user.rep_score / nextTierThreshold) * 100, 100);
   const displayName = user.full_name || user.email || 'Member';
 
+  // Use actual profile photo if uploaded; fall back to generated initials avatar
+  const avatarSrc = user.profile_pic_url
+    ? user.profile_pic_url
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1A6B3C&color=fff&size=96`;
+
   return (
     <div className="space-y-6 pb-24">
       <header className="flex justify-between items-start mb-6">
@@ -68,9 +73,14 @@ export default function Profile() {
           <div className="flex justify-between items-end -mt-12 mb-4">
             <div className="w-24 h-24 rounded-full border-4 border-white bg-white shadow-sm overflow-hidden">
               <img
-                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1A6B3C&color=fff&size=96`}
+                src={avatarSrc}
                 alt={displayName}
                 className="w-full h-full object-cover"
+                onError={e => {
+                  // If the Cloudinary URL fails, fall back to initials avatar
+                  (e.target as HTMLImageElement).src =
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1A6B3C&color=fff&size=96`;
+                }}
               />
             </div>
             <Button size="sm" variant="outline" className="mb-2" onClick={() => navigate('/settings')}>
