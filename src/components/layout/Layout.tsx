@@ -15,18 +15,14 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-enb-surface">
       <DesktopSidebar />
-      <div className="md:ml-64 transition-all duration-300">
+      {/* ml-72 = 288px — matches the wider sidebar */}
+      <div className="md:ml-72 transition-all duration-300">
         {/*
-          LAYOUT PHILOSOPHY:
-          - Mobile: p-4 (16px), full width
-          - Desktop: p-6 (24px), max-w-2xl (672px) centred
-            → With 256px sidebar + 24px padding each side, the content
-              column is a comfortable reading width. No more vast empty
-              gutters on 1366px laptops.
-          - max-w-2xl is the sweet spot: wide enough for 2-column grids,
-            narrow enough that text lines aren't too long to read.
+          max-w-4xl = 896px content.
+          On a 1366px screen: 288px sidebar + 896px content + ~180px breathing room.
+          Fills the screen comfortably without stretching too wide.
         */}
-        <main className="p-4 md:p-6 pb-24 md:pb-8 max-w-2xl md:mx-auto">
+        <main className="p-4 md:p-6 pb-24 md:pb-8 max-w-4xl md:mx-auto">
           {children}
         </main>
       </div>

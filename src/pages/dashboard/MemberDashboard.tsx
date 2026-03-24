@@ -21,9 +21,7 @@ const ActiveCampaignBanner = () => {
           .order('ends_at', { ascending: true })
           .limit(1);
         if (data && data.length > 0) setCampaign(data[0]);
-      } catch (e) {
-        // Silently ignore — no campaign is fine
-      }
+      } catch (e) { /* silent */ }
     };
     fetchCampaign();
   }, []);
@@ -67,7 +65,6 @@ const ActiveCampaignBanner = () => {
   );
 };
 
-// Action type → human-readable label
 const ACTION_LABELS: Record<string, string> = {
   neighbourhood_cleanup: 'Neighbourhood Cleanup',
   food_sharing: 'Food Sharing',
@@ -80,7 +77,6 @@ const ACTION_LABELS: Record<string, string> = {
   community_event: 'Community Event',
   other: 'Community Action',
 };
-
 const formatAction = (raw: string) =>
   ACTION_LABELS[raw] || raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
@@ -90,21 +86,17 @@ const ImpactCounter = () => {
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Step 1: Count all approved submissions
+        // Step 1: count approved submissions
         const { count: approvedCount } = await supabase
           .from('submissions')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'approved');
 
-        // Step 2: Sum ENB from lifetime_earned on users table
-        // (approve_submission RPC updates this — most reliable source)
-        const { data: usersData } = await supabase
-          .from('users')
-          .select('lifetime_earned');
+        // Step 2: sum lifetime_earned from users (most reliable ENB total)
+        const { data: usersData } = await supabase.from('users').select('lifetime_earned');
         const totalEnb = (usersData || []).reduce(
           (sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0
         );
-
         setStats({ actions: approvedCount || 0, enb: totalEnb });
       } catch (e) { /* silent */ }
     };
@@ -120,7 +112,7 @@ const ImpactCounter = () => {
     setLoading(true);
     setRows([]);
 
-    // Step 1: Fetch approved submissions — use correct column names
+    // Step 1: fetch approved submissions — CORRECT column names: enb_awarded, submitted_at
     const { data: submissions } = await supabase
       .from('submissions')
       .select('id, user_id, action_type, neighbourhood, enb_awarded, submitted_at')
@@ -133,35 +125,29 @@ const ImpactCounter = () => {
       return;
     }
 
-    // Step 2: Get unique user_ids, fetch first names only (no email, no phone)
+    // Step 2: get first names only — never email, never phone
     const uniqueUserIds = [...new Set(submissions.map((s: any) => s.user_id).filter(Boolean))];
     const { data: usersData } = await supabase
       .from('users')
       .select('id, full_name')
       .in('id', uniqueUserIds);
 
-    // Build a map: user_id → first name only
     const nameMap: Record<string, string> = {};
     (usersData || []).forEach((u: any) => {
-      // Show first name only — never email, never phone
-      const firstName = (u.full_name || '').split(' ')[0] || 'Community Member';
-      nameMap[u.id] = firstName;
+      nameMap[u.id] = (u.full_name || '').split(' ')[0] || 'Member';
     });
 
-    // Merge name into each submission row
-    const merged = submissions.map((s: any) => ({
+    setRows(submissions.map((s: any) => ({
       ...s,
-      first_name: nameMap[s.user_id] || 'Community Member',
-    }));
-
-    setRows(merged);
+      first_name: nameMap[s.user_id] || 'Member',
+    })));
     setLoading(false);
   };
 
   const openModal = (type: 'actions' | 'enb') => {
     setModalType(type);
     setShowModal(true);
-    fetchRows();
+    fetchRows(); // always fresh fetch — no early-return guard
   };
 
   const closeModal = () => {
@@ -201,7 +187,6 @@ const ImpactCounter = () => {
             className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
               <div>
                 <h3 className="font-bold text-enb-text-primary">
@@ -209,9 +194,7 @@ const ImpactCounter = () => {
                     ? `${stats.actions.toLocaleString()} Verified Actions`
                     : `${(stats.enb / 1000).toFixed(1)}k ENB Distributed`}
                 </h3>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Community activity · First names only · No private info
-                </p>
+                <p className="text-xs text-gray-400 mt-0.5">Community activity · First names only · No private info</p>
               </div>
               <button
                 onClick={closeModal}
@@ -221,7 +204,6 @@ const ImpactCounter = () => {
               </button>
             </div>
 
-            {/* Body */}
             <div className="overflow-y-auto flex-1">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -229,9 +211,7 @@ const ImpactCounter = () => {
                   <span className="text-xs text-gray-400">Loading community data...</span>
                 </div>
               ) : rows.length === 0 ? (
-                <div className="text-center py-12 text-gray-400 text-sm">
-                  No verified actions yet
-                </div>
+                <div className="text-center py-12 text-gray-400 text-sm">No verified actions yet</div>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 sticky top-0 border-b border-gray-100">
@@ -244,10 +224,7 @@ const ImpactCounter = () => {
                   </thead>
                   <tbody>
                     {rows.map((a, i) => (
-                      <tr
-                        key={a.id}
-                        className={`border-b border-gray-50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}
-                      >
+                      <tr key={a.id} className={`border-b border-gray-50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}>
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-enb-green/10 flex items-center justify-center text-[10px] font-bold text-enb-green flex-shrink-0">
@@ -257,25 +234,16 @@ const ImpactCounter = () => {
                           </div>
                         </td>
                         <td className="p-3">
-                          <span className="text-xs font-medium text-enb-text-primary">
-                            {formatAction(a.action_type || '')}
-                          </span>
-                          {a.neighbourhood && (
-                            <div className="text-[10px] text-gray-400 mt-0.5">{a.neighbourhood}</div>
-                          )}
+                          <span className="text-xs font-medium text-enb-text-primary">{formatAction(a.action_type || '')}</span>
+                          {a.neighbourhood && <div className="text-[10px] text-gray-400 mt-0.5">{a.neighbourhood}</div>}
                         </td>
                         <td className="p-3 text-right">
-                          <span className="font-bold text-enb-green text-xs">
-                            +{(a.enb_awarded || 0).toLocaleString()}
-                          </span>
+                          <span className="font-bold text-enb-green text-xs">+{(a.enb_awarded || 0).toLocaleString()}</span>
                         </td>
                         <td className="p-3 text-right">
                           <span className="text-[10px] text-gray-400">
                             {a.submitted_at
-                              ? new Date(a.submitted_at).toLocaleDateString('en-PK', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                })
+                              ? new Date(a.submitted_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })
                               : '—'}
                           </span>
                         </td>
@@ -286,11 +254,8 @@ const ImpactCounter = () => {
               )}
             </div>
 
-            {/* Footer */}
             <div className="p-3 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
-              <span className="text-xs text-gray-400">
-                Most recent {rows.length} actions shown
-              </span>
+              <span className="text-xs text-gray-400">Most recent {rows.length} shown</span>
               <span className="text-xs text-gray-300">· First names only · No private info</span>
             </div>
           </div>
@@ -329,9 +294,7 @@ const RecentActivity = () => {
   return (
     <div className="space-y-3">
       <h3 className="font-bold text-enb-text-primary text-lg">Recent Activity</h3>
-      {loading && (
-        <div className="text-sm text-enb-text-secondary text-center py-4">Loading...</div>
-      )}
+      {loading && <div className="text-sm text-enb-text-secondary text-center py-4">Loading...</div>}
       {!loading && transactions.length === 0 && (
         <div className="text-sm text-enb-text-secondary text-center py-8 bg-gray-50 rounded-xl">
           No activity yet — submit your first community action!
@@ -352,9 +315,7 @@ const RecentActivity = () => {
           </div>
           <div className="text-right flex-shrink-0 ml-3">
             <div className="font-bold text-enb-green text-sm">+{(item.enb_amount || 0).toLocaleString()} ENB</div>
-            {item.rep_change > 0 && (
-              <div className="text-xs text-enb-gold">+{item.rep_change} Rep</div>
-            )}
+            {item.rep_change > 0 && <div className="text-xs text-enb-gold">+{item.rep_change} Rep</div>}
           </div>
         </div>
       ))}
@@ -373,37 +334,25 @@ const getTierIcon = (repScore: number) => {
   const tier = getTier(repScore);
   switch (tier) {
     case 'Newcomer': return '🌱';
-    case 'Helper': return '🌿';
+    case 'Helper':   return '🌿';
     case 'Guardian': return '🌳';
-    case 'Pillar': return '⭐';
-    case 'Founder': return '🏆';
-    default: return '🌱';
+    case 'Pillar':   return '⭐';
+    case 'Founder':  return '🏆';
+    default:         return '🌱';
   }
 };
 
 export default function MemberDashboard() {
   const { user, setUser } = useUserStore();
 
-  // Real-time subscription — balance and rep update instantly when DB changes
   React.useEffect(() => {
     if (!user?.id) return;
-
     const channel = supabase
       .channel(`dashboard-user-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'users',
-          filter: `id=eq.${user.id}`,
-        },
-        (payload) => {
-          if (payload.new) setUser({ ...user, ...payload.new });
-        }
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
+        (payload) => { if (payload.new) setUser({ ...user, ...payload.new }); }
       )
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
 

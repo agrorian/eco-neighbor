@@ -22,7 +22,6 @@ export default function DesktopSidebar() {
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
-  // Volunteer option — shown to all except onboarding_team and admin (they already have it)
   const volunteerNav = !['onboarding_team', 'admin', 'moderator', 'founder'].includes(user?.role || '') ? [
     { path: '/volunteer-apply', icon: Users, label: 'Join Onboarding Team' },
   ] : [];
@@ -68,73 +67,100 @@ export default function DesktopSidebar() {
     { path: '/partner-signup', icon: Store, label: 'Become a Partner' },
   ] : [];
 
-  const navItems = isAdminSection ? adminNav 
+  const navItems = isAdminSection ? adminNav
     : (isBusiness && isBusinessSection) ? businessNav
     : [...memberNav, ...roleBasedNav, ...modNav, ...onboardingNav, ...volunteerNav, ...partnerNav];
 
   return (
-    <aside className="hidden md:flex flex-col w-64 h-screen bg-white border-r border-gray-200 fixed left-0 top-0 z-50">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="bg-enb-green p-2 rounded-xl">
-            <ENBLeaf size={28} />
+    // w-72 = 288px (up from w-64 = 256px)
+    <aside className="hidden md:flex flex-col w-72 h-screen bg-white border-r border-enb-border fixed left-0 top-0 z-50">
+
+      {/* Logo — slightly taller, bigger icon */}
+      <div className="px-5 py-5 border-b border-enb-border">
+        <div className="flex items-center gap-3">
+          <div className="bg-enb-green p-2.5 rounded-xl">
+            <ENBLeaf size={30} />
           </div>
-          <span className="font-bold text-xl tracking-tight text-enb-text-primary">Eco-Neighbor</span>
+          <div>
+            <span className="font-bold text-xl tracking-tight text-enb-text-primary">Eco-Neighbor</span>
+            <div className="text-xs text-enb-text-muted font-medium">$ENB · v4.7</div>
+          </div>
         </div>
       </div>
 
-      {/* Admin / Member toggle — only shown for admin users */}
+      {/* Admin / Member toggle */}
       {user.role === 'admin' && (
-        <div className="px-4 pt-4 pb-1 flex gap-2">
-          <Link to="/" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${!isAdminSection ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+        <div className="px-4 pt-4 pb-2 flex gap-2">
+          <Link
+            to="/"
+            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!isAdminSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
             Member View
           </Link>
-          <Link to="/admin" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${isAdminSection ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+          <Link
+            to="/admin"
+            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${isAdminSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
             Admin Panel
           </Link>
         </div>
       )}
 
-      {/* Onboarding tab — only shown for onboarding_team role */}
+      {/* Onboarding team toggle */}
       {user.role === 'onboarding_team' && (
-        <div className="px-4 pt-4 pb-1 flex gap-2">
-          <Link to="/" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${!location.pathname.startsWith('/onboarding') ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+        <div className="px-4 pt-4 pb-2 flex gap-2">
+          <Link
+            to="/"
+            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!location.pathname.startsWith('/onboarding') ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
             Member View
           </Link>
-          <Link to="/onboarding-queue" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${location.pathname.startsWith('/onboarding') ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+          <Link
+            to="/onboarding-queue"
+            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${location.pathname.startsWith('/onboarding') ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
             Biz Onboarding
           </Link>
         </div>
       )}
 
-      {/* Business Member / Business Admin toggle — only shown for business role */}
+      {/* Business toggle */}
       {user.role === 'business' && (
-        <div className="px-4 pt-4 pb-1 flex gap-2">
-          <Link to="/" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${!isBusinessSection ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+        <div className="px-4 pt-4 pb-2 flex gap-2">
+          <Link
+            to="/"
+            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!isBusinessSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
             Member View
           </Link>
-          <Link to="/business" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${isBusinessSection ? 'bg-enb-teal text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+          <Link
+            to="/business"
+            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${isBusinessSection ? 'bg-enb-teal text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
             Business Admin
           </Link>
         </div>
       )}
 
-      {/* Nav Items */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      {/* Nav Items — larger touch targets, bigger text */}
+      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = item.path === '/admin'
             ? location.pathname === '/admin'
             : location.pathname === item.path || location.pathname.startsWith(item.path + '/');
           return (
             <Link key={item.path} to={item.path}>
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive ? 'bg-enb-green/10 text-enb-green font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
-                <item.icon className={`w-5 h-5 ${isActive ? 'text-enb-green' : 'text-gray-400'}`} />
-                <span>{item.label}</span>
+              <div className={`flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition-all ${
+                isActive
+                  ? 'bg-enb-green/10 text-enb-green font-semibold'
+                  : 'text-enb-text-secondary hover:bg-gray-50 hover:text-enb-text-primary'
+              }`}>
+                <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-enb-green' : 'text-gray-400'}`} />
+                <span className="text-[0.9375rem]">{item.label}</span>
                 {isActive && (
                   <motion.div
                     layoutId="desktop-nav-indicator"
-                    className="ml-auto w-1.5 h-1.5 rounded-full bg-enb-green"
+                    className="ml-auto w-2 h-2 rounded-full bg-enb-green"
                   />
                 )}
               </div>
@@ -143,9 +169,9 @@ export default function DesktopSidebar() {
         })}
       </nav>
 
-      {/* User footer — language toggle + account switcher */}
-      <div className="p-2 border-t border-gray-100">
-        <div className="px-2 pb-1">
+      {/* Footer */}
+      <div className="px-3 pb-3 pt-2 border-t border-enb-border">
+        <div className="px-1 pb-1">
           <LanguageToggle className="w-full justify-center" />
         </div>
         <AccountSwitcher compact={false} />
