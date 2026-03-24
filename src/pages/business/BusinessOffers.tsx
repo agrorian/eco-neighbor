@@ -93,28 +93,6 @@ export default function BusinessOffers() {
     setValidUntil(''); setEnbCost(''); setShowForm(false);
   };
 
-  const handleEditOpen = (offer: Offer) => {
-    setEditingOffer(offer);
-    setEditName(offer.item_name);
-    setEditDesc(offer.description || '');
-    setEditDiscount(offer.discount_pct?.toString() || '');
-    setEditEnbCost(offer.enb_cost?.toString() || '');
-  };
-
-  const handleEditSave = async () => {
-    if (!editingOffer || !editName.trim()) return;
-    setEditSaving(true);
-    await supabase.from('business_offers').update({
-      item_name: editName.trim(),
-      description: editDesc.trim() || null,
-      discount_pct: editingOffer.category === 'discount' ? parseInt(editDiscount) || null : null,
-      enb_cost: editingOffer.category === 'swap' ? parseInt(editEnbCost) || null : null,
-    }).eq('id', editingOffer.id);
-    setEditingOffer(null);
-    setEditSaving(false);
-    fetchOffers();
-  };
-
   const handleSave = async () => {
     if (!itemName.trim() || !partnerId) return;
     if (formType === 'discount' && !discountPct) return;
@@ -136,6 +114,28 @@ export default function BusinessOffers() {
 
     if (!error) { resetForm(); fetchOffers(); }
     setSaving(false);
+  };
+
+  const handleEditOpen = (offer: Offer) => {
+    setEditingOffer(offer);
+    setEditName(offer.item_name);
+    setEditDesc(offer.description || '');
+    setEditDiscount(offer.discount_pct?.toString() || '');
+    setEditEnbCost(offer.enb_cost?.toString() || '');
+  };
+
+  const handleEditSave = async () => {
+    if (!editingOffer || !editName.trim()) return;
+    setEditSaving(true);
+    await supabase.from('business_offers').update({
+      item_name: editName.trim(),
+      description: editDesc.trim() || null,
+      discount_pct: editingOffer.category === 'discount' ? parseInt(editDiscount) || null : null,
+      enb_cost: editingOffer.category === 'swap' ? parseInt(editEnbCost) || null : null,
+    }).eq('id', editingOffer.id);
+    setEditingOffer(null);
+    setEditSaving(false);
+    fetchOffers();
   };
 
   const toggleActive = async (id: string, current: boolean) => {
@@ -274,10 +274,9 @@ export default function BusinessOffers() {
           </section>
         </>
       )}
-
-      {/* Edit Modal */}
+      {/* Edit Offer Modal */}
       {editingOffer && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4" onClick={() => setEditingOffer(null)}>
           <div className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-enb-text-primary">Edit Offer</h3>
@@ -330,29 +329,6 @@ function OfferCard({ offer, onToggle, onDelete, onEdit }: { offer: Offer; onTogg
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
-
-      {/* Edit Modal */}
-      {editingOffer && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-enb-text-primary">Edit Offer</h3>
-              <button onClick={() => setEditingOffer(null)}><X className="w-5 h-5 text-gray-400" /></button>
-            </div>
-            <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Item name *" />
-            <Input value={editDesc} onChange={e => setEditDesc(e.target.value)} placeholder="Description (optional)" />
-            {editingOffer.category === 'discount' && (
-              <Input type="number" value={editDiscount} onChange={e => setEditDiscount(e.target.value)} placeholder="Discount %" />
-            )}
-            {editingOffer.category === 'swap' && (
-              <Input type="number" value={editEnbCost} onChange={e => setEditEnbCost(e.target.value)} placeholder="ENB cost" />
-            )}
-            <Button onClick={handleEditSave} disabled={editSaving || !editName.trim()} className="w-full bg-enb-green text-white">
-              {editSaving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Saving...</> : <><CheckCircle className="w-4 h-4 mr-2" />Save Changes</>}
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
