@@ -125,12 +125,13 @@ export default function AdminOnboarding() {
 
   const approveVolunteer = async (vApp: VolunteerApp) => {
     setSaving(vApp.id);
-    // Update volunteer application
-    await supabase.from('volunteer_applications').update({
-      status: 'approved', reviewed_by: user!.id, reviewed_at: new Date().toISOString()
-    }).eq('id', vApp.id);
-    // Update user role
-    await supabase.from('users').update({ role: 'onboarding_team' }).eq('id', vApp.user_id);
+    // Use SECURITY DEFINER RPC — direct users.role update fails with anon key
+    const { data, error } = await supabase.rpc('approve_volunteer', {
+      p_application_id: vApp.id,
+      p_user_id: vApp.user_id,
+      p_admin_id: user!.id,
+    });
+    if (error) console.error('Approve volunteer failed:', error);
     setSaving(null); fetchAll();
   };
 
