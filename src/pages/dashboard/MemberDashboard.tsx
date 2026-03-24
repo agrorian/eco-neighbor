@@ -2,7 +2,7 @@ import React from 'react';
 import ENBLeaf from '@/components/ENBLeaf';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'motion/react';
-import { Leaf, ArrowRight, Clock, Star, MapPin, History } from 'lucide-react';
+import { ArrowRight, Clock, Star, MapPin, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore, getTier } from '@/store/user';
@@ -14,7 +14,6 @@ const ActiveCampaignBanner = () => {
   React.useEffect(() => {
     const fetchCampaign = async () => {
       try {
-        // Use limit(1) without .single() to avoid throwing on empty result
         const { data } = await supabase
           .from('campaigns')
           .select('name, multiplier, ends_at')
@@ -68,20 +67,37 @@ const ActiveCampaignBanner = () => {
   );
 };
 
+// Action type → human-readable label
+const ACTION_LABELS: Record<string, string> = {
+  neighbourhood_cleanup: 'Neighbourhood Cleanup',
+  food_sharing: 'Food Sharing',
+  skill_workshop: 'Skill Workshop',
+  tree_planting: 'Tree Planting',
+  carpool: 'Carpool',
+  recycling: 'Recycling',
+  mentoring: 'Mentoring',
+  verified_trade_job: 'Verified Trade Job',
+  community_event: 'Community Event',
+  other: 'Community Action',
+};
+
+const formatAction = (raw: string) =>
+  ACTION_LABELS[raw] || raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
 const ImpactCounter = () => {
   const [stats, setStats] = React.useState({ actions: 0, enb: 0 });
 
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Count ALL approved submissions across the community
+        // Step 1: Count all approved submissions
         const { count: approvedCount } = await supabase
           .from('submissions')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'approved');
 
-        // Sum all ENB ever earned — use lifetime_earned column from users table
-        // This is the correct source — approve_submission updates lifetime_earned
+        // Step 2: Sum ENB from lifetime_earned on users table
+        // (approve_submission RPC updates this — most reliable source)
         const { data: usersData } = await supabase
           .from('users')
           .select('lifetime_earned');
@@ -97,29 +113,67 @@ const ImpactCounter = () => {
 
   const [showModal, setShowModal] = React.useState(false);
   const [modalType, setModalType] = React.useState<'actions' | 'enb'>('actions');
-  const [publicActions, setPublicActions] = React.useState<any[]>([]);
-  const [loadingActions, setLoadingActions] = React.useState(false);
+  const [rows, setRows] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(false);
 
-  const openModal = async (type: 'actions' | 'enb') => {
+  const fetchRows = async () => {
+    setLoading(true);
+    setRows([]);
+
+    // Step 1: Fetch approved submissions — use correct column names
+    const { data: submissions } = await supabase
+      .from('submissions')
+      .select('id, user_id, action_type, neighbourhood, enb_awarded, submitted_at')
+      .eq('status', 'approved')
+      .order('submitted_at', { ascending: false })
+      .limit(50);
+
+    if (!submissions || submissions.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    // Step 2: Get unique user_ids, fetch first names only (no email, no phone)
+    const uniqueUserIds = [...new Set(submissions.map((s: any) => s.user_id).filter(Boolean))];
+    const { data: usersData } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .in('id', uniqueUserIds);
+
+    // Build a map: user_id → first name only
+    const nameMap: Record<string, string> = {};
+    (usersData || []).forEach((u: any) => {
+      // Show first name only — never email, never phone
+      const firstName = (u.full_name || '').split(' ')[0] || 'Community Member';
+      nameMap[u.id] = firstName;
+    });
+
+    // Merge name into each submission row
+    const merged = submissions.map((s: any) => ({
+      ...s,
+      first_name: nameMap[s.user_id] || 'Community Member',
+    }));
+
+    setRows(merged);
+    setLoading(false);
+  };
+
+  const openModal = (type: 'actions' | 'enb') => {
     setModalType(type);
     setShowModal(true);
-    if (publicActions.length > 0) return;
-    setLoadingActions(true);
-    const { data } = await supabase
-      .from('submissions')
-      .select('id, action_type, neighbourhood, enb_earned, created_at')
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    setPublicActions(data || []);
-    setLoadingActions(false);
+    fetchRows();
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setRows([]);
   };
 
   return (
     <>
       <div className="grid grid-cols-2 gap-4 mb-6">
         <button onClick={() => openModal('actions')} className="text-left w-full">
-          <Card className="bg-enb-green/5 border-enb-green/10 hover:border-enb-green/30 transition-colors cursor-pointer">
+          <Card className="bg-enb-green/5 border-enb-green/10 hover:border-enb-green/30 transition-colors cursor-pointer min-h-[80px]">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-enb-green mb-1">{stats.actions.toLocaleString()}</div>
               <div className="text-xs text-enb-text-secondary uppercase tracking-wider">Verified Actions</div>
@@ -128,7 +182,7 @@ const ImpactCounter = () => {
           </Card>
         </button>
         <button onClick={() => openModal('enb')} className="text-left w-full">
-          <Card className="bg-enb-gold/5 border-enb-gold/10 hover:border-enb-gold/30 transition-colors cursor-pointer">
+          <Card className="bg-enb-gold/5 border-enb-gold/10 hover:border-enb-gold/30 transition-colors cursor-pointer min-h-[80px]">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-enb-gold mb-1">{(stats.enb / 1000).toFixed(1)}k</div>
               <div className="text-xs text-enb-text-secondary uppercase tracking-wider">ENB Distributed</div>
@@ -139,42 +193,105 @@ const ImpactCounter = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-md max-h-[75vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h3 className="font-bold text-enb-text-primary">
-                {modalType === 'actions' ? `${stats.actions.toLocaleString()} Verified Actions` : `${(stats.enb/1000).toFixed(1)}k ENB Distributed`}
-              </h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 text-xl leading-none">×</button>
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
+              <div>
+                <h3 className="font-bold text-enb-text-primary">
+                  {modalType === 'actions'
+                    ? `${stats.actions.toLocaleString()} Verified Actions`
+                    : `${(stats.enb / 1000).toFixed(1)}k ENB Distributed`}
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Community activity · First names only · No private info
+                </p>
+              </div>
+              <button
+                onClick={closeModal}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg leading-none transition-colors"
+              >
+                ×
+              </button>
             </div>
+
+            {/* Body */}
             <div className="overflow-y-auto flex-1">
-              {loadingActions ? (
-                <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-enb-green border-t-transparent rounded-full animate-spin" /></div>
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="w-7 h-7 border-2 border-enb-green border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs text-gray-400">Loading community data...</span>
+                </div>
+              ) : rows.length === 0 ? (
+                <div className="text-center py-12 text-gray-400 text-sm">
+                  No verified actions yet
+                </div>
               ) : (
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 sticky top-0">
+                  <thead className="bg-gray-50 sticky top-0 border-b border-gray-100">
                     <tr>
-                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Action</th>
-                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Area</th>
-                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase">ENB</th>
-                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Member</th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Action</th>
+                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">ENB</th>
+                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {publicActions.map((a, i) => (
-                      <tr key={a.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                        <td className="p-3 capitalize font-medium">{(a.action_type || '').replace(/_/g,' ')}</td>
-                        <td className="p-3 text-gray-500 text-xs">{a.neighbourhood || 'Chaklala'}</td>
-                        <td className="p-3 text-right text-enb-green font-bold">+{(a.enb_earned||0).toLocaleString()}</td>
-                        <td className="p-3 text-right text-gray-400 text-xs">{new Date(a.created_at).toLocaleDateString('en-PK',{day:'numeric',month:'short'})}</td>
+                    {rows.map((a, i) => (
+                      <tr
+                        key={a.id}
+                        className={`border-b border-gray-50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-enb-green/10 flex items-center justify-center text-[10px] font-bold text-enb-green flex-shrink-0">
+                              {a.first_name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-xs font-medium text-enb-text-primary">{a.first_name}</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span className="text-xs font-medium text-enb-text-primary">
+                            {formatAction(a.action_type || '')}
+                          </span>
+                          {a.neighbourhood && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">{a.neighbourhood}</div>
+                          )}
+                        </td>
+                        <td className="p-3 text-right">
+                          <span className="font-bold text-enb-green text-xs">
+                            +{(a.enb_awarded || 0).toLocaleString()}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right">
+                          <span className="text-[10px] text-gray-400">
+                            {a.submitted_at
+                              ? new Date(a.submitted_at).toLocaleDateString('en-PK', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                })
+                              : '—'}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               )}
             </div>
-            <div className="p-3 border-t border-gray-100 text-center text-xs text-gray-400">
-              Most recent 50 · No personal information shown
+
+            {/* Footer */}
+            <div className="p-3 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
+              <span className="text-xs text-gray-400">
+                Most recent {rows.length} actions shown
+              </span>
+              <span className="text-xs text-gray-300">· First names only · No private info</span>
             </div>
           </div>
         </div>
