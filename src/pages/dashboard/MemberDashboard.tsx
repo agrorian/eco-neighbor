@@ -86,13 +86,10 @@ const ImpactCounter = () => {
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Step 1: count approved submissions
         const { count: approvedCount } = await supabase
           .from('submissions')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'approved');
-
-        // Step 2: sum lifetime_earned from users (most reliable ENB total)
         const { data: usersData } = await supabase.from('users').select('lifetime_earned');
         const totalEnb = (usersData || []).reduce(
           (sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0
@@ -111,8 +108,7 @@ const ImpactCounter = () => {
   const fetchRows = async () => {
     setLoading(true);
     setRows([]);
-
-    // Step 1: fetch approved submissions — CORRECT column names: enb_awarded, submitted_at
+    // CORRECT column names: enb_awarded (not enb_earned), submitted_at (not created_at)
     const { data: submissions } = await supabase
       .from('submissions')
       .select('id, user_id, action_type, neighbourhood, enb_awarded, submitted_at')
@@ -120,40 +116,29 @@ const ImpactCounter = () => {
       .order('submitted_at', { ascending: false })
       .limit(50);
 
-    if (!submissions || submissions.length === 0) {
-      setLoading(false);
-      return;
-    }
+    if (!submissions || submissions.length === 0) { setLoading(false); return; }
 
-    // Step 2: get first names only — never email, never phone
     const uniqueUserIds = [...new Set(submissions.map((s: any) => s.user_id).filter(Boolean))];
     const { data: usersData } = await supabase
-      .from('users')
-      .select('id, full_name')
-      .in('id', uniqueUserIds);
+      .from('users').select('id, full_name').in('id', uniqueUserIds);
 
     const nameMap: Record<string, string> = {};
     (usersData || []).forEach((u: any) => {
       nameMap[u.id] = (u.full_name || '').split(' ')[0] || 'Member';
     });
 
-    setRows(submissions.map((s: any) => ({
-      ...s,
-      first_name: nameMap[s.user_id] || 'Member',
-    })));
+    setRows(submissions.map((s: any) => ({ ...s, first_name: nameMap[s.user_id] || 'Member' })));
     setLoading(false);
   };
 
+  // No early-return guard — always fresh fetch on open
   const openModal = (type: 'actions' | 'enb') => {
     setModalType(type);
     setShowModal(true);
-    fetchRows(); // always fresh fetch — no early-return guard
+    fetchRows();
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setRows([]);
-  };
+  const closeModal = () => { setShowModal(false); setRows([]); };
 
   return (
     <>
@@ -179,31 +164,17 @@ const ImpactCounter = () => {
       </div>
 
       {showModal && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4"
-          onClick={closeModal}
-        >
-          <div
-            className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col"
-            onClick={e => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4" onClick={closeModal}>
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
               <div>
                 <h3 className="font-bold text-enb-text-primary">
-                  {modalType === 'actions'
-                    ? `${stats.actions.toLocaleString()} Verified Actions`
-                    : `${(stats.enb / 1000).toFixed(1)}k ENB Distributed`}
+                  {modalType === 'actions' ? `${stats.actions.toLocaleString()} Verified Actions` : `${(stats.enb / 1000).toFixed(1)}k ENB Distributed`}
                 </h3>
                 <p className="text-xs text-gray-400 mt-0.5">Community activity · First names only · No private info</p>
               </div>
-              <button
-                onClick={closeModal}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg leading-none transition-colors"
-              >
-                ×
-              </button>
+              <button onClick={closeModal} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg leading-none">×</button>
             </div>
-
             <div className="overflow-y-auto flex-1">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -216,10 +187,10 @@ const ImpactCounter = () => {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 sticky top-0 border-b border-gray-100">
                     <tr>
-                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Member</th>
-                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Action</th>
-                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">ENB</th>
-                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Member</th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Action</th>
+                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase">ENB</th>
+                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -230,22 +201,16 @@ const ImpactCounter = () => {
                             <div className="w-6 h-6 rounded-full bg-enb-green/10 flex items-center justify-center text-[10px] font-bold text-enb-green flex-shrink-0">
                               {a.first_name.charAt(0).toUpperCase()}
                             </div>
-                            <span className="text-xs font-medium text-enb-text-primary">{a.first_name}</span>
+                            <span className="text-xs font-medium">{a.first_name}</span>
                           </div>
                         </td>
                         <td className="p-3">
-                          <span className="text-xs font-medium text-enb-text-primary">{formatAction(a.action_type || '')}</span>
+                          <span className="text-xs font-medium">{formatAction(a.action_type || '')}</span>
                           {a.neighbourhood && <div className="text-[10px] text-gray-400 mt-0.5">{a.neighbourhood}</div>}
                         </td>
-                        <td className="p-3 text-right">
-                          <span className="font-bold text-enb-green text-xs">+{(a.enb_awarded || 0).toLocaleString()}</span>
-                        </td>
-                        <td className="p-3 text-right">
-                          <span className="text-[10px] text-gray-400">
-                            {a.submitted_at
-                              ? new Date(a.submitted_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })
-                              : '—'}
-                          </span>
+                        <td className="p-3 text-right font-bold text-enb-green text-xs">+{(a.enb_awarded || 0).toLocaleString()}</td>
+                        <td className="p-3 text-right text-[10px] text-gray-400">
+                          {a.submitted_at ? new Date(a.submitted_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' }) : '—'}
                         </td>
                       </tr>
                     ))}
@@ -253,7 +218,6 @@ const ImpactCounter = () => {
                 </table>
               )}
             </div>
-
             <div className="p-3 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
               <span className="text-xs text-gray-400">Most recent {rows.length} shown</span>
               <span className="text-xs text-gray-300">· First names only · No private info</span>
@@ -274,19 +238,15 @@ const RecentActivity = () => {
     if (!user?.id) return;
     const fetchTx = async () => {
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('transactions')
           .select('id, description, enb_amount, rep_change, created_at, type')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(5);
-        if (error) console.error('Recent activity error:', error);
         if (data) setTransactions(data);
-      } catch (e) {
-        console.error('Recent activity exception:', e);
-      } finally {
-        setLoading(false);
-      }
+      } catch (e) { /* silent */ }
+      finally { setLoading(false); }
     };
     fetchTx();
   }, [user?.id]);
@@ -351,8 +311,7 @@ export default function MemberDashboard() {
       .channel(`dashboard-user-${user.id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
         (payload) => { if (payload.new) setUser({ ...user, ...payload.new }); }
-      )
-      .subscribe();
+      ).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
 
@@ -361,20 +320,16 @@ export default function MemberDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Greeting */}
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary">
             Hi, {user.full_name?.split(' ')[0] || user.email} {getTierIcon(user.rep_score)}
           </h1>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-enb-text-secondary font-medium bg-gray-100 px-2 py-0.5 rounded-md">
-              {tier} Tier
-            </span>
+            <span className="text-sm text-enb-text-secondary font-medium bg-gray-100 px-2 py-0.5 rounded-md">{tier} Tier</span>
             <span className="text-sm text-enb-text-secondary">•</span>
             <span className="text-sm text-enb-text-secondary font-medium flex items-center gap-1">
-              <Star className="w-3 h-3 text-enb-gold fill-current" />
-              {user.rep_score} Rep
+              <Star className="w-3 h-3 text-enb-gold fill-current" />{user.rep_score} Rep
             </span>
           </div>
         </div>
@@ -386,7 +341,6 @@ export default function MemberDashboard() {
 
       <ActiveCampaignBanner />
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-3">
         <Link to="/submit">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">

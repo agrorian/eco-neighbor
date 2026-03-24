@@ -15,14 +15,14 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-enb-surface">
       <DesktopSidebar />
-      {/* ml-72 = 288px — matches the wider sidebar */}
+      {/* ml-72 = 288px matches the wider sidebar w-72 */}
       <div className="md:ml-72 transition-all duration-300">
         {/*
-          max-w-4xl = 896px content.
-          On a 1366px screen: 288px sidebar + 896px content + ~180px breathing room.
-          Fills the screen comfortably without stretching too wide.
+          No max-w + no mx-auto = content fills all available space,
+          exactly like the admin panel does with flex-1.
+          Padding provides breathing room. No centering, no empty gutters.
         */}
-        <main className="p-4 md:p-6 pb-24 md:pb-8 max-w-4xl md:mx-auto">
+        <main className="p-4 md:p-6 pb-24 md:pb-8">
           {children}
         </main>
       </div>

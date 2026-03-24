@@ -1,14 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, ShieldCheck, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
+import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import LanguageToggle from '@/components/LanguageToggle';
 
 export default function DesktopSidebar() {
   const location = useLocation();
-  const { user, logout } = useUserStore();
+  const { user } = useUserStore();
 
   if (!user) return null;
 
@@ -63,7 +63,7 @@ export default function DesktopSidebar() {
   const isBusinessSection = location.pathname === '/business' || location.pathname.startsWith('/business/') || location.pathname === '/scan' || location.pathname === '/partner-float';
   const isBusiness = user?.role === 'business';
 
-  const partnerNav = !['business', 'admin'].includes(user?.role || '') ? [
+  const partnerNav = !['business', 'admin', 'moderator', 'founder', 'onboarding_team', 'organiser'].includes(user?.role || '') ? [
     { path: '/partner-signup', icon: Store, label: 'Become a Partner' },
   ] : [];
 
@@ -72,53 +72,40 @@ export default function DesktopSidebar() {
     : [...memberNav, ...roleBasedNav, ...modNav, ...onboardingNav, ...volunteerNav, ...partnerNav];
 
   return (
-    // w-72 = 288px (up from w-64 = 256px)
     <aside className="hidden md:flex flex-col w-72 h-screen bg-white border-r border-enb-border fixed left-0 top-0 z-50">
 
-      {/* Logo — slightly taller, bigger icon */}
+      {/* Logo */}
       <div className="px-5 py-5 border-b border-enb-border">
         <div className="flex items-center gap-3">
-          <div className="bg-enb-green p-2.5 rounded-xl">
+          <div className="bg-enb-green p-2.5 rounded-xl flex-shrink-0">
             <ENBLeaf size={30} />
           </div>
           <div>
-            <span className="font-bold text-xl tracking-tight text-enb-text-primary">Eco-Neighbor</span>
-            <div className="text-xs text-enb-text-muted font-medium">$ENB · v4.7</div>
+            <span className="font-bold text-xl tracking-tight text-enb-text-primary block">Eco-Neighbor</span>
+            <span className="text-xs text-enb-text-muted font-medium">$ENB · v4.7</span>
           </div>
         </div>
       </div>
 
-      {/* Admin / Member toggle */}
+      {/* Admin toggle */}
       {user.role === 'admin' && (
         <div className="px-4 pt-4 pb-2 flex gap-2">
-          <Link
-            to="/"
-            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!isAdminSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-          >
+          <Link to="/" className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!isAdminSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Member View
           </Link>
-          <Link
-            to="/admin"
-            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${isAdminSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-          >
+          <Link to="/admin" className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${isAdminSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Admin Panel
           </Link>
         </div>
       )}
 
-      {/* Onboarding team toggle */}
+      {/* Onboarding toggle */}
       {user.role === 'onboarding_team' && (
         <div className="px-4 pt-4 pb-2 flex gap-2">
-          <Link
-            to="/"
-            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!location.pathname.startsWith('/onboarding') ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-          >
+          <Link to="/" className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!location.pathname.startsWith('/onboarding') ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Member View
           </Link>
-          <Link
-            to="/onboarding-queue"
-            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${location.pathname.startsWith('/onboarding') ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-          >
+          <Link to="/onboarding-queue" className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${location.pathname.startsWith('/onboarding') ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Biz Onboarding
           </Link>
         </div>
@@ -127,22 +114,16 @@ export default function DesktopSidebar() {
       {/* Business toggle */}
       {user.role === 'business' && (
         <div className="px-4 pt-4 pb-2 flex gap-2">
-          <Link
-            to="/"
-            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!isBusinessSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-          >
+          <Link to="/" className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!isBusinessSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Member View
           </Link>
-          <Link
-            to="/business"
-            className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${isBusinessSection ? 'bg-enb-teal text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-          >
+          <Link to="/business" className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${isBusinessSection ? 'bg-enb-teal text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Business Admin
           </Link>
         </div>
       )}
 
-      {/* Nav Items — larger touch targets, bigger text */}
+      {/* Nav items — larger text and touch targets */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = item.path === '/admin'
@@ -156,7 +137,7 @@ export default function DesktopSidebar() {
                   : 'text-enb-text-secondary hover:bg-gray-50 hover:text-enb-text-primary'
               }`}>
                 <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-enb-green' : 'text-gray-400'}`} />
-                <span className="text-[0.9375rem]">{item.label}</span>
+                <span className="text-[15px]">{item.label}</span>
                 {isActive && (
                   <motion.div
                     layoutId="desktop-nav-indicator"
