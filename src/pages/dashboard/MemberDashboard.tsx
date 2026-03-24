@@ -58,7 +58,7 @@ const ActiveCampaignBanner = () => {
         <p className="text-white/90 text-sm mb-4 max-w-xs">
           Earn {campaign.multiplier}× ENB for eligible actions during this campaign!
         </p>
-        <Link to="/impact">
+        <Link to="/governance">
           <Button variant="secondary" size="sm" className="bg-white text-enb-green hover:bg-white/90 border-none">
             View Details <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
@@ -68,30 +68,37 @@ const ActiveCampaignBanner = () => {
   );
 };
 
-interface PublicAction {
-  id: string; action_type: string; neighbourhood: string | null;
-  enb_earned: number; created_at: string;
-}
-
 const ImpactCounter = () => {
   const [stats, setStats] = React.useState({ actions: 0, enb: 0 });
-  const [showModal, setShowModal] = React.useState(false);
-  const [modalType, setModalType] = React.useState<'actions' | 'enb'>('actions');
-  const [publicActions, setPublicActions] = React.useState<PublicAction[]>([]);
-  const [loadingActions, setLoadingActions] = React.useState(false);
 
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
+        // Count ALL approved submissions across the community
         const { count: approvedCount } = await supabase
-          .from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved');
-        const { data: usersData } = await supabase.from('users').select('lifetime_earned');
-        const totalEnb = (usersData || []).reduce((sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0);
+          .from('submissions')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'approved');
+
+        // Sum all ENB ever earned — use lifetime_earned column from users table
+        // This is the correct source — approve_submission updates lifetime_earned
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('lifetime_earned');
+        const totalEnb = (usersData || []).reduce(
+          (sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0
+        );
+
         setStats({ actions: approvedCount || 0, enb: totalEnb });
       } catch (e) { /* silent */ }
     };
     fetchStats();
   }, []);
+
+  const [showModal, setShowModal] = React.useState(false);
+  const [modalType, setModalType] = React.useState<'actions' | 'enb'>('actions');
+  const [publicActions, setPublicActions] = React.useState<any[]>([]);
+  const [loadingActions, setLoadingActions] = React.useState(false);
 
   const openModal = async (type: 'actions' | 'enb') => {
     setModalType(type);
@@ -111,27 +118,26 @@ const ImpactCounter = () => {
   return (
     <>
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <button onClick={() => openModal('actions')} className="text-left">
+        <button onClick={() => openModal('actions')} className="text-left w-full">
           <Card className="bg-enb-green/5 border-enb-green/10 hover:border-enb-green/30 transition-colors cursor-pointer">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-enb-green mb-1">{stats.actions.toLocaleString()}</div>
               <div className="text-xs text-enb-text-secondary uppercase tracking-wider">Verified Actions</div>
-              <div className="text-xs text-enb-green/60 mt-1">Tap to view ↗</div>
+              <div className="text-xs text-enb-green/50 mt-1">tap to view ↗</div>
             </CardContent>
           </Card>
         </button>
-        <button onClick={() => openModal('enb')} className="text-left">
+        <button onClick={() => openModal('enb')} className="text-left w-full">
           <Card className="bg-enb-gold/5 border-enb-gold/10 hover:border-enb-gold/30 transition-colors cursor-pointer">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-enb-gold mb-1">{(stats.enb / 1000).toFixed(1)}k</div>
               <div className="text-xs text-enb-text-secondary uppercase tracking-wider">ENB Distributed</div>
-              <div className="text-xs text-enb-gold/60 mt-1">Tap to view ↗</div>
+              <div className="text-xs text-enb-gold/50 mt-1">tap to view ↗</div>
             </CardContent>
           </Card>
         </button>
       </div>
 
-      {/* Public actions modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[75vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
@@ -139,7 +145,7 @@ const ImpactCounter = () => {
               <h3 className="font-bold text-enb-text-primary">
                 {modalType === 'actions' ? `${stats.actions.toLocaleString()} Verified Actions` : `${(stats.enb/1000).toFixed(1)}k ENB Distributed`}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 text-xl leading-none">×</button>
             </div>
             <div className="overflow-y-auto flex-1">
               {loadingActions ? (
@@ -157,10 +163,10 @@ const ImpactCounter = () => {
                   <tbody>
                     {publicActions.map((a, i) => (
                       <tr key={a.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                        <td className="p-3 capitalize font-medium">{a.action_type?.replace(/_/g,' ') || '—'}</td>
+                        <td className="p-3 capitalize font-medium">{(a.action_type || '').replace(/_/g,' ')}</td>
                         <td className="p-3 text-gray-500 text-xs">{a.neighbourhood || 'Chaklala'}</td>
-                        <td className="p-3 text-right text-enb-green font-bold">+{(a.enb_earned || 0).toLocaleString()}</td>
-                        <td className="p-3 text-right text-gray-400 text-xs">{new Date(a.created_at).toLocaleDateString('en-PK', { day:'numeric', month:'short' })}</td>
+                        <td className="p-3 text-right text-enb-green font-bold">+{(a.enb_earned||0).toLocaleString()}</td>
+                        <td className="p-3 text-right text-gray-400 text-xs">{new Date(a.created_at).toLocaleDateString('en-PK',{day:'numeric',month:'short'})}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -168,7 +174,7 @@ const ImpactCounter = () => {
               )}
             </div>
             <div className="p-3 border-t border-gray-100 text-center text-xs text-gray-400">
-              Showing most recent 50 — no personal information displayed
+              Most recent 50 · No personal information shown
             </div>
           </div>
         </div>

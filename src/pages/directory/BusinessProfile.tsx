@@ -1,60 +1,117 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { ArrowLeft, MapPin, Star, Clock, Phone, Globe, Share2, CheckCircle, QrCode } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Phone, Globe, Share2, CheckCircle, Tag, Coins, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
 
-// Mock Data (In a real app, fetch based on ID)
-const BUSINESS_DATA = {
-  id: '1',
-  name: 'Green Leaf Chai House',
-  category: 'Food & Drink',
-  verified: true,
-  address: '123 Eco Lane, Green City',
-  distance: '0.2 km',
-  rating: 4.8,
-  reviews: 124,
-  tier: 'Grove',
-  hours: 'Mon-Fri: 8am - 6pm',
-  phone: '+1 (555) 123-4567',
-  website: 'www.greenleaf.pk',
-  description: 'Organic, locally sourced ingredients with a zero-waste philosophy. Bring your own cup for an extra discount!',
-  offer: {
-    title: '10% Off Any Purchase',
-    description: 'Get 10% off your total bill when you pay with ENB or show your member QR code.',
-    terms: 'Valid for dine-in and takeout. Cannot be combined with other offers.',
-  },
-  image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1000&auto=format&fit=crop',
-  reviewsList: [
-    { id: 1, user: 'Alice G.', rating: 5, text: 'Amazing vegan options! Love the zero-waste vibe.', date: '2 days ago' },
-    { id: 2, user: 'Bob M.', rating: 4, text: 'Great chai, but a bit pricey without the ENB discount.', date: '1 week ago' },
-  ]
-};
+interface BusinessData {
+  id: string;
+  business_name: string;
+  category: string;
+  address: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  discount_offer: string | null;
+  enb_float: number;
+  is_verified: boolean;
+  is_active: boolean;
+  gps_lat: number | null;
+  gps_lng: number | null;
+  hours: string | null;
+}
+
+interface Offer {
+  id: string;
+  category: 'discount' | 'swap';
+  item_name: string;
+  description: string | null;
+  discount_pct: number | null;
+  enb_cost: number | null;
+  valid_until: string | null;
+  photo_url: string | null;
+  is_active: boolean;
+}
 
 export default function BusinessProfile() {
+  const { id } = useParams();
+  const [business, setBusiness] = useState<BusinessData | null>(null);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!id) return;
+    fetchBusiness();
+  }, [id]);
+
+  const fetchBusiness = async () => {
+    setLoading(true);
+
+    // Step 1: Get business data
+    const { data: biz, error: bizErr } = await supabase
+      .from('business_partners')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (bizErr || !biz) { setError('Business not found.'); setLoading(false); return; }
+    setBusiness(biz);
+
+    // Step 2: Get active offers
+    const { data: offersData } = await supabase
+      .from('business_offers')
+      .select('*')
+      .eq('partner_id', id)
+      .eq('is_active', true)
+      .order('category');
+
+    setOffers(offersData || []);
+    setLoading(false);
+  };
+
   const handleShare = async () => {
     const url = window.location.href;
-    const title = document.title;
     if (navigator.share) {
-      try {
-        await navigator.share({ title, url });
-      } catch { /* user cancelled */ }
+      try { await navigator.share({ title: business?.business_name || 'ENB Partner', url }); }
+      catch { /* cancelled */ }
     } else {
       await navigator.clipboard.writeText(url);
       alert('Link copied to clipboard!');
     }
   };
 
-  const { id } = useParams();
-  // In a real app, use `id` to fetch data.
-  const business = BUSINESS_DATA; 
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Loader2 className="w-8 h-8 animate-spin text-enb-green" />
+    </div>
+  );
+
+  if (error || !business) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-6">
+      <AlertCircle className="w-10 h-10 text-gray-300" />
+      <p className="text-enb-text-secondary">{error || 'Business not found.'}</p>
+      <Link to="/directory"><Button variant="outline">Back to Directory</Button></Link>
+    </div>
+  );
+
+  const discountOffers = offers.filter(o => o.category === 'discount');
+  const swapOffers = offers.filter(o => o.category === 'swap');
+  const initial = business.business_name.charAt(0).toUpperCase();
+
+  // Show discount_offer field only if no structured offers exist and it's not TBD
+  const legacyOffer = (!offers.length && business.discount_offer &&
+    !business.discount_offer.toLowerCase().includes('tbd') &&
+    !business.discount_offer.toLowerCase().includes('to be confirmed'))
+    ? business.discount_offer : null;
 
   return (
     <div className="pb-24">
-      {/* Header Image */}
-      <div className="relative h-64 w-full">
-        <img src={business.image} alt={business.name} className="w-full h-full object-cover" />
+      {/* Header */}
+      <div className="relative h-48 w-full bg-gradient-to-br from-enb-green to-enb-teal flex items-center justify-center">
+        <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-4xl">
+          {initial}
+        </div>
         <div className="absolute top-4 left-4">
           <Link to="/directory">
             <Button variant="ghost" size="icon" className="bg-white/80 hover:bg-white rounded-full backdrop-blur-sm">
@@ -69,116 +126,158 @@ export default function BusinessProfile() {
         </div>
       </div>
 
-      <div className="px-6 -mt-10 relative z-10">
+      <div className="px-4 md:px-6 -mt-6 relative z-10 space-y-4">
+        {/* Business card */}
         <Card className="shadow-lg border-none">
-          <CardContent className="p-6">
+          <CardContent className="p-5">
             <div className="flex justify-between items-start mb-2">
               <div>
                 <h1 className="text-2xl font-bold text-enb-text-primary flex items-center gap-2">
-                  {business.name}
-                  {business.verified && <CheckCircle className="w-5 h-5 text-blue-500 fill-current" />}
+                  {business.business_name}
+                  {business.is_verified && <CheckCircle className="w-5 h-5 text-blue-500 fill-current" />}
                 </h1>
                 <p className="text-sm text-enb-text-secondary">{business.category}</p>
               </div>
-              <div className="flex flex-col items-end">
-                <div className="flex items-center gap-1 bg-enb-gold/10 text-enb-gold px-2 py-1 rounded-lg font-bold text-sm">
-                  <Star className="w-4 h-4 fill-current" />
-                  {business.rating}
-                </div>
-                <span className="text-xs text-gray-400 mt-1">{business.reviews} reviews</span>
-              </div>
+              {business.enb_float > 0 && (
+                <span className="bg-enb-green/10 text-enb-green text-xs font-bold px-2 py-1 rounded-full">
+                  ENB Accepted
+                </span>
+              )}
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-enb-text-secondary mt-4">
-              <div className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                {business.distance}
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-enb-green" />
-                Open Now
-              </div>
+            <div className="space-y-2 mt-3">
+              {business.address && (
+                <div className="flex items-start gap-2 text-sm text-enb-text-secondary">
+                  <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                  {business.gps_lat && business.gps_lng ? (
+                    <a href={`https://maps.google.com/?q=${business.gps_lat},${business.gps_lng}`}
+                      target="_blank" rel="noopener noreferrer" className="text-enb-green hover:underline">
+                      {business.address}
+                    </a>
+                  ) : business.address}
+                </div>
+              )}
+              {business.hours && (
+                <div className="flex items-center gap-2 text-sm text-enb-text-secondary">
+                  <Clock className="w-4 h-4 text-gray-400" />{business.hours}
+                </div>
+              )}
+              {business.phone && (
+                <div className="flex items-center gap-2 text-sm text-enb-text-secondary">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  <a href={`tel:${business.phone}`} className="hover:text-enb-green">{business.phone}</a>
+                </div>
+              )}
+              {business.whatsapp && (
+                <div className="flex items-center gap-2 text-sm text-enb-text-secondary">
+                  <Globe className="w-4 h-4 text-gray-400" />
+                  <a href={`https://wa.me/${business.whatsapp.replace(/\D/g, '')}`}
+                    target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
+                    WhatsApp: {business.whatsapp}
+                  </a>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="px-6 mt-6 space-y-6">
-        {/* Offer Section */}
-        <div className="bg-gradient-to-r from-enb-green/10 to-enb-teal/10 p-6 rounded-2xl border border-enb-green/20">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-lg font-bold text-enb-green mb-1">{business.offer.title}</h3>
-              <p className="text-sm text-enb-text-secondary">{business.offer.description}</p>
-            </div>
-            <div className="bg-white p-2 rounded-lg shadow-sm">
-              <QrCode className="w-8 h-8 text-enb-text-primary" />
-            </div>
-          </div>
-          <Link to="/wallet/redeem">
-            <Button className="w-full bg-enb-green hover:bg-enb-green/90 text-white font-bold shadow-lg shadow-enb-green/20">
-              Redeem Offer
-            </Button>
-          </Link>
-          <p className="text-xs text-gray-400 mt-3 text-center">{business.offer.terms}</p>
-        </div>
-
-        {/* Info Section */}
-        <div className="space-y-4">
-          <h3 className="font-bold text-enb-text-primary text-lg">Info</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-              <span className="text-enb-text-secondary">{business.address}</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-              <span className="text-enb-text-secondary">{business.hours}</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <Phone className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-              <span className="text-enb-text-secondary">{business.phone}</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <Globe className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-              <a href={`https://${business.website}`} target="_blank" rel="noopener noreferrer" className="text-enb-green hover:underline">
-                {business.website}
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* About Section */}
-        <div className="space-y-2">
-          <h3 className="font-bold text-enb-text-primary text-lg">About</h3>
-          <p className="text-sm text-enb-text-secondary leading-relaxed">
-            {business.description}
-          </p>
-        </div>
-
-        {/* Reviews Section */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-enb-text-primary text-lg">Reviews</h3>
-            <Button variant="ghost" size="sm" className="text-enb-green hover:text-enb-green/80">View All</Button>
-          </div>
-          <div className="space-y-4">
-            {business.reviewsList.map((review) => (
-              <div key={review.id} className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-bold text-sm text-enb-text-primary">{review.user}</span>
-                  <span className="text-xs text-gray-400">{review.date}</span>
-                </div>
-                <div className="flex items-center gap-1 mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-enb-gold fill-current' : 'text-gray-300'}`} />
-                  ))}
-                </div>
-                <p className="text-sm text-enb-text-secondary">{review.text}</p>
+        {/* ENB Swap Items */}
+        {swapOffers.length > 0 && (
+          <Card className="border-enb-green/20 shadow-sm">
+            <CardContent className="p-5">
+              <h2 className="font-bold text-enb-text-primary flex items-center gap-2 mb-3">
+                <Coins className="w-5 h-5 text-enb-green" /> ENB Swap Items
+              </h2>
+              <div className="space-y-3">
+                {swapOffers.map(offer => (
+                  <div key={offer.id} className="border border-enb-green/20 rounded-xl p-3 bg-enb-green/5">
+                    {offer.photo_url && (
+                      <img src={offer.photo_url} alt={offer.item_name}
+                        className="w-full h-32 object-cover rounded-lg mb-2" />
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-sm text-enb-text-primary">{offer.item_name}</span>
+                      <span className="font-bold text-enb-green">{offer.enb_cost?.toLocaleString()} ENB</span>
+                    </div>
+                    {offer.description && <p className="text-xs text-gray-500 mt-0.5">{offer.description}</p>}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+              <Link to="/wallet/redeem">
+                <Button className="w-full mt-3 bg-enb-green text-white">
+                  Redeem ENB Here →
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Discount Offers */}
+        {discountOffers.length > 0 && (
+          <Card className="border-amber-200 shadow-sm">
+            <CardContent className="p-5">
+              <h2 className="font-bold text-enb-text-primary flex items-center gap-2 mb-3">
+                <Tag className="w-5 h-5 text-amber-600" /> Discount Offers
+              </h2>
+              <div className="space-y-3">
+                {discountOffers.map(offer => (
+                  <div key={offer.id} className="border border-amber-200 rounded-xl p-3 bg-amber-50/50">
+                    {offer.photo_url && (
+                      <img src={offer.photo_url} alt={offer.item_name}
+                        className="w-full h-32 object-cover rounded-lg mb-2" />
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-sm text-enb-text-primary">{offer.item_name}</span>
+                      <span className="font-bold text-amber-700">{offer.discount_pct}% off</span>
+                    </div>
+                    {offer.description && <p className="text-xs text-gray-500 mt-0.5">{offer.description}</p>}
+                    {offer.valid_until && (
+                      <p className="text-xs text-orange-500 mt-0.5">
+                        Valid until {new Date(offer.valid_until).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Legacy discount_offer field */}
+        {legacyOffer && (
+          <Card className="border-enb-green/20 shadow-sm">
+            <CardContent className="p-5">
+              <h2 className="font-bold text-enb-text-primary mb-2">ENB Offer</h2>
+              <p className="text-sm text-enb-green font-semibold">{legacyOffer}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* No offers yet */}
+        {!offers.length && !legacyOffer && (
+          <Card className="border-gray-100 shadow-sm">
+            <CardContent className="p-5 text-center text-sm text-gray-400">
+              <p>Offers from this business will appear here once confirmed.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* GPS Map */}
+        {business.gps_lat && business.gps_lng && (
+          <Card className="border-gray-100 shadow-sm overflow-hidden">
+            <CardContent className="p-0">
+              <a href={`https://maps.google.com/?q=${business.gps_lat},${business.gps_lng}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
+                <MapPin className="w-5 h-5 text-enb-green" />
+                <div>
+                  <p className="font-medium text-sm text-enb-text-primary">View on Google Maps</p>
+                  <p className="text-xs text-gray-400 font-mono">{business.gps_lat.toFixed(5)}, {business.gps_lng.toFixed(5)}</p>
+                </div>
+              </a>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

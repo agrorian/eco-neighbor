@@ -19,14 +19,9 @@ export default function DesktopSidebar() {
     { path: '/directory', icon: Store, label: 'Business Directory' },
     { path: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
     { path: '/bridge', icon: ArrowRightLeft, label: 'Bridge' },
-
+    { path: '/partner-signup', icon: Store, label: 'Become a Partner' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
-
-  // Become a Partner — hidden for existing business accounts
-  const partnerNav = !['business', 'admin'].includes(user?.role || '') ? [
-    { path: '/partner-signup', icon: Store, label: 'Become a Partner' },
-  ] : [];
 
   // Volunteer option — shown to all except onboarding_team and admin (they already have it)
   const volunteerNav = !['onboarding_team', 'admin', 'moderator', 'founder'].includes(user?.role || '') ? [
@@ -67,12 +62,12 @@ export default function DesktopSidebar() {
   ];
 
   const isAdminSection = location.pathname.startsWith('/admin');
-  const isBusinessSection = location.pathname.startsWith('/business') || location.pathname === '/scan' || location.pathname === '/partner-float';
+  const isBusinessSection = location.pathname.startsWith('/business') || location.pathname === '/scan' || location.pathname === '/partner-float' || location.pathname === '/business/dashboard';
   const isBusiness = user?.role === 'business';
 
   const navItems = isAdminSection ? adminNav 
     : (isBusiness && isBusinessSection) ? businessNav
-    : [...memberNav, ...roleBasedNav, ...modNav, ...onboardingNav, ...volunteerNav, ...partnerNav];
+    : [...memberNav, ...roleBasedNav, ...modNav, ...onboardingNav, ...volunteerNav];
 
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen bg-white border-r border-gray-200 fixed left-0 top-0 z-50">
@@ -116,7 +111,7 @@ export default function DesktopSidebar() {
           <Link to="/" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${!isBusinessSection ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Member View
           </Link>
-          <Link to="/business/offers" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${isBusinessSection ? 'bg-enb-teal text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+          <Link to="/business/dashboard" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${isBusinessSection ? 'bg-enb-teal text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Business Admin
           </Link>
         </div>

@@ -25,17 +25,22 @@ export default function BusinessDashboard() {
     fetchStats();
   }, []);
 
+  const [initialFloat, setInitialFloat] = useState(10000);
+
   const fetchStats = async () => {
     if (!user) return;
     setLoading(true);
 
-    // Step 1: Get business name
+    // Step 1: Get business name + initial float
     const { data: partner } = await supabase
       .from('business_partners')
-      .select('name, category')
+      .select('business_name, category, enb_float')
       .eq('owner_user_id', user.id)
       .single();
-    if (partner) setBusinessName(partner.name);
+    if (partner) {
+      setBusinessName(partner.business_name);
+      if (partner.enb_float) setInitialFloat(partner.enb_float);
+    }
 
     // Step 2: Get stats
     const { data } = await supabase.rpc('get_business_stats', { p_user_id: user.id });
@@ -44,8 +49,8 @@ export default function BusinessDashboard() {
     setLoading(false);
   };
 
-  const floatPct = stats ? Math.min(100, Math.round((stats.float_balance / 150000) * 100)) : 0;
-  const floatColor = floatPct <= 30 ? 'bg-red-500' : floatPct <= 40 ? 'bg-orange-400' : 'bg-enb-green';
+  const floatPct = stats ? Math.min(100, Math.round((stats.float_balance / Math.max(initialFloat, stats.float_balance, 1000)) * 100)) : 100;
+  const floatColor = floatPct <= 30 ? 'bg-red-500' : floatPct <= 50 ? 'bg-orange-400' : 'bg-enb-green';
 
   return (
     <div className="space-y-5 pb-24">

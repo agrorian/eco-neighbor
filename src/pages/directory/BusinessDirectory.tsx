@@ -82,7 +82,7 @@ function LeafletMap({ businesses, onSelect }: { businesses: Business[]; onSelect
             <div style="font-size:12px; color:#666; margin-bottom:4px;">
               ${b.category}${b.address ? ' · ' + b.address : ''}
             </div>
-            ${b.discount_offer ? `<div style="background:#f0fdf4; color:#1A6B3C; font-size:12px; font-weight:600; padding:4px 8px; border-radius:6px; margin-bottom:8px;">${b.discount_offer}</div>` : ''}
+            ${b.discount_offer && !b.discount_offer.toLowerCase().includes('tbd') && !b.discount_offer.toLowerCase().includes('to be confirmed') ? `<div style="background:#f0fdf4; color:#1A6B3C; font-size:12px; font-weight:600; padding:4px 8px; border-radius:6px; margin-bottom:8px;">${b.discount_offer}</div>` : ''}
             <button
               onclick="window._enbSelectBusiness('${b.id}')"
               style="width:100%; background:#1A6B3C; color:white; border:none; border-radius:8px; padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer;"
@@ -272,7 +272,7 @@ export default function BusinessDirectory() {
                       {business.category}
                       {business.address && ` • ${business.address}`}
                     </div>
-                    {business.discount_offer && (
+                    {business.discount_offer && !business.discount_offer.toLowerCase().includes('tbd') && !business.discount_offer.toLowerCase().includes('to be confirmed') && (
                       <span className="inline-block bg-enb-green/10 text-enb-green text-xs font-bold px-2 py-1 rounded-md mt-2">
                         {business.discount_offer}
                       </span>

@@ -29,6 +29,12 @@ export default function BusinessOffers() {
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<'discount' | 'swap'>('discount');
   const [saving, setSaving] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editDiscount, setEditDiscount] = useState('');
+  const [editEnbCost, setEditEnbCost] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
   // Form state
   const [itemName, setItemName] = useState('');
@@ -85,6 +91,28 @@ export default function BusinessOffers() {
   const resetForm = () => {
     setItemName(''); setDescription(''); setDiscountPct(''); setPhotoUrl('');
     setValidUntil(''); setEnbCost(''); setShowForm(false);
+  };
+
+  const handleEditOpen = (offer: Offer) => {
+    setEditingOffer(offer);
+    setEditName(offer.item_name);
+    setEditDesc(offer.description || '');
+    setEditDiscount(offer.discount_pct?.toString() || '');
+    setEditEnbCost(offer.enb_cost?.toString() || '');
+  };
+
+  const handleEditSave = async () => {
+    if (!editingOffer || !editName.trim()) return;
+    setEditSaving(true);
+    await supabase.from('business_offers').update({
+      item_name: editName.trim(),
+      description: editDesc.trim() || null,
+      discount_pct: editingOffer.category === 'discount' ? parseInt(editDiscount) || null : null,
+      enb_cost: editingOffer.category === 'swap' ? parseInt(editEnbCost) || null : null,
+    }).eq('id', editingOffer.id);
+    setEditingOffer(null);
+    setEditSaving(false);
+    fetchOffers();
   };
 
   const handleSave = async () => {
@@ -220,7 +248,7 @@ export default function BusinessOffers() {
             ) : (
               <div className="space-y-2">
                 {discountOffers.map(offer => (
-                  <OfferCard key={offer.id} offer={offer} onToggle={toggleActive} onDelete={deleteOffer} />
+                  <OfferCard key={offer.id} offer={offer} onToggle={toggleActive} onDelete={deleteOffer} onEdit={handleEditOpen} />
                 ))}
               </div>
             )}
@@ -239,7 +267,7 @@ export default function BusinessOffers() {
             ) : (
               <div className="space-y-2">
                 {redemptionOffers.map(offer => (
-                  <OfferCard key={offer.id} offer={offer} onToggle={toggleActive} onDelete={deleteOffer} />
+                  <OfferCard key={offer.id} offer={offer} onToggle={toggleActive} onDelete={deleteOffer} onEdit={handleEditOpen} />
                 ))}
               </div>
             )}
@@ -247,10 +275,34 @@ export default function BusinessOffers() {
         </>
       )}
     </div>
+
+      {/* Edit Modal */}
+      {editingOffer && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-enb-text-primary">Edit Offer</h3>
+              <button onClick={() => setEditingOffer(null)}><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+            <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Item name *" />
+            <Input value={editDesc} onChange={e => setEditDesc(e.target.value)} placeholder="Description (optional)" />
+            {editingOffer.category === 'discount' && (
+              <Input type="number" value={editDiscount} onChange={e => setEditDiscount(e.target.value)} placeholder="Discount %" />
+            )}
+            {editingOffer.category === 'swap' && (
+              <Input type="number" value={editEnbCost} onChange={e => setEditEnbCost(e.target.value)} placeholder="ENB cost" />
+            )}
+            <Button onClick={handleEditSave} disabled={editSaving || !editName.trim()} className="w-full bg-enb-green text-white">
+              {editSaving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Saving...</> : <><CheckCircle className="w-4 h-4 mr-2" />Save Changes</>}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
-function OfferCard({ offer, onToggle, onDelete }: { offer: Offer; onToggle: (id: string, current: boolean) => void; onDelete: (id: string) => void }) {
+function OfferCard({ offer, onToggle, onDelete, onEdit }: { offer: Offer; onToggle: (id: string, current: boolean) => void; onDelete: (id: string) => void; onEdit?: (offer: Offer) => void }) {
   return (
     <div className={`flex items-start justify-between p-4 rounded-xl border transition-all ${offer.is_active ? 'bg-white border-gray-100 shadow-sm' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
       <div className="flex-1 min-w-0">
@@ -269,6 +321,9 @@ function OfferCard({ offer, onToggle, onDelete }: { offer: Offer; onToggle: (id:
         {offer.photo_url && <img src={offer.photo_url} alt={offer.item_name} className="w-full h-24 object-cover rounded-lg mt-2 border border-gray-100" />}
       </div>
       <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+        <button onClick={() => onEdit && onEdit(offer)} className="p-1 text-blue-400 hover:bg-blue-50 rounded-lg" title="Edit">
+          <Edit2 className="w-3.5 h-3.5" />
+        </button>
         <button onClick={() => onToggle(offer.id, offer.is_active)} className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${offer.is_active ? 'text-orange-600 hover:bg-orange-50' : 'text-enb-green hover:bg-enb-green/5'}`}>
           {offer.is_active ? 'Pause' : 'Resume'}
         </button>
@@ -276,6 +331,30 @@ function OfferCard({ offer, onToggle, onDelete }: { offer: Offer; onToggle: (id:
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
+    </div>
+
+      {/* Edit Modal */}
+      {editingOffer && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-enb-text-primary">Edit Offer</h3>
+              <button onClick={() => setEditingOffer(null)}><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+            <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Item name *" />
+            <Input value={editDesc} onChange={e => setEditDesc(e.target.value)} placeholder="Description (optional)" />
+            {editingOffer.category === 'discount' && (
+              <Input type="number" value={editDiscount} onChange={e => setEditDiscount(e.target.value)} placeholder="Discount %" />
+            )}
+            {editingOffer.category === 'swap' && (
+              <Input type="number" value={editEnbCost} onChange={e => setEditEnbCost(e.target.value)} placeholder="ENB cost" />
+            )}
+            <Button onClick={handleEditSave} disabled={editSaving || !editName.trim()} className="w-full bg-enb-green text-white">
+              {editSaving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Saving...</> : <><CheckCircle className="w-4 h-4 mr-2" />Save Changes</>}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

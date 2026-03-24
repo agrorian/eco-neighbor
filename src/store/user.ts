@@ -25,6 +25,7 @@ interface UserState {
     role: UserRole;
     wallet_address?: string;
     whatsapp_number?: string;
+    profile_pic_url?: string;
     lifetime_earned?: number;
     referred_by?: string;
     referral_code?: string;

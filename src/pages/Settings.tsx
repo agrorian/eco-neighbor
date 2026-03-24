@@ -75,7 +75,7 @@ export default function Settings() {
     }).eq('id', user.id);
 
     if (error) { setProfileError('Failed to save. Please try again.'); setSaving(false); return; }
-    setUser({ ...user, full_name: fullName.trim(), whatsapp_number: whatsapp.trim() || undefined } as any);
+    setUser({ ...user, full_name: fullName.trim(), whatsapp_number: whatsapp.trim() || undefined, profile_pic_url: profilePic || undefined } as any);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     setSaving(false);
