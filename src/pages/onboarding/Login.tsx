@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, ArrowLeft, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useT } from '@/contexts/LanguageContext';
 import { saveCurrentSession } from '@/components/AccountSwitcher';
 
 type Mode = 'login' | 'reset';
 
 export default function Login() {
+  const { l, isUrdu } = useT();
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
@@ -39,13 +41,13 @@ export default function Login() {
       }
       window.location.href = '/';
     } catch (err: any) {
-      setError(err.message || 'Invalid email or password. Please try again.');
+      setError(err.message || '{l('login', 'invalidCredentials')}. Please try again.');
       setLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    if (!email) { setError('Please enter your email address.'); return; }
+    if (!email) { setError('{l('login', 'enterEmail')} address.'); return; }
     setLoading(true);
     setError('');
     try {
@@ -79,7 +81,7 @@ export default function Login() {
             <ArrowLeft className="w-5 h-5 text-gray-500" />
           </button>
           <h2 className="text-2xl font-bold text-enb-text-primary ml-2">
-            {mode === 'login' ? 'Log In' : 'Reset Password'}
+            {mode === 'login' ? l('common', 'logIn') : l('login', 'resetTitle')}
           </h2>
         </div>
 
@@ -110,7 +112,7 @@ export default function Login() {
             <div className="space-y-4">
               {/* Email field — shared between both modes */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-enb-text-primary">Email Address</label>
+                <label className="text-sm font-medium text-enb-text-primary">{l('login', 'email')}</label>
                 <Input
                   type="email"
                   placeholder="you@example.com"
@@ -124,20 +126,20 @@ export default function Login() {
               {mode === 'login' && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-enb-text-primary">Password</label>
+                    <label className="text-sm font-medium text-enb-text-primary">{l('login', 'password')}</label>
                     <button
                       type="button"
                       onClick={() => { setMode('reset'); setError(''); }}
                       className="text-xs text-enb-green hover:underline flex items-center gap-1"
                     >
                       <KeyRound className="w-3 h-3" />
-                      Forgot password?
+                      {l('login', 'forgotPassword')}
                     </button>
                   </div>
                   <div className="relative">
                     <Input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Your password"
+                      placeholder={l('login', 'passwordPlaceholder')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
@@ -168,7 +170,7 @@ export default function Login() {
                   className="w-full mt-2 bg-enb-dark text-white"
                   disabled={!email || !password || loading}
                 >
-                  {loading ? 'Logging in...' : 'Log In'}
+                  {loading ? 'Logging in...' : l('common', 'logIn')}
                   {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               ) : (
@@ -177,7 +179,7 @@ export default function Login() {
                   className="w-full mt-2 bg-enb-green text-white"
                   disabled={!email || loading}
                 >
-                  {loading ? 'Sending...' : 'Send Reset Link'}
+                  {loading ? 'Sending...' : l('login', 'sendReset')}
                   {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               )}
@@ -186,7 +188,7 @@ export default function Login() {
               <div className="flex items-center justify-center gap-4 pt-2 text-sm text-gray-400">
                 {mode === 'login' ? (
                   <span>
-                    Don't have an account?{' '}
+                    {l('login', 'noAccount')}{' '}
                     <button onClick={() => navigate('/signup/step1')} className="text-enb-green font-medium hover:underline">
                       Sign up
                     </button>

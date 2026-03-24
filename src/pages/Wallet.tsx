@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { ArrowUpRight, ArrowDownLeft, RefreshCw, QrCode, Users } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
+import { useT } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import TransactionHistory from './wallet/TransactionHistory';
 
 export default function Wallet() {
+  const { l, isUrdu } = useT();
   const { user, setUser } = useUserStore();
 
   useEffect(() => {
@@ -53,7 +55,7 @@ export default function Wallet() {
   return (
     <div className="space-y-6 pb-24">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-enb-text-primary">My Wallet</h1>
+        <h1 className="text-2xl font-bold text-enb-text-primary">{l('wallet', 'title')}</h1>
         <p className="text-enb-text-secondary">Manage your ENB tokens and transactions</p>
       </header>
 
@@ -81,7 +83,7 @@ export default function Wallet() {
         {/* ENB.LOCAL Card */}
         <Card className="border-l-4 border-l-enb-green shadow-md">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">ENB.LOCAL</CardTitle>
+            <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">{l('wallet', 'localBalance')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-enb-green mb-1">
@@ -98,7 +100,7 @@ export default function Wallet() {
               <Link to="/bridge">
                 <Button variant="outline" size="sm" className="w-full text-enb-gold border-enb-gold/20 hover:bg-enb-gold/5">
                   <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0" />
-                  Bridge
+                  {l('wallet', 'bridge')}
                 </Button>
               </Link>
             </div>

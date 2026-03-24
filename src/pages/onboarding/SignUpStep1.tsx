@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, ArrowLeft, Eye, EyeOff, Gift } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useT } from '@/contexts/LanguageContext';
 
 export default function SignUpStep1() {
+  const { l, isUrdu } = useT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
@@ -105,7 +107,7 @@ export default function SignUpStep1() {
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5 text-gray-500" />
           </button>
-          <h2 className="text-2xl font-bold text-enb-text-primary ml-2">Create Account</h2>
+          <h2 className="text-2xl font-bold text-enb-text-primary ml-2">{l('signup', 'step1Title')}</h2>
         </div>
 
         {resetSent ? (
@@ -129,7 +131,7 @@ export default function SignUpStep1() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-enb-text-primary">Email Address</label>
+                <label className="text-sm font-medium text-enb-text-primary">{l('login', 'email')}</label>
                 <Input
                   type="email"
                   placeholder="you@example.com"
@@ -139,7 +141,7 @@ export default function SignUpStep1() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-enb-text-primary">Password</label>
+                <label className="text-sm font-medium text-enb-text-primary">{l('login', 'password')}</label>
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
@@ -162,7 +164,7 @@ export default function SignUpStep1() {
                 <label className="text-sm font-medium text-enb-text-primary">Confirm Password</label>
                 <Input
                   type="password"
-                  placeholder="Repeat your password"
+                  placeholder={l('login', 'passwordPlaceholder')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSignUp()}
@@ -195,7 +197,7 @@ export default function SignUpStep1() {
                 className="w-full mt-4 bg-enb-dark text-white"
                 disabled={!email || !password || !confirmPassword || loading}
               >
-                {loading ? 'Creating account...' : 'Continue'}
+                {loading ? l('common', 'loading') : l('common', 'continue')}
                 {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
               </Button>
 
@@ -217,7 +219,7 @@ export default function SignUpStep1() {
               </div>
 
               <p className="text-center text-sm text-gray-400">
-                Already have an account?{' '}
+                {l('login', 'noAccount')}{' '}
                 <button onClick={() => navigate('/login')} className="text-enb-green font-medium hover:underline">
                   Log in
                 </button>

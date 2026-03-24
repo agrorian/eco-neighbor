@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, ArrowLeft, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useT } from '@/contexts/LanguageContext';
 
 const NEIGHBOURHOODS = [
   'Chaklala Scheme 3','Airport Housing Society','Gulrez Housing Society',
@@ -23,6 +24,7 @@ const PROFESSIONS = [
 ];
 
 export default function SignUpStep2() {
+  const { l, isUrdu } = useT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [name, setName] = useState('');
@@ -142,7 +144,7 @@ export default function SignUpStep2() {
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5 text-gray-500" />
           </button>
-          <h2 className="text-2xl font-bold text-enb-text-primary ml-2">Complete Profile</h2>
+          <h2 className="text-2xl font-bold text-enb-text-primary ml-2">{l('signup', 'step2Title')}</h2>
         </div>
 
         {error && (
@@ -153,12 +155,12 @@ export default function SignUpStep2() {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-enb-text-primary">Full Name</label>
+            <label className="text-sm font-medium text-enb-text-primary">{l('signup', 'fullName')}</label>
             <Input type="text" placeholder="Your full name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-enb-text-primary">Neighbourhood</label>
+            <label className="text-sm font-medium text-enb-text-primary">{l('signup', 'neighbourhood')}</label>
             <Select onValueChange={setNeighborhood}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select your neighbourhood" />
@@ -170,7 +172,7 @@ export default function SignUpStep2() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-enb-text-primary">Profession</label>
+            <label className="text-sm font-medium text-enb-text-primary">{l('signup', 'profession')}</label>
             <Select onValueChange={setProfession}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select your profession" />

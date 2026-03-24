@@ -1,6 +1,7 @@
 import React from 'react';
 import ENBLeaf from '@/components/ENBLeaf';
 import { supabase } from '@/lib/supabase';
+import { useT } from '@/contexts/LanguageContext';
 import { motion } from 'motion/react';
 import { Leaf, ArrowRight, Clock, Star, MapPin, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -74,6 +75,7 @@ interface PublicAction {
 }
 
 const ImpactCounter = () => {
+  const { l } = useT();
   const [stats, setStats] = React.useState({ actions: 0, enb: 0 });
   const [showModal, setShowModal] = React.useState(false);
   const [modalType, setModalType] = React.useState<'actions' | 'enb'>('actions');
@@ -115,7 +117,7 @@ const ImpactCounter = () => {
           <Card className="bg-enb-green/5 border-enb-green/10 hover:border-enb-green/30 transition-colors cursor-pointer">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-enb-green mb-1">{stats.actions.toLocaleString()}</div>
-              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">Verified Actions</div>
+              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">{l('dashboard', 'verifiedActions')}</div>
               <div className="text-xs text-enb-green/60 mt-1">Tap to view ↗</div>
             </CardContent>
           </Card>
@@ -124,7 +126,7 @@ const ImpactCounter = () => {
           <Card className="bg-enb-gold/5 border-enb-gold/10 hover:border-enb-gold/30 transition-colors cursor-pointer">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-enb-gold mb-1">{(stats.enb / 1000).toFixed(1)}k</div>
-              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">ENB Distributed</div>
+              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">{l('dashboard', 'enbDistributed')}</div>
               <div className="text-xs text-enb-gold/60 mt-1">Tap to view ↗</div>
             </CardContent>
           </Card>
@@ -205,13 +207,13 @@ const RecentActivity = () => {
 
   return (
     <div className="space-y-3">
-      <h3 className="font-bold text-enb-text-primary text-lg">Recent Activity</h3>
+      <h3 className="font-bold text-enb-text-primary text-lg">{l('dashboard', 'recentActivity')}</h3>
       {loading && (
         <div className="text-sm text-enb-text-secondary text-center py-4">Loading...</div>
       )}
       {!loading && transactions.length === 0 && (
         <div className="text-sm text-enb-text-secondary text-center py-8 bg-gray-50 rounded-xl">
-          No activity yet — submit your first community action!
+          {l('dashboard', 'noActivity')}
         </div>
       )}
       {transactions.map((item, i) => (
@@ -258,7 +260,8 @@ const getTierIcon = (repScore: number) => {
   }
 };
 
-export default function MemberDashboard() {
+export default function MemberDashboard()
+  const { l, isUrdu } = useT();  // Urdu wiring {
   const { user, setUser } = useUserStore();
 
   // Real-time subscription — balance and rep update instantly when DB changes
@@ -302,7 +305,7 @@ export default function MemberDashboard() {
             <span className="text-sm text-enb-text-secondary">•</span>
             <span className="text-sm text-enb-text-secondary font-medium flex items-center gap-1">
               <Star className="w-3 h-3 text-enb-gold fill-current" />
-              {user.rep_score} Rep
+              {user.rep_score} {l('dashboard', 'repScore')}
             </span>
           </div>
         </div>
@@ -319,19 +322,19 @@ export default function MemberDashboard() {
         <Link to="/submit">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
             <ENBLeaf size={24} />
-            <span className="text-xs font-medium">Submit Action</span>
+            <span className="text-xs font-medium">{l('dashboard', 'submitAction')}</span>
           </Button>
         </Link>
         <Link to="/directory">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
             <MapPin className="w-6 h-6 text-enb-teal" />
-            <span className="text-xs font-medium">Find Business</span>
+            <span className="text-xs font-medium">{l('dashboard', 'findBusiness')}</span>
           </Button>
         </Link>
         <Link to="/history">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
             <History className="w-6 h-6 text-enb-gold" />
-            <span className="text-xs font-medium">My History</span>
+            <span className="text-xs font-medium">{l('dashboard', 'myHistory')}</span>
           </Button>
         </Link>
       </div>
