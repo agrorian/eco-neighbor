@@ -7,8 +7,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ENB DESIGN SYSTEM — v4
-   Tailwind CSS v4 — text scale overrides go inside @theme, NOT html{}
+   ENB DESIGN SYSTEM
    ═══════════════════════════════════════════════════════════════════════ */
 
 @theme {
@@ -41,30 +40,15 @@
   --font-sans: 'Geist Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* ══════════════════════════════════════════════════════════════════
-     FONT SIZE SCALE — Tailwind v4 override
-     In Tailwind v4, text-* classes read from --text-* custom properties
-     defined in @theme. Overriding them here scales every class
-     throughout the entire app without touching a single component file.
-
-     Default → New (increase of ~1.5–2px per step)
-     text-xs:   0.75rem (12px) → 0.8125rem  (13px)
-     text-sm:   0.875rem(14px) → 0.9375rem  (15px)  ← most body text
-     text-base: 1rem    (16px) → 1.0625rem  (17px)
-     text-lg:   1.125rem(18px) → 1.1875rem  (19px)
-     text-xl:   1.25rem (20px) → 1.3125rem  (21px)
-     text-2xl:  1.5rem  (24px) → 1.5625rem  (25px)
-     text-3xl:  1.875rem(30px) → 1.9375rem  (31px)
-     text-4xl:  2.25rem (36px) → 2.375rem   (38px)
-  ══════════════════════════════════════════════════════════════════ */
-  --text-xs:   0.8125rem;
-  --text-sm:   0.9375rem;
-  --text-base: 1.0625rem;
-  --text-lg:   1.1875rem;
-  --text-xl:   1.3125rem;
-  --text-2xl:  1.5625rem;
-  --text-3xl:  1.9375rem;
-  --text-4xl:  2.375rem;
+  /* ── Font scale (Tailwind v4: override --text-* here to resize all text-* classes) ── */
+  --text-xs:   0.8125rem;   /* 13px  (was 12px) */
+  --text-sm:   0.9375rem;   /* 15px  (was 14px) */
+  --text-base: 1.0625rem;   /* 17px  (was 16px) */
+  --text-lg:   1.1875rem;   /* 19px  (was 18px) */
+  --text-xl:   1.3125rem;   /* 21px  (was 20px) */
+  --text-2xl:  1.5625rem;   /* 25px  (was 24px) */
+  --text-3xl:  1.9375rem;   /* 31px  (was 30px) */
+  --text-4xl:  2.375rem;    /* 38px  (was 36px) */
   --text-5xl:  3rem;
 
   /* ── Radii ── */
@@ -113,9 +97,6 @@
   --sidebar-ring:            #1A6B3C;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   SHADCN THEME INLINE MAP
-   ═══════════════════════════════════════════════════════════════════════ */
 @theme inline {
   --font-sans: 'Geist Variable', sans-serif;
   --color-background:              var(--background);
@@ -154,79 +135,67 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   BASE STYLES
+   BASE
    ═══════════════════════════════════════════════════════════════════════ */
 @layer base {
   * {
     @apply border-border outline-ring/50;
     box-sizing: border-box;
   }
-
   html {
     font-family: var(--font-sans);
     line-height: 1.6;
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }
-
   body {
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Subtle ENB dot texture on page surface */
     background-image: radial-gradient(circle, rgba(26,107,60,0.055) 1px, transparent 1px);
     background-size: 28px 28px;
   }
-
-  /* Heading defaults — tighter tracking */
   h1 { @apply text-3xl font-bold;     letter-spacing: -0.02em;  line-height: 1.2; }
   h2 { @apply text-2xl font-semibold; letter-spacing: -0.015em; line-height: 1.25; }
   h3 { @apply text-xl  font-semibold;                            line-height: 1.3; }
   h4 { @apply text-base font-semibold;                           line-height: 1.4; }
-
-  /* ENB green text selection */
-  ::selection {
-    background-color: rgba(26,107,60,0.18);
-    color: #1B2B1E;
-  }
-
-  /* Slim ENB-green scrollbar */
+  ::selection { background-color: rgba(26,107,60,0.18); color: #1B2B1E; }
   ::-webkit-scrollbar       { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(26,107,60,0.3);
-    border-radius: 9999px;
-  }
+  ::-webkit-scrollbar-thumb { background: rgba(26,107,60,0.3); border-radius: 9999px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(26,107,60,0.6); }
-
-  /* Consistent focus ring */
-  :focus-visible {
-    outline: 2px solid #1A6B3C;
-    outline-offset: 2px;
-  }
+  :focus-visible { outline: 2px solid #1A6B3C; outline-offset: 2px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SHADOW SCALE
+   SAFELIST — force Tailwind to include these layout-critical classes
+   even if they only appear in dynamically-deployed files
    ═══════════════════════════════════════════════════════════════════════ */
-.shadow-enb-sm    { box-shadow: 0 1px 3px 0   rgba(27,43,30,0.08), 0 1px 2px -1px rgba(27,43,30,0.05); }
-.shadow-enb       { box-shadow: 0 2px 8px 0   rgba(27,43,30,0.08), 0 1px 3px -1px rgba(27,43,30,0.05); }
-.shadow-enb-lg    { box-shadow: 0 8px 24px 0  rgba(27,43,30,0.10), 0 2px 8px  -2px rgba(27,43,30,0.07); }
+.w-72   { width: 18rem; }
+.ml-72  { margin-left: 18rem; }
+.md\:ml-72 { margin-left: 18rem; }
+.w-64   { width: 16rem; }
+.ml-64  { margin-left: 16rem; }
+.md\:ml-64 { margin-left: 16rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SHADOWS
+   ═══════════════════════════════════════════════════════════════════════ */
+.shadow-enb-sm    { box-shadow: 0 1px 3px 0   rgba(27,43,30,0.08); }
+.shadow-enb       { box-shadow: 0 2px 8px 0   rgba(27,43,30,0.08); }
+.shadow-enb-lg    { box-shadow: 0 8px 24px 0  rgba(27,43,30,0.10); }
 .shadow-enb-green { box-shadow: 0 4px 16px 0  rgba(26,107,60,0.22); }
 
 /* ═══════════════════════════════════════════════════════════════════════
    COMPONENT UTILITIES
    ═══════════════════════════════════════════════════════════════════════ */
-
-/* Cards */
 .card-standard  { @apply bg-white rounded-2xl border border-enb-border p-5; box-shadow: 0 2px 8px 0 rgba(27,43,30,0.07); }
 .card-highlight { @apply bg-white rounded-2xl border-l-4 border-l-enb-green border-t border-r border-b border-enb-border-light p-5; box-shadow: 0 2px 8px 0 rgba(27,43,30,0.07); }
 .card-green     { @apply bg-enb-green-faint rounded-2xl border border-enb-green/20 p-5; }
 .card-gold      { @apply bg-enb-gold-faint  rounded-2xl border border-enb-gold/20  p-5; }
 
-/* Buttons */
 .btn-primary {
   @apply bg-enb-green text-white rounded-xl min-h-[48px] px-6 font-semibold
          hover:bg-enb-green-light active:bg-enb-green-dark active:scale-[0.98]
@@ -238,7 +207,6 @@
   @apply bg-enb-teal text-white rounded-xl min-h-[48px] px-6 font-semibold
          hover:bg-enb-teal-light active:scale-[0.98] transition-all duration-150
          flex items-center justify-center;
-  box-shadow: 0 2px 8px 0 rgba(0,121,107,0.28);
 }
 .btn-ghost {
   @apply bg-transparent text-enb-text-primary rounded-xl min-h-[44px] px-4 font-medium
@@ -250,8 +218,6 @@
          hover:bg-enb-green-faint hover:border-enb-green/60 active:scale-[0.98]
          transition-all duration-150 flex items-center justify-center;
 }
-
-/* Input */
 .input-standard {
   @apply h-12 rounded-xl border border-enb-border px-4 bg-white text-enb-text-primary
          placeholder:text-enb-text-muted
@@ -276,30 +242,22 @@
 .badge-teal { @apply inline-flex items-center gap-1 bg-enb-teal/10  text-enb-teal      text-xs font-semibold px-2.5 py-1 rounded-full; }
 .badge-gray { @apply inline-flex items-center gap-1 bg-gray-100     text-gray-600      text-xs font-semibold px-2.5 py-1 rounded-full; }
 
-/* Stat cards */
 .stat-card       { @apply bg-white rounded-2xl border border-enb-border p-5; box-shadow: 0 1px 4px 0 rgba(27,43,30,0.07); }
 .stat-card-green { @apply bg-enb-green-faint rounded-2xl border border-enb-green/15 p-5; }
 .stat-card-gold  { @apply bg-enb-gold-faint  rounded-2xl border border-enb-gold/15  p-5; }
+.section-header  { @apply font-bold text-lg text-enb-text-primary mb-3 flex items-center gap-2; }
+.divider         { @apply border-t border-enb-border-light my-4; }
 
-/* Page section */
-.section-header { @apply font-bold text-lg text-enb-text-primary mb-3 flex items-center gap-2; }
-.divider        { @apply border-t border-enb-border-light my-4; }
-
-/* ═══════════════════════════════════════════════════════════════════════
-   ANIMATIONS
-   ═══════════════════════════════════════════════════════════════════════ */
+/* Animations */
 .animate-fade-in  { animation: fadeIn  0.2s  ease-out both; }
 .animate-slide-up { animation: slideUp 0.25s ease-out both; }
 .animate-scale-in { animation: scaleIn 0.2s  ease-out both; }
+@keyframes fadeIn  { from { opacity: 0; }                             to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.96); }     to { opacity: 1; transform: scale(1); } }
 
-@keyframes fadeIn  { from { opacity: 0; }                              to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(8px); }  to { opacity: 1; transform: translateY(0); } }
-@keyframes scaleIn { from { opacity: 0; transform: scale(0.96); }      to { opacity: 1; transform: scale(1); } }
-
-/* ═══════════════════════════════════════════════════════════════════════
-   URDU / RTL SUPPORT
-   ═══════════════════════════════════════════════════════════════════════ */
+/* Urdu / RTL */
 .font-urdu { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2; }
-[dir="rtl"] .rotate-rtl              { transform: scaleX(-1); }
-[dir="rtl"] .space-y-4 > * + *      { margin-top: 1rem; }
+[dir="rtl"] .rotate-rtl         { transform: scaleX(-1); }
+[dir="rtl"] .space-y-4 > * + *  { margin-top: 1rem; }
 :lang(ur) { font-family: 'Noto Nastaliq Urdu', serif; direction: rtl; line-height: 2; }
