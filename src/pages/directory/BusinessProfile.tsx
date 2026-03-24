@@ -203,9 +203,9 @@ export default function BusinessProfile() {
                   </div>
                 ))}
               </div>
-              <Link to="/wallet/redeem">
+              <Link to={`/wallet/redeem?business=${business.id}`}>
                 <Button className="w-full mt-3 bg-enb-green text-white">
-                  Redeem ENB Here →
+                  Redeem ENB at This Business →
                 </Button>
               </Link>
             </CardContent>
