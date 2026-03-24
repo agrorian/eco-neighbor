@@ -41,13 +41,13 @@ export default function Login() {
       }
       window.location.href = '/';
     } catch (err: any) {
-      setError(err.message || '{l('login', 'invalidCredentials')}. Please try again.');
+      setError(err.message || l('login', 'invalidCredentials'));
       setLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    if (!email) { setError('{l('login', 'enterEmail')} address.'); return; }
+    if (!email) { setError(l('login', 'enterEmail')); return; }
     setLoading(true);
     setError('');
     try {
@@ -95,54 +95,13 @@ export default function Login() {
               Click the link in the email to set a new password, then come back and log in.
             </p>
             <Button
-              onClick={() => { setMode('login'); setResetSent(false); setError(''); }}
-              className="w-full bg-enb-green text-white"
-            >
-              Back to Login
-            </Button>
-          </div>
-        ) : (
-          <>
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {/* Email field — shared between both modes */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-enb-text-primary">{l('login', 'email')}</label>
-                <Input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setError(''); }}
+              onClick={() => { setMode('login'); setResetSent(false); setError('l('login', 'email')'); }}
                   onKeyDown={(e) => mode === 'login' && e.key === 'Enter' && handleLogin()}
                 />
               </div>
 
               {/* Password field — login mode only */}
-              {mode === 'login' && (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-enb-text-primary">{l('login', 'password')}</label>
-                    <button
-                      type="button"
-                      onClick={() => { setMode('reset'); setError(''); }}
-                      className="text-xs text-enb-green hover:underline flex items-center gap-1"
-                    >
-                      <KeyRound className="w-3 h-3" />
-                      {l('login', 'forgotPassword')}
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder={l('login', 'passwordPlaceholder')}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              {mode === 'loginl('login', 'password')reset'); setError('l('login', 'forgotPassword')text' : 'passwordl('login', 'passwordPlaceholder')Enter' && handleLogin()}
                       className="pr-10"
                     />
                     <button
@@ -186,9 +145,7 @@ export default function Login() {
 
               {/* Footer links */}
               <div className="flex items-center justify-center gap-4 pt-2 text-sm text-gray-400">
-                {mode === 'login' ? (
-                  <span>
-                    {l('login', 'noAccount')}{' '}
+                {mode === 'loginl('login', 'noAccount') '}
                     <button onClick={() => navigate('/signup/step1')} className="text-enb-green font-medium hover:underline">
                       Sign up
                     </button>

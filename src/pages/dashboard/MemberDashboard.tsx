@@ -113,33 +113,7 @@ const ImpactCounter = () => {
   return (
     <>
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <button onClick={() => openModal('actions')} className="text-left">
-          <Card className="bg-enb-green/5 border-enb-green/10 hover:border-enb-green/30 transition-colors cursor-pointer">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-enb-green mb-1">{stats.actions.toLocaleString()}</div>
-              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">{l('dashboard', 'verifiedActions')}</div>
-              <div className="text-xs text-enb-green/60 mt-1">Tap to view ↗</div>
-            </CardContent>
-          </Card>
-        </button>
-        <button onClick={() => openModal('enb')} className="text-left">
-          <Card className="bg-enb-gold/5 border-enb-gold/10 hover:border-enb-gold/30 transition-colors cursor-pointer">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-enb-gold mb-1">{(stats.enb / 1000).toFixed(1)}k</div>
-              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">{l('dashboard', 'enbDistributed')}</div>
-              <div className="text-xs text-enb-gold/60 mt-1">Tap to view ↗</div>
-            </CardContent>
-          </Card>
-        </button>
-      </div>
-
-      {/* Public actions modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-md max-h-[75vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h3 className="font-bold text-enb-text-primary">
-                {modalType === 'actions' ? `${stats.actions.toLocaleString()} Verified Actions` : `${(stats.enb/1000).toFixed(1)}k ENB Distributed`}
+        <button onClick={() => openModal('actionsl('dashboard', 'verifiedActions')enbl('dashboard', 'enbDistributed')actions' ? `${stats.actions.toLocaleString()} Verified Actions` : `${(stats.enb/1000).toFixed(1)}k ENB Distributed`}
               </h3>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
@@ -197,23 +171,7 @@ const RecentActivity = () => {
         if (error) console.error('Recent activity error:', error);
         if (data) setTransactions(data);
       } catch (e) {
-        console.error('Recent activity exception:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTx();
-  }, [user?.id]);
-
-  return (
-    <div className="space-y-3">
-      <h3 className="font-bold text-enb-text-primary text-lg">{l('dashboard', 'recentActivity')}</h3>
-      {loading && (
-        <div className="text-sm text-enb-text-secondary text-center py-4">Loading...</div>
-      )}
-      {!loading && transactions.length === 0 && (
-        <div className="text-sm text-enb-text-secondary text-center py-8 bg-gray-50 rounded-xl">
-          {l('dashboard', 'noActivity')}
+        console.error('Recent activity exception:l('dashboard', 'recentActivity')dashboard', 'noActivity')}
         </div>
       )}
       {transactions.map((item, i) => (
@@ -296,45 +254,7 @@ export default function MemberDashboard()
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary">
-            Hi, {user.full_name?.split(' ')[0] || user.email} {getTierIcon(user.rep_score)}
-          </h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-enb-text-secondary font-medium bg-gray-100 px-2 py-0.5 rounded-md">
-              {tier} Tier
-            </span>
-            <span className="text-sm text-enb-text-secondary">•</span>
-            <span className="text-sm text-enb-text-secondary font-medium flex items-center gap-1">
-              <Star className="w-3 h-3 text-enb-gold fill-current" />
-              {user.rep_score} {l('dashboard', 'repScore')}
-            </span>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-enb-gold">{(user.enb_local_bal || 0).toLocaleString()}</div>
-          <div className="text-xs text-enb-text-secondary uppercase tracking-wider font-medium">ENB.LOCAL</div>
-        </div>
-      </div>
-
-      <ActiveCampaignBanner />
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-3">
-        <Link to="/submit">
-          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
-            <ENBLeaf size={24} />
-            <span className="text-xs font-medium">{l('dashboard', 'submitAction')}</span>
-          </Button>
-        </Link>
-        <Link to="/directory">
-          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
-            <MapPin className="w-6 h-6 text-enb-teal" />
-            <span className="text-xs font-medium">{l('dashboard', 'findBusiness')}</span>
-          </Button>
-        </Link>
-        <Link to="/history">
-          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
-            <History className="w-6 h-6 text-enb-gold" />
-            <span className="text-xs font-medium">{l('dashboard', 'myHistory')}</span>
+            Hi, {user.full_name?.split(' l('dashboard', 'repScore')dashboard', 'submitActionl('dashboard', 'findBusiness')dashboard', 'myHistory')}</span>
           </Button>
         </Link>
       </div>

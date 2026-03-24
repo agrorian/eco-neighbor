@@ -34,73 +34,7 @@ export default function Wallet() {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'users',
-          filter: `id=eq.${user.id}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            setUser({ ...user, ...payload.new });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
-
-  if (!user) return null;
-
-  return (
-    <div className="space-y-6 pb-24">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-enb-text-primary">{l('wallet', 'title')}</h1>
-        <p className="text-enb-text-secondary">Manage your ENB tokens and transactions</p>
-      </header>
-
-      {/* Rep Score & Tier */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-enb-gold/10 flex items-center justify-center text-enb-gold font-bold">
-            {user.tier?.charAt(0) || 'N'}
-          </div>
-          <div>
-            <div className="font-bold text-enb-text-primary">{user.tier} Tier</div>
-            <div className="text-xs text-enb-text-secondary">Rep Score: {user.rep_score}</div>
-          </div>
-        </div>
-        <Link to="/leaderboard">
-          <Button variant="ghost" size="sm" className="text-enb-gold hover:text-enb-gold hover:bg-enb-gold/10">
-            View Progress
-          </Button>
-        </Link>
-      </div>
-
-      {/* Token Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {/* ENB.LOCAL Card */}
-        <Card className="border-l-4 border-l-enb-green shadow-md">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">{l('wallet', 'localBalance')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-enb-green mb-1">
-              {(user.enb_local_bal || 0).toLocaleString()}
-            </div>
-            <p className="text-xs text-enb-text-secondary mb-5">Community Rewards (Non-transferable)</p>
-            <div className="grid grid-cols-2 gap-2">
-              <Link to="/wallet/redeem">
-                <Button variant="outline" size="sm" className="w-full">
-                  <QrCode className="w-4 h-4 mr-2 flex-shrink-0" />
-                  Redeem
-                </Button>
-              </Link>
-              <Link to="/bridge">
-                <Button variant="outline" size="sm" className="w-full text-enb-gold border-enb-gold/20 hover:bg-enb-gold/5">
-                  <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0" />
-                  {l('wallet', 'bridge')}
+          table: 'usersl('wallet', 'title')Nl('wallet', 'localBalance')wallet', 'bridge')}
                 </Button>
               </Link>
             </div>
