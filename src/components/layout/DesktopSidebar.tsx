@@ -19,9 +19,14 @@ export default function DesktopSidebar() {
     { path: '/directory', icon: Store, label: 'Business Directory' },
     { path: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
     { path: '/bridge', icon: ArrowRightLeft, label: 'Bridge' },
-    { path: '/partner-signup', icon: Store, label: 'Become a Partner' },
+
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
+
+  // Become a Partner — hidden for existing business accounts
+  const partnerNav = !['business', 'admin'].includes(user?.role || '') ? [
+    { path: '/partner-signup', icon: Store, label: 'Become a Partner' },
+  ] : [];
 
   // Volunteer option — shown to all except onboarding_team and admin (they already have it)
   const volunteerNav = !['onboarding_team', 'admin', 'moderator', 'founder'].includes(user?.role || '') ? [
@@ -67,7 +72,7 @@ export default function DesktopSidebar() {
 
   const navItems = isAdminSection ? adminNav 
     : (isBusiness && isBusinessSection) ? businessNav
-    : [...memberNav, ...roleBasedNav, ...modNav, ...onboardingNav, ...volunteerNav];
+    : [...memberNav, ...roleBasedNav, ...modNav, ...onboardingNav, ...volunteerNav, ...partnerNav];
 
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen bg-white border-r border-gray-200 fixed left-0 top-0 z-50">

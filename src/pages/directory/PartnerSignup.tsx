@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Store, ArrowLeft, CheckCircle, Loader2, Phone, MapPin, MessageSquare, ChevronDown } from 'lucide-react';
+import { Store, ArrowLeft, CheckCircle, Loader2, Phone, MapPin, MessageSquare, ChevronDown, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,14 +20,103 @@ export default function PartnerSignup() {
   const [whatsapp, setWhatsapp] = useState('');
   const [address, setAddress] = useState('');
   const [message, setMessage] = useState('');
+  const [gpsLat, setGpsLat] = useState<number | null>(null);
+  const [gpsLng, setGpsLng] = useState<number | null>(null);
+  const [gpsAddress, setGpsAddress] = useState('');
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+
+  // Initialize Leaflet map for pin drop
+  useEffect(() => {
+    if (!showMap || !mapRef.current || mapInstanceRef.current) return;
+
+    const initMap = async () => {
+      const L = (await import('leaflet' as any)).default;
+      await import('leaflet/dist/leaflet.css' as any);
+
+      const defaultLat = gpsLat || 33.5813;
+      const defaultLng = gpsLng || 73.1034;
+
+      const map = L.map(mapRef.current).setView([defaultLat, defaultLng], 15);
+      mapInstanceRef.current = map;
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      const icon = L.divIcon({
+        html: `<div style="width:32px;height:32px;background:#1A6B3C;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>`,
+        className: '',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+      });
+
+      // Add marker if we have a location
+      if (gpsLat && gpsLng) {
+        markerRef.current = L.marker([gpsLat, gpsLng], { icon, draggable: true }).addTo(map);
+      }
+
+      // Click to place/move marker
+      map.on('click', (e: any) => {
+        const { lat, lng } = e.latlng;
+        if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng]);
+        } else {
+          markerRef.current = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+        }
+        setGpsLat(lat);
+        setGpsLng(lng);
+        setGpsAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      });
+
+      // Drag marker
+      if (markerRef.current) {
+        markerRef.current.on('dragend', (e: any) => {
+          const { lat, lng } = e.target.getLatLng();
+          setGpsLat(lat);
+          setGpsLng(lng);
+          setGpsAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        });
+      }
+    };
+
+    initMap();
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markerRef.current = null;
+      }
+    };
+  }, [showMap]);
+
+  const detectGPS = () => {
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsLat(pos.coords.latitude);
+        setGpsLng(pos.coords.longitude);
+        setGpsAddress(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+        setGpsLoading(false);
+        setShowMap(true);
+      },
+      () => {
+        setGpsLoading(false);
+        setShowMap(true); // Show map anyway so they can drop pin
+      }
+    );
+  };
 
   const handleSubmit = async () => {
     if (!businessName.trim() || !category || !ownerName.trim() || !whatsapp.trim()) {
       setError('Please fill in all required fields.');
       return;
     }
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
 
     const { error: dbError } = await supabase.from('partner_applications').insert({
       business_name: businessName.trim(),
@@ -38,28 +127,25 @@ export default function PartnerSignup() {
       message: message.trim() || null,
       source: 'app',
       status: 'pending',
+      // Store GPS in notes for now until column added
+      onboarding_notes: gpsLat ? `GPS: ${gpsLat}, ${gpsLng}` : null,
     });
 
-    if (dbError) {
-      setError('Submission failed. Please try again.');
-      setLoading(false);
-      return;
-    }
-    setSuccess(true);
-    setLoading(false);
+    if (dbError) { setError('Submission failed. Please try again.'); setLoading(false); return; }
+    setSuccess(true); setLoading(false);
   };
 
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] p-6 space-y-4 text-center">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
           <div className="w-24 h-24 bg-enb-green/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-12 h-12 text-enb-green" />
           </div>
         </motion.div>
         <h1 className="text-2xl font-bold text-enb-text-primary">Application Received!</h1>
         <p className="text-enb-text-secondary max-w-xs mx-auto text-sm">
-          Thank you for applying to join the ENB Partner network. Our onboarding team will contact you on WhatsApp within 48 hours.
+          Our onboarding team will contact you on WhatsApp within 48 hours.
         </p>
         <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-4 max-w-xs text-sm text-enb-text-secondary">
           <p className="font-medium text-enb-green mb-1">What happens next?</p>
@@ -77,9 +163,7 @@ export default function PartnerSignup() {
     <div className="space-y-5 p-4 max-w-lg mx-auto pb-24">
       <header className="flex items-center gap-3">
         <Link to="/more">
-          <Button variant="ghost" size="icon" className="-ml-2">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+          <Button variant="ghost" size="icon" className="-ml-2"><ArrowLeft className="w-5 h-5" /></Button>
         </Link>
         <div>
           <h1 className="text-xl font-bold text-enb-text-primary">Become an ENB Partner</h1>
@@ -87,7 +171,6 @@ export default function PartnerSignup() {
         </div>
       </header>
 
-      {/* Benefits banner */}
       <div className="bg-enb-green rounded-2xl p-4 text-white">
         <p className="font-bold text-sm mb-2">Why join as an ENB Partner?</p>
         <div className="space-y-1 text-sm text-white/90">
@@ -100,8 +183,6 @@ export default function PartnerSignup() {
 
       <Card className="border-gray-100 shadow-sm">
         <CardContent className="p-5 space-y-4">
-
-          {/* Business name */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-enb-text-primary flex items-center gap-1">
               <Store className="w-4 h-4 text-enb-green" /> Business Name <span className="text-red-400">*</span>
@@ -109,33 +190,25 @@ export default function PartnerSignup() {
             <Input placeholder="e.g. Ahmed General Store" value={businessName} onChange={e => setBusinessName(e.target.value)} />
           </div>
 
-          {/* Category */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-enb-text-primary">Business Type <span className="text-red-400">*</span></label>
             <div className="relative">
-              <select
-                value={category}
-                onChange={e => setCategory(e.target.value)}
-                className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-enb-green/50 focus:border-enb-green outline-none text-sm appearance-none pr-10"
-              >
+              <select value={category} onChange={e => setCategory(e.target.value)}
+                className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-enb-green/50 outline-none text-sm appearance-none pr-10">
                 <option value="">Select business type...</option>
                 {BUSINESS_CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>
-                    {BUSINESS_TYPE_EMOJI[cat] || '🏬'} {cat}
-                  </option>
+                  <option key={cat} value={cat}>{BUSINESS_TYPE_EMOJI[cat] || '🏬'} {cat}</option>
                 ))}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
-          {/* Owner name */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-enb-text-primary">Your Name <span className="text-red-400">*</span></label>
             <Input placeholder="Owner / Manager name" value={ownerName} onChange={e => setOwnerName(e.target.value)} />
           </div>
 
-          {/* WhatsApp */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-enb-text-primary flex items-center gap-1">
               <Phone className="w-4 h-4 text-green-500" /> WhatsApp Number <span className="text-red-400">*</span>
@@ -144,7 +217,6 @@ export default function PartnerSignup() {
             <p className="text-xs text-gray-400">Our team will contact you on this number</p>
           </div>
 
-          {/* Address */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-enb-text-primary flex items-center gap-1">
               <MapPin className="w-4 h-4 text-enb-teal" /> Address / Location
@@ -152,33 +224,61 @@ export default function PartnerSignup() {
             <Input placeholder="Street, Area, Neighbourhood" value={address} onChange={e => setAddress(e.target.value)} />
           </div>
 
-          {/* Message */}
+          {/* GPS Location Picker */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-enb-text-primary flex items-center gap-1">
+              <Navigation className="w-4 h-4 text-enb-green" /> Pin Business Location on Map
+              <span className="text-gray-400 font-normal text-xs">(Recommended)</span>
+            </label>
+
+            {gpsLat && gpsLng ? (
+              <div className="flex items-center gap-2 bg-enb-green/5 border border-enb-green/20 rounded-xl p-3">
+                <MapPin className="w-4 h-4 text-enb-green flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-enb-green">Location pinned ✓</p>
+                  <p className="text-xs text-gray-500 font-mono">{gpsLat.toFixed(5)}, {gpsLng.toFixed(5)}</p>
+                </div>
+                <button onClick={() => setShowMap(!showMap)} className="text-xs text-enb-green underline">
+                  {showMap ? 'Hide map' : 'Edit pin'}
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button onClick={detectGPS} disabled={gpsLoading} variant="outline" size="sm" className="flex-1 border-enb-green/30 text-enb-green">
+                  {gpsLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Navigation className="w-4 h-4 mr-1" />}
+                  {gpsLoading ? 'Detecting...' : 'Use My Location'}
+                </Button>
+                <Button onClick={() => setShowMap(!showMap)} variant="outline" size="sm" className="flex-1">
+                  <MapPin className="w-4 h-4 mr-1" /> Drop Pin on Map
+                </Button>
+              </div>
+            )}
+
+            {showMap && (
+              <div className="space-y-1">
+                <p className="text-xs text-gray-500">Tap on the map to place your business pin</p>
+                <div ref={mapRef} className="w-full h-56 rounded-xl border border-gray-200 overflow-hidden" />
+              </div>
+            )}
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-enb-text-primary flex items-center gap-1">
-              <MessageSquare className="w-4 h-4 text-gray-400" /> Why do you want to join? <span className="text-gray-400 font-normal text-xs">(Optional)</span>
+              <MessageSquare className="w-4 h-4 text-gray-400" /> Why do you want to join?
+              <span className="text-gray-400 font-normal text-xs">(Optional)</span>
             </label>
-            <Textarea
-              placeholder="Tell us about your business and why you'd like to be part of the ENB community..."
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              className="resize-none h-24"
-              maxLength={500}
-            />
+            <Textarea placeholder="Tell us about your business..." value={message} onChange={e => setMessage(e.target.value)} className="resize-none h-24" maxLength={500} />
           </div>
 
           {error && <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-3">{error}</p>}
 
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !businessName.trim() || !category || !ownerName.trim() || !whatsapp.trim()}
-            className="w-full h-12 text-base bg-enb-green hover:bg-enb-green/90 text-white shadow-lg shadow-enb-green/20"
-          >
+          <Button onClick={handleSubmit} disabled={loading || !businessName.trim() || !category || !ownerName.trim() || !whatsapp.trim()}
+            className="w-full h-12 text-base bg-enb-green hover:bg-enb-green/90 text-white shadow-lg shadow-enb-green/20">
             {loading ? <><Loader2 className="w-5 h-5 animate-spin mr-2" />Submitting...</> : <><Store className="w-5 h-5 mr-2" />Submit Application</>}
           </Button>
 
           <p className="text-xs text-gray-400 text-center">
-            Discount details and MOU will be discussed by our onboarding team.
-            No commitment required at this stage.
+            Discount details and MOU will be discussed by our onboarding team. No commitment required at this stage.
           </p>
         </CardContent>
       </Card>

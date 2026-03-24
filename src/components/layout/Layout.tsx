@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import MobileNav from './MobileNav';
+import FloatingBugButton from '@/components/FloatingBugButton';
 import DesktopSidebar from './DesktopSidebar';
 import { useUserStore } from '@/store/user';
 
@@ -20,6 +21,7 @@ export default function Layout({ children }: LayoutProps) {
         </main>
       </div>
       <MobileNav />
+      <FloatingBugButton />
     </div>
   );
 }

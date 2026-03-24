@@ -26,7 +26,7 @@ export default function More() {
     { icon: TrendingUp, label: 'Founder Sale Gate', path: '/founder-sale', color: 'text-enb-gold', show: user?.role === 'admin' || user?.role === 'founder' },
     { icon: TrendingDown, label: 'Float Monitor', path: '/partner-float', color: 'text-enb-teal', show: user?.role === 'business' || user?.role === 'admin' },
     { icon: LayoutDashboard, label: 'Admin Panel', path: '/admin', color: 'text-purple-600', show: user?.role === 'admin' || user?.role === 'founder' },
-    { icon: Store, label: 'Become a Partner', path: '/partner-signup', color: 'text-enb-teal', show: true },
+    { icon: Store, label: 'Become a Partner', path: '/partner-signup', color: 'text-enb-teal', show: user?.role !== 'business' },
     { icon: Users, label: 'Join Onboarding Team', path: '/volunteer-apply', color: 'text-blue-600', show: !['onboarding_team','admin'].includes(user?.role || '') },
     { icon: ClipboardList, label: 'Onboarding Queue', path: '/onboarding-queue', color: 'text-enb-green', show: ['onboarding_team','admin'].includes(user?.role || '') },
     { icon: Bug, label: 'Report a Bug', path: '/bug-report', color: 'text-red-500', show: true },
