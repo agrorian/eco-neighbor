@@ -274,7 +274,6 @@ export default function BusinessOffers() {
           </section>
         </>
       )}
-    </div>
 
       {/* Edit Modal */}
       {editingOffer && (
@@ -331,7 +330,6 @@ function OfferCard({ offer, onToggle, onDelete, onEdit }: { offer: Offer; onTogg
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
-    </div>
 
       {/* Edit Modal */}
       {editingOffer && (
