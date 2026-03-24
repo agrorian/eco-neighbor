@@ -182,7 +182,7 @@ export default function AdminOnboarding() {
           <Card className="border-gray-100"><CardContent className="p-8 text-center text-enb-text-secondary">No partner applications awaiting review</CardContent></Card>
         ) : (
           <div className="space-y-3">
-            {(partnerFilter === 'all' ? partnerApps : partnerApps.filter(a => a.admin_review === partnerFilter || a.status === partnerFilter)).map(app => (
+            {partnerApps.filter(a => partnerFilter === 'all' || a.admin_review === partnerFilter || a.status === partnerFilter).map(app => (
               <Card key={app.id} className="border-orange-100 shadow-sm overflow-hidden">
                 <div className="p-4 cursor-pointer hover:bg-orange-50/50" onClick={() => { setExpandedId(expandedId === app.id ? null : app.id); setAdminNote(''); }}>
                   <div className="flex items-start justify-between gap-3">
@@ -230,7 +230,7 @@ export default function AdminOnboarding() {
               </Card>
             ))}
           </div>
-        ); })()
+        )
       ) : (
         volunteerApps.length === 0 ? (
           <Card className="border-gray-100"><CardContent className="p-8 text-center text-enb-text-secondary">No volunteer applications pending</CardContent></Card>
