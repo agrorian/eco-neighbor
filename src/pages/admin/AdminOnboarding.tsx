@@ -45,6 +45,8 @@ export default function AdminOnboarding() {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<'partners' | 'volunteers'>('partners');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [partnerFilter, setPartnerFilter] = useState('all');
+  const [volunteerFilter, setVolunteerFilter] = useState('all');
   const [adminNote, setAdminNote] = useState('');
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -57,8 +59,7 @@ export default function AdminOnboarding() {
     const { data: apps } = await supabase
       .from('partner_applications')
       .select('*')
-      .eq('admin_review', 'pending_review')
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false });
 
     // Fetch team member names
     if (apps && apps.length > 0) {
@@ -79,8 +80,7 @@ export default function AdminOnboarding() {
     const { data: vApps } = await supabase
       .from('volunteer_applications')
       .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (vApps && vApps.length > 0) {
       const userIds = vApps.map(v => v.user_id);
@@ -125,13 +125,12 @@ export default function AdminOnboarding() {
 
   const approveVolunteer = async (vApp: VolunteerApp) => {
     setSaving(vApp.id);
-    // Use SECURITY DEFINER RPC — direct users.role update fails with anon key
-    const { data, error } = await supabase.rpc('approve_volunteer', {
-      p_application_id: vApp.id,
-      p_user_id: vApp.user_id,
-      p_admin_id: user!.id,
-    });
-    if (error) console.error('Approve volunteer failed:', error);
+    // Update volunteer application
+    await supabase.from('volunteer_applications').update({
+      status: 'approved', reviewed_by: user!.id, reviewed_at: new Date().toISOString()
+    }).eq('id', vApp.id);
+    // Update user role
+    await supabase.from('users').update({ role: 'onboarding_team' }).eq('id', vApp.user_id);
     setSaving(null); fetchAll();
   };
 
@@ -149,6 +148,18 @@ export default function AdminOnboarding() {
         <h1 className="text-2xl font-bold text-enb-text-primary">Onboarding Management</h1>
         <p className="text-sm text-enb-text-secondary">Review partner applications and volunteer requests</p>
       </header>
+
+      {/* Partner status filter */}
+      {activeSection === 'partners' && (
+        <div className="flex gap-2 flex-wrap mb-2">
+          {['all', 'pending_review', 'approved', 'returned', 'pending', 'contacted'].map(s => (
+            <button key={s} onClick={() => setPartnerFilter(s)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${partnerFilter === s ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+              {s === 'all' ? 'All' : s === 'pending_review' ? 'Awaiting Review' : s === 'pending' ? 'New' : s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Section tabs */}
       <div className="flex gap-3">
@@ -171,7 +182,7 @@ export default function AdminOnboarding() {
           <Card className="border-gray-100"><CardContent className="p-8 text-center text-enb-text-secondary">No partner applications awaiting review</CardContent></Card>
         ) : (
           <div className="space-y-3">
-            {partnerApps.map(app => (
+            {(partnerFilter === 'all' ? partnerApps : partnerApps.filter(a => a.admin_review === partnerFilter || a.status === partnerFilter)).map(app => (
               <Card key={app.id} className="border-orange-100 shadow-sm overflow-hidden">
                 <div className="p-4 cursor-pointer hover:bg-orange-50/50" onClick={() => { setExpandedId(expandedId === app.id ? null : app.id); setAdminNote(''); }}>
                   <div className="flex items-start justify-between gap-3">
@@ -219,7 +230,7 @@ export default function AdminOnboarding() {
               </Card>
             ))}
           </div>
-        )
+        ); })()
       ) : (
         volunteerApps.length === 0 ? (
           <Card className="border-gray-100"><CardContent className="p-8 text-center text-enb-text-secondary">No volunteer applications pending</CardContent></Card>
@@ -232,6 +243,7 @@ export default function AdminOnboarding() {
                     <div>
                       <p className="font-bold text-enb-text-primary">{app.applicant_name}</p>
                       <p className="text-xs text-gray-500">{app.applicant_email} · {app.rep_score?.toLocaleString()} Rep</p>
+                    <p className="text-xs text-gray-400">{new Date(app.created_at).toLocaleDateString('en-PK', { day:'numeric', month:'short', year:'numeric' })} · Status: <span className={`font-medium ${app.status === 'approved' ? 'text-green-600' : app.status === 'rejected' ? 'text-red-500' : 'text-orange-500'}`}>{app.status}</span></p>
                     </div>
                     {expandedId === app.id ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                   </div>

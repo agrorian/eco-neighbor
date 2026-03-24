@@ -16,7 +16,8 @@ export default function BusinessDesktopSidebar() {
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/scan', icon: QrCode, label: 'Scan QR' },
     { path: '/business/offers', icon: Tag, label: 'My Offers' },
-    { path: '/business/history', icon: History, label: 'Redemption History' },
+    { path: '/business/history', icon: History, label: 'ENB Swap History' },
+    { path: '/business/settings', icon: Settings, label: 'Business Profile' },
     { path: '/partner-float', icon: TrendingDown, label: 'Float Monitor' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];

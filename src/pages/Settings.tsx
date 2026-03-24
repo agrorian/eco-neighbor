@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Shield, HelpCircle, LogOut, MessageCircle, Save, User, ChevronRight, KeyRound } from 'lucide-react';
+import { Bell, Shield, HelpCircle, LogOut, MessageCircle, Save, User, KeyRound, Camera, Loader2 } from 'lucide-react';
 import { useUserStore } from '@/store/user';
-import { PROFESSIONS } from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLang } from '@/contexts/LanguageContext';
+import { PROFESSIONS } from '@/lib/constants';
 
 const NEIGHBOURHOODS = [
   'Chaklala Scheme 3','Airport Housing Society','Gulrez Housing Society',
@@ -18,283 +18,241 @@ const NEIGHBOURHOODS = [
   'Yusuf Colony','Ayub Colony','Dhok Choudhrian','Car Chowk Area','Other'
 ];
 
-
+function formatCnic(val: string) {
+  const digits = val.replace(/\D/g, '').slice(0, 13);
+  if (digits.length <= 5) return digits;
+  if (digits.length <= 12) return digits.slice(0,5) + '-' + digits.slice(5);
+  return digits.slice(0,5) + '-' + digits.slice(5,12) + '-' + digits.slice(12);
+}
 
 export default function Settings() {
   const { user, setUser, logout } = useUserStore();
   const { lang } = useLang();
 
-  // Profile fields
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [whatsapp, setWhatsapp] = useState(user?.whatsapp_number || '');
   const [neighbourhood, setNeighbourhood] = useState(user?.neighbourhood || '');
   const [profession, setProfession] = useState(user?.profession || '');
+  const [dob, setDob] = useState((user as any)?.dob || '');
+  const [cnic, setCnic] = useState((user as any)?.cnic || '');
+  const [profilePic, setProfilePic] = useState((user as any)?.profile_pic_url || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [profileError, setProfileError] = useState('');
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // Password reset
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [resetError, setResetError] = useState('');
 
-  const handleSaveProfile = async () => {
-    if (!user) return;
-    setSaving(true);
-    setProfileError('');
+  const uploadPhoto = async (file: File) => {
+    setPhotoUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'enb_photos');
     try {
-      const updatePayload = {
-        full_name: fullName,
-        whatsapp_number: whatsapp.replace(/\D/g, '') || null,
-        neighbourhood: neighbourhood || null,
-        profession: profession || null,
-      };
-      const { data, error } = await supabase
-        .from('users')
-        .update(updatePayload)
-        .eq('id', user.id)
-        .select('full_name, neighbourhood, profession, whatsapp_number')
-        .single();
-      if (error) throw error;
-      // Use DB-confirmed values to update store
-      const confirmed = data || updatePayload;
-      setUser({ 
-        ...user, 
-        full_name: confirmed.full_name || fullName,
-        whatsapp_number: confirmed.whatsapp_number || whatsapp,
-        neighbourhood: confirmed.neighbourhood || neighbourhood,
-        profession: confirmed.profession || profession,
+      const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', {
+        method: 'POST', body: formData,
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (err: any) {
-      setProfileError(err.message || 'Failed to save. Please try again.');
-    } finally {
-      setSaving(false);
-    }
+      const data = await res.json();
+      if (data.secure_url) setProfilePic(data.secure_url);
+    } catch { /* silent */ }
+    setPhotoUploading(false);
   };
 
-  const handleResetPassword = async () => {
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setSaving(true); setProfileError(''); setSaved(false);
+    const { error } = await supabase.from('users').update({
+      full_name: fullName.trim(),
+      whatsapp_number: whatsapp.trim() || null,
+      neighbourhood: neighbourhood || null,
+      profession: profession || null,
+      dob: dob || null,
+      cnic: cnic || null,
+      profile_pic_url: profilePic || null,
+    }).eq('id', user.id);
+
+    if (error) { setProfileError('Failed to save. Please try again.'); setSaving(false); return; }
+    setUser({ ...user, full_name: fullName.trim(), whatsapp_number: whatsapp.trim() || undefined } as any);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    setSaving(false);
+  };
+
+  const handlePasswordReset = async () => {
     if (!user?.email) return;
-    setResetLoading(true);
-    setResetError('');
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
-      setResetSent(true);
-    } catch (err: any) {
-      setResetError(err.message || 'Failed to send reset email.');
-    } finally {
-      setResetLoading(false);
-    }
+    setResetLoading(true); setResetError(''); setResetSent(false);
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) { setResetError(error.message); setResetLoading(false); return; }
+    setResetSent(true); setResetLoading(false);
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     logout();
-    window.location.href = '/';
   };
 
+  if (!user) return null;
+
   return (
-    <div className="space-y-6 pb-24">
-      <header className="mb-6">
+    <div className="space-y-6 pb-24 max-w-2xl mx-auto">
+      <header>
         <h1 className="text-2xl font-bold text-enb-text-primary">Settings</h1>
         <p className="text-enb-text-secondary">Manage your account and preferences</p>
       </header>
 
-      {/* Language Card */}
+      {/* Language */}
       <Card className="border-gray-100 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
-            <span className="text-lg">🌐</span>
-            Language / زبان
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-enb-text-primary">
-                {lang === 'en' ? 'English' : 'اردو'}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {lang === 'en' ? 'Tap to switch to Urdu' : 'انگریزی پر جائیں'}
-              </p>
-            </div>
-            <LanguageToggle />
+        <CardContent className="p-5 flex items-center justify-between">
+          <div>
+            <p className="font-semibold text-enb-text-primary">
+              {lang === 'en' ? '🌐 Language / زبان' : '🌐 زبان / Language'}
+            </p>
+            <p className="text-sm text-enb-text-secondary">
+              {lang === 'en' ? 'English — Tap to switch to Urdu' : 'اردو — انگریزی پر جائیں'}
+            </p>
           </div>
+          <LanguageToggle />
         </CardContent>
       </Card>
 
-      {/* Profile Card */}
+      {/* Profile */}
       <Card className="border-gray-100 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
-            <User className="w-4 h-4 text-enb-green" />
-            Profile Information
+          <CardTitle className="flex items-center gap-2 text-base">
+            <User className="w-4 h-4 text-enb-green" /> Profile Information
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Full Name */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-enb-text-primary">Full Name</label>
-            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" />
+
+          {/* Profile picture */}
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full bg-enb-green/10 flex items-center justify-center overflow-hidden border-2 border-enb-green/20">
+                {profilePic ? (
+                  <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-bold text-enb-green">
+                    {user.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => photoInputRef.current?.click()}
+                className="absolute bottom-0 right-0 w-7 h-7 bg-enb-green text-white rounded-full flex items-center justify-center shadow-sm hover:bg-enb-green/90"
+              >
+                {photoUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+              </button>
+              <input ref={photoInputRef} type="file" accept="image/*" className="hidden"
+                onChange={e => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+            </div>
+            <div>
+              <p className="font-medium text-sm text-enb-text-primary">Profile Photo</p>
+              <p className="text-xs text-gray-400">Tap the camera icon to update</p>
+            </div>
           </div>
 
-          {/* WhatsApp */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-enb-text-primary flex items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-green-500" />
-              WhatsApp Number
-            </label>
-            <Input
-              type="tel"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              placeholder="+92 300 1234567"
-            />
-            <p className="text-xs text-gray-400">Used for action approval notifications. No marketing messages ever.</p>
+          <div>
+            <label className="text-sm font-medium text-enb-text-primary mb-1 block">Full Name</label>
+            <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" />
           </div>
 
-          {/* Neighbourhood */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-enb-text-primary">Neighbourhood</label>
+          <div>
+            <label className="text-sm font-medium text-enb-text-primary mb-1 block">WhatsApp Number</label>
+            <Input type="tel" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+92 300 1234567" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-enb-text-primary mb-1 block">Date of Birth</label>
+              <input type="date" value={dob} onChange={e => setDob(e.target.value)}
+                max={new Date(Date.now() - 16*365*24*60*60*1000).toISOString().split('T')[0]}
+                className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-enb-green/30" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-enb-text-primary mb-1 block">CNIC</label>
+              <Input value={cnic} onChange={e => setCnic(formatCnic(e.target.value))}
+                placeholder="XXXXX-XXXXXXX-X" maxLength={15} className="font-mono" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-enb-text-primary mb-1 block">Neighbourhood</label>
             <Select value={neighbourhood} onValueChange={setNeighbourhood}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select your neighbourhood" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Select neighbourhood" /></SelectTrigger>
               <SelectContent className="max-h-60 overflow-y-auto">
                 {NEIGHBOURHOODS.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Profession */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-enb-text-primary">Profession</label>
+          <div>
+            <label className="text-sm font-medium text-enb-text-primary mb-1 block">Profession</label>
             <Select value={profession} onValueChange={setProfession}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select your profession" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60 overflow-y-auto">
+              <SelectTrigger><SelectValue placeholder="Select profession" /></SelectTrigger>
+              <SelectContent className="max-h-72 overflow-y-auto">
                 {PROFESSIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
-          {profileError && <p className="text-sm text-red-500">{profileError}</p>}
+          {profileError && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg">{profileError}</p>}
+          {saved && <p className="text-sm text-enb-green bg-green-50 p-3 rounded-lg">✓ Changes saved</p>}
 
-          <Button
-            onClick={handleSaveProfile}
-            disabled={saving}
-            className="w-full bg-enb-green hover:bg-enb-green/90 text-white"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
+          <Button onClick={handleSaveProfile} disabled={saving} className="w-full bg-enb-green text-white">
+            {saving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Saving...</> : <><Save className="w-4 h-4 mr-2" />Save Changes</>}
           </Button>
         </CardContent>
       </Card>
 
-      {/* Account Card */}
+      {/* Account */}
       <Card className="border-gray-100 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
-            <Shield className="w-4 h-4 text-enb-teal" />
-            Account
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Shield className="w-4 h-4 text-enb-green" /> Account
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-1">
-          <div className="flex items-center justify-between py-3 border-b border-gray-50">
-            <div>
-              <p className="text-sm font-medium text-enb-text-primary">Email Address</p>
-              <p className="text-xs text-enb-text-secondary">{user?.email || '—'}</p>
-            </div>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-enb-text-primary mb-1 block">Email Address</label>
+            <Input value={user.email || ''} disabled className="bg-gray-50 text-gray-400" />
           </div>
-
-          {/* Change Password */}
-          <div className="py-3">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-sm font-medium text-enb-text-primary">Password</p>
-                <p className="text-xs text-enb-text-secondary">Send a reset link to your email</p>
-              </div>
-            </div>
-            {resetSent ? (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
-                ✅ Reset link sent to <strong>{user?.email}</strong>. Check your inbox.
-              </div>
-            ) : (
-              <>
-                {resetError && <p className="text-xs text-red-500 mb-2">{resetError}</p>}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResetPassword}
-                  disabled={resetLoading}
-                  className="w-full border-enb-teal/30 text-enb-teal hover:bg-enb-teal/5"
-                >
-                  <KeyRound className="w-4 h-4 mr-2" />
-                  {resetLoading ? 'Sending...' : 'Change Password'}
-                </Button>
-              </>
-            )}
+          <div>
+            <Button onClick={handlePasswordReset} disabled={resetLoading || resetSent} variant="outline" className="w-full">
+              <KeyRound className="w-4 h-4 mr-2" />
+              {resetLoading ? 'Sending...' : resetSent ? '✓ Reset link sent to your email' : 'Change Password'}
+            </Button>
+            {resetError && <p className="text-sm text-red-500 mt-1">{resetError}</p>}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Notifications */}
-      <Card className="border-gray-100 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
-            <Bell className="w-4 h-4 text-enb-gold" />
-            Notifications
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <p className="text-sm font-medium text-enb-text-primary">WhatsApp Alerts</p>
-              <p className="text-xs text-enb-text-secondary">Action approvals, ENB credited, campaign alerts</p>
-            </div>
-            <div className={`w-10 h-6 rounded-full flex items-center px-1 transition-colors ${whatsapp ? 'bg-enb-green' : 'bg-gray-200'}`}>
-              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${whatsapp ? 'translate-x-4' : 'translate-x-0'}`} />
-            </div>
-          </div>
-          {!whatsapp && (
-            <p className="text-xs text-orange-500 mt-2">Add your WhatsApp number above to enable notifications.</p>
-          )}
         </CardContent>
       </Card>
 
       {/* Support */}
       <Card className="border-gray-100 shadow-sm">
-        <CardContent className="p-2">
-          <a
-            href="https://wa.me/923001234567?text=Hi%20ENB%20Support%2C%20I%20need%20help%20with..."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <HelpCircle className="w-4 h-4 text-enb-text-secondary" />
-              <span className="text-sm font-medium text-enb-text-primary">Help & Support (WhatsApp)</span>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-300" />
+        <CardContent className="p-5 space-y-3">
+          <a href="https://wa.me/923001234567" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" className="w-full justify-start gap-2">
+              <MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp Support
+            </Button>
+          </a>
+          <a href="/bug-report">
+            <Button variant="outline" className="w-full justify-start gap-2">
+              <HelpCircle className="w-4 h-4 text-enb-teal" /> Report a Problem
+            </Button>
           </a>
         </CardContent>
       </Card>
 
       {/* Logout */}
-      <Button
-        variant="destructive"
-        size="lg"
-        onClick={handleLogout}
-        className="w-full bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 shadow-none"
-      >
-        <LogOut className="w-5 h-5 mr-2" />
-        Log Out
+      <Button onClick={handleLogout} variant="outline" className="w-full border-red-100 text-red-600 hover:bg-red-50">
+        <LogOut className="w-4 h-4 mr-2" /> Log Out
       </Button>
+
+      <p className="text-center text-xs text-gray-400">Eco-Neighbor · ENB Token · v4.7</p>
     </div>
   );
 }

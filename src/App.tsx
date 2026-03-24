@@ -53,6 +53,8 @@ import AdminOnboarding from '@/pages/admin/AdminOnboarding';
 import OnboardingQueue from '@/pages/onboarding-team/OnboardingQueue';
 import VolunteerApply from '@/pages/onboarding-team/VolunteerApply';
 import BusinessHistory from '@/pages/business/BusinessHistory';
+import BusinessSettings from '@/pages/business/BusinessSettings';
+import BusinessSettings from '@/pages/business/BusinessSettings';
 import PartnerSignup from '@/pages/directory/PartnerSignup';
 import SignUpStep1 from '@/pages/onboarding/SignUpStep1';
 import SignUpStep2 from '@/pages/onboarding/SignUpStep2';
@@ -213,6 +215,7 @@ export default function App() {
                       <Route path="/volunteer-apply" element={<VolunteerApply />} />
                       <Route path="/business/offers" element={<BusinessOffers />} />
                       <Route path="/business/history" element={<BusinessHistory />} />
+                      <Route path="/business/settings" element={<BusinessSettings />} />
                       <Route path="/founder-sale" element={<FounderSale />} />
                       <Route path="/founder-hardship" element={<FounderHardship />} />
                       <Route path="/partner-float" element={<PartnerFloat />} />
