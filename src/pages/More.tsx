@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug } from 'lucide-react';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
 import { useT } from '@/contexts/LanguageContext';
+import { supabase } from '@/lib/supabase';
 
 const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
 
 export default function More() {
-  const { l, isUrdu } = useT();
   const { user, logout } = useUserStore();
+  const { l, isUrdu } = useT();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -32,7 +32,14 @@ export default function More() {
     { icon: Users, label: 'Join Onboarding Team', path: '/volunteer-apply', color: 'text-blue-600', show: !['onboarding_team','admin'].includes(user?.role || '') },
     { icon: ClipboardList, label: 'Onboarding Queue', path: '/onboarding-queue', color: 'text-enb-green', show: ['onboarding_team','admin'].includes(user?.role || '') },
     { icon: Bug, label: 'Report a Bug', path: '/bug-report', color: 'text-red-500', show: true },
-    { icon: Settings, label: 'Settings', path: '/settings', color: 'text-gray-600l('nav', 'more')مزید خصوصیات دیکھیں' : 'Explore additional features'}</p>
+    { icon: Settings, label: 'Settings', path: '/settings', color: 'text-gray-600', show: true },
+  ].filter(i => i.show);
+
+  return (
+    <div className="space-y-6 pb-24">
+      <header>
+        <h1 className="text-2xl font-bold text-enb-text-primary">{l('nav', 'more')}</h1>
+        <p className="text-enb-text-secondary">{isUrdu ? 'مزید خصوصیات دیکھیں' : 'Explore additional features'}</p>
       </header>
 
       <div className="grid grid-cols-2 gap-4">
