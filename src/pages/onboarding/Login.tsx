@@ -10,7 +10,7 @@ import { saveCurrentSession } from '@/components/AccountSwitcher';
 type Mode = 'login' | 'reset';
 
 export default function Login() {
-  const { l, isUrdu } = useT();
+  const { l } = useT();
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
@@ -41,13 +41,13 @@ export default function Login() {
       }
       window.location.href = '/';
     } catch (err: any) {
-      setError(err.message || l('login', 'invalidCredentials'));
+      setError(err.message || 'Invalid email or password. Please try again.');
       setLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    if (!email) { setError(l('login', 'enterEmail')); return; }
+    if (!email) { setError('Please enter your email address.'); return; }
     setLoading(true);
     setError('');
     try {
@@ -95,13 +95,54 @@ export default function Login() {
               Click the link in the email to set a new password, then come back and log in.
             </p>
             <Button
-              onClick={() => { setMode('login'); setResetSent(false); setError('l('login', 'email')'); }}
+              onClick={() => { setMode('login'); setResetSent(false); setError(''); }}
+              className="w-full bg-enb-green text-white"
+            >
+              Back to Login
+            </Button>
+          </div>
+        ) : (
+          <>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Email field — shared between both modes */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-enb-text-primary">{l('login', 'email')}</label>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(''); }}
                   onKeyDown={(e) => mode === 'login' && e.key === 'Enter' && handleLogin()}
                 />
               </div>
 
               {/* Password field — login mode only */}
-              {mode === 'loginl('login', 'password')reset'); setError('l('login', 'forgotPassword')text' : 'passwordl('login', 'passwordPlaceholder')Enter' && handleLogin()}
+              {mode === 'login' && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-enb-text-primary">{l('login', 'password')}</label>
+                    <button
+                      type="button"
+                      onClick={() => { setMode('reset'); setError(''); }}
+                      className="text-xs text-enb-green hover:underline flex items-center gap-1"
+                    >
+                      <KeyRound className="w-3 h-3" />
+                      Forgot password?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                       className="pr-10"
                     />
                     <button
@@ -129,7 +170,7 @@ export default function Login() {
                   className="w-full mt-2 bg-enb-dark text-white"
                   disabled={!email || !password || loading}
                 >
-                  {loading ? 'Logging in...' : l('common', 'logIn')}
+                  {loading ? 'Logging in...' : 'Log In'}
                   {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               ) : (
@@ -138,14 +179,16 @@ export default function Login() {
                   className="w-full mt-2 bg-enb-green text-white"
                   disabled={!email || loading}
                 >
-                  {loading ? 'Sending...' : l('login', 'sendReset')}
+                  {loading ? 'Sending...' : 'Send Reset Link'}
                   {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               )}
 
               {/* Footer links */}
               <div className="flex items-center justify-center gap-4 pt-2 text-sm text-gray-400">
-                {mode === 'loginl('login', 'noAccount') '}
+                {mode === 'login' ? (
+                  <span>
+                    Don't have an account?{' '}
                     <button onClick={() => navigate('/signup/step1')} className="text-enb-green font-medium hover:underline">
                       Sign up
                     </button>
