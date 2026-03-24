@@ -49,6 +49,7 @@ const MyHistory = lazy(() => import('@/pages/MyHistory'));
 import Welcome from '@/pages/onboarding/Welcome';
 import About from '@/pages/onboarding/About';
 import BusinessOffers from '@/pages/business/BusinessOffers';
+import BusinessDashboard from '@/pages/dashboard/BusinessDashboard';
 import AdminOnboarding from '@/pages/admin/AdminOnboarding';
 import OnboardingQueue from '@/pages/onboarding-team/OnboardingQueue';
 import VolunteerApply from '@/pages/onboarding-team/VolunteerApply';
@@ -212,6 +213,7 @@ export default function App() {
                       <Route path="/bug-report" element={<BugReport />} />
                       <Route path="/onboarding-queue" element={<OnboardingQueue />} />
                       <Route path="/volunteer-apply" element={<VolunteerApply />} />
+                      <Route path="/business" element={<BusinessDashboard />} />
                       <Route path="/business/offers" element={<BusinessOffers />} />
                       <Route path="/business/history" element={<BusinessHistory />} />
                       <Route path="/founder-sale" element={<FounderSale />} />

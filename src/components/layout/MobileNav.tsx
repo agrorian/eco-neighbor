@@ -10,7 +10,7 @@ export default function MobileNav() {
 
   if (!user) return null;
 
-  const isBusinessSection = location.pathname.startsWith('/business') ||
+  const isBusinessSection = location.pathname === '/business' || location.pathname.startsWith('/business/') ||
     location.pathname === '/scan' || location.pathname === '/partner-float';
 
   // Business role — show toggle bar + context nav
@@ -69,7 +69,7 @@ export default function MobileNav() {
           <div className="flex-1 py-2 text-center text-xs font-semibold text-enb-green border-b-2 border-enb-green">
             Member View
           </div>
-          <Link to="/business/offers" className="flex-1 py-2 text-center text-xs font-semibold text-gray-400 hover:text-enb-teal">
+          <Link to="/business" className="flex-1 py-2 text-center text-xs font-semibold text-gray-400 hover:text-enb-teal">
             Business Admin
           </Link>
         </div>

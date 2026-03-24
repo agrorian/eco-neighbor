@@ -52,7 +52,7 @@ export default function DesktopSidebar() {
   ];
 
   const businessNav = [
-    { path: '/', icon: Home, label: 'Dashboard' },
+    { path: '/business', icon: Home, label: 'Dashboard' },
     { path: '/scan', icon: Store, label: 'Scan QR' },
     { path: '/business/offers', icon: Megaphone, label: 'My Offers' },
     { path: '/business/history', icon: BarChart2, label: 'Redemption History' },
@@ -61,7 +61,7 @@ export default function DesktopSidebar() {
   ];
 
   const isAdminSection = location.pathname.startsWith('/admin');
-  const isBusinessSection = location.pathname.startsWith('/business') || location.pathname === '/scan' || location.pathname === '/partner-float';
+  const isBusinessSection = location.pathname === '/business' || location.pathname.startsWith('/business/') || location.pathname === '/scan' || location.pathname === '/partner-float';
   const isBusiness = user?.role === 'business';
 
   const partnerNav = !['business', 'admin'].includes(user?.role || '') ? [
@@ -114,7 +114,7 @@ export default function DesktopSidebar() {
           <Link to="/" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${!isBusinessSection ? 'bg-enb-green text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Member View
           </Link>
-          <Link to="/business/offers" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${isBusinessSection ? 'bg-enb-teal text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+          <Link to="/business" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${isBusinessSection ? 'bg-enb-teal text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Business Admin
           </Link>
         </div>
