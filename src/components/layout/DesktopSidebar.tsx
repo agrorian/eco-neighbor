@@ -38,7 +38,7 @@ export default function DesktopSidebar() {
   ] : [];
 
   const onboardingNav = user?.role === 'onboarding_team' ? [
-    { path: '/onboarding-queue', icon: Store, label: 'Client Onboarding' },
+    { path: '/onboarding-queue', icon: Store, label: 'Business Onboarding' },
   ] : [];
 
   const adminNav = [
@@ -103,7 +103,7 @@ export default function DesktopSidebar() {
             Member View
           </Link>
           <Link to="/onboarding-queue" className={`flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors ${location.pathname.startsWith('/onboarding') ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-            Onboarding
+            Biz Onboarding
           </Link>
         </div>
       )}

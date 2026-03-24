@@ -124,7 +124,7 @@ export default function MobileNav() {
         ]
       : user.role === 'onboarding_team'
       ? [
-          { path: '/onboarding-queue', icon: Store, label: 'Onboarding' },
+          { path: '/onboarding-queue', icon: Store, label: 'Biz Onboarding' },
           { path: '/more', icon: MoreHorizontal, label: 'More' },
         ]
       : [
