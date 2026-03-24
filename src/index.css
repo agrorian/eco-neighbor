@@ -7,100 +7,71 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ENB DESIGN SYSTEM — v2
-   Single source of truth for all visual tokens.
-   Changes here cascade to every screen automatically.
+   ENB DESIGN SYSTEM — v3
    ═══════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* ── Palette ── */
   --color-enb-green:         #1A6B3C;
   --color-enb-green-light:   #22854A;
   --color-enb-green-dark:    #134F2C;
-  --color-enb-green-faint:   #F0F7F2;   /* card tints, hover surfaces */
-
+  --color-enb-green-faint:   #F0F7F2;
   --color-enb-teal:          #00796B;
   --color-enb-teal-light:    #00897B;
   --color-enb-teal-faint:    #E8F5F4;
-
   --color-enb-gold:          #F9A825;
   --color-enb-gold-dark:     #E08D00;
   --color-enb-gold-faint:    #FFF8E6;
-
   --color-enb-dark:          #1B2B1E;
   --color-enb-white:         #FFFFFF;
-
-  /* Page & card surfaces */
-  --color-enb-surface:       #F3F6F3;   /* warm green-grey page bg */
-  --color-enb-surface-raised:#FFFFFF;   /* cards sit above the surface */
-  --color-enb-border:        #DDE8DE;   /* green-tinted border */
-  --color-enb-border-light:  #EBF2EC;   /* subtle dividers */
-
-  /* Text */
+  --color-enb-surface:       #F3F6F3;
+  --color-enb-surface-raised:#FFFFFF;
+  --color-enb-border:        #DDE8DE;
+  --color-enb-border-light:  #EBF2EC;
   --color-enb-text-primary:  #1B2B1E;
   --color-enb-text-secondary:#4D6352;
   --color-enb-text-muted:    #80997F;
   --color-enb-text-inverse:  #FFFFFF;
-
-  /* Semantic */
   --color-enb-success:       #2E7D32;
   --color-enb-warning:       #E65100;
   --color-enb-error:         #C62828;
 
-  /* ── Typography ── */
   --font-sans: 'Geist Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* ── Spacing / Radius ── */
-  --radius-xs:  0.25rem;   /*  4px */
-  --radius-sm:  0.5rem;    /*  8px */
-  --radius-md:  0.75rem;   /* 12px */
-  --radius-lg:  1rem;      /* 16px */
-  --radius-xl:  1.25rem;   /* 20px */
-  --radius-2xl: 1.5rem;    /* 24px */
-  --radius-3xl: 2rem;      /* 32px */
+  --radius-xs:  0.25rem;
+  --radius-sm:  0.5rem;
+  --radius-md:  0.75rem;
+  --radius-lg:  1rem;
+  --radius-xl:  1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
   --radius-full: 9999px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
    SHADCN VARIABLE OVERRIDE
-   shadcn reads --primary, --ring, --border etc for ALL components.
-   Wiring these to ENB values means every Button, Input, Badge, Select,
-   Dialog — everything — automatically uses the ENB brand.
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
   --background:              #F3F6F3;
   --foreground:              #1B2B1E;
-
   --card:                    #FFFFFF;
   --card-foreground:         #1B2B1E;
-
   --popover:                 #FFFFFF;
   --popover-foreground:      #1B2B1E;
-
   --primary:                 #1A6B3C;
   --primary-foreground:      #FFFFFF;
-
   --secondary:               #EDF3EE;
   --secondary-foreground:    #1B2B1E;
-
   --muted:                   #EDF3EE;
   --muted-foreground:        #4D6352;
-
   --accent:                  #E0F2F0;
   --accent-foreground:       #00796B;
-
   --destructive:             #C62828;
   --destructive-foreground:  #FFFFFF;
-
   --border:                  #DDE8DE;
   --input:                   #DDE8DE;
   --ring:                    #1A6B3C;
-
-  /* Base radius — shadcn multiplies this for variants */
   --radius:                  0.75rem;
-
-  /* Sidebar */
   --sidebar:                 #FFFFFF;
   --sidebar-foreground:      #1B2B1E;
   --sidebar-primary:         #1A6B3C;
@@ -111,12 +82,8 @@
   --sidebar-ring:            #1A6B3C;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   SHADCN THEME INLINE MAP
-   ═══════════════════════════════════════════════════════════════════════ */
 @theme inline {
   --font-sans:  'Geist Variable', sans-serif;
-
   --color-background:              var(--background);
   --color-foreground:              var(--foreground);
   --color-card:                    var(--card);
@@ -135,7 +102,6 @@
   --color-border:                  var(--border);
   --color-input:                   var(--input);
   --color-ring:                    var(--ring);
-
   --radius-sm:  calc(var(--radius) * 0.67);
   --radius-md:  calc(var(--radius) * 0.83);
   --radius-lg:  var(--radius);
@@ -143,7 +109,6 @@
   --radius-2xl: calc(var(--radius) * 2);
   --radius-3xl: calc(var(--radius) * 2.67);
   --radius-4xl: calc(var(--radius) * 3.33);
-
   --color-sidebar:                 var(--sidebar);
   --color-sidebar-foreground:      var(--sidebar-foreground);
   --color-sidebar-primary:         var(--sidebar-primary);
@@ -155,7 +120,16 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   BASE STYLES
+   BASE — ROOT FONT SIZE IS THE KEY LEVER
+   All Tailwind text-* classes are rem-based relative to this.
+   Raising from 16px (browser default) to 17px shifts the entire
+   type scale up uniformly without touching a single component file.
+   text-xs  → 12.75px (was 12px)
+   text-sm  → 14.875px (was 14px)  ← most body text
+   text-base→ 17px    (was 16px)
+   text-lg  → 20.4px  (was 18px)
+   text-xl  → 22.95px (was 20px)
+   text-2xl → 25.5px  (was 24px)
    ═══════════════════════════════════════════════════════════════════════ */
 @layer base {
   * {
@@ -165,7 +139,12 @@
 
   html {
     font-family: var(--font-sans);
-    font-size: 15px;             /* up from 14px — removes the "blunt" feeling */
+    /* ── THE KEY CHANGE ──
+       Browser default is 16px. We set 17px.
+       This shifts the ENTIRE Tailwind rem scale up by 6.25%.
+       Every text-xs, text-sm, text-base etc. gets larger automatically.
+       No component files need to change. */
+    font-size: 17px;
     line-height: 1.6;
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
@@ -177,33 +156,35 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Subtle dot-grid texture on the page surface — very faint */
-    background-image: radial-gradient(circle, #1A6B3C0D 1px, transparent 1px);
-    background-size: 24px 24px;
+    /* Very subtle dot texture — brand presence on the surface */
+    background-image: radial-gradient(circle, rgba(26,107,60,0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
 
-  /* Heading defaults — tighter tracking, proper weight progression */
-  h1 { @apply text-3xl font-bold tracking-tight;   }
-  h2 { @apply text-2xl font-semibold tracking-tight; }
-  h3 { @apply text-xl font-semibold;  }
-  h4 { @apply text-base font-semibold; }
+  /* Heading defaults */
+  h1 { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+  h2 { font-size: 1.5rem;   font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; }
+  h3 { font-size: 1.25rem;  font-weight: 600; line-height: 1.3; }
+  h4 { font-size: 1.0625rem;font-weight: 600; line-height: 1.4; }
 
-  /* Selection colour — ENB green */
+  /* ENB green text selection */
   ::selection {
-    background-color: #1A6B3C30;
+    background-color: rgba(26, 107, 60, 0.18);
     color: #1B2B1E;
   }
 
-  /* Scrollbar — thin, green-tinted (webkit only) */
-  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  /* Slim green scrollbar */
+  ::-webkit-scrollbar       { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: #1A6B3C40;
+    background: rgba(26, 107, 60, 0.3);
     border-radius: 9999px;
   }
-  ::-webkit-scrollbar-thumb:hover { background: #1A6B3C80; }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(26, 107, 60, 0.6);
+  }
 
-  /* Focus — consistent ring across all interactive elements */
+  /* Consistent focus ring */
   :focus-visible {
     outline: 2px solid #1A6B3C;
     outline-offset: 2px;
@@ -212,50 +193,39 @@
 
 /* ═══════════════════════════════════════════════════════════════════════
    SHADOW SCALE
-   Three levels — use consistently:
-   shadow-enb-sm  → inline elements, badges
-   shadow-enb     → cards, panels
-   shadow-enb-lg  → modals, dropdowns, hero cards
    ═══════════════════════════════════════════════════════════════════════ */
-.shadow-enb-sm { box-shadow: 0 1px 3px 0 #1B2B1E14, 0 1px 2px -1px #1B2B1E0D; }
-.shadow-enb    { box-shadow: 0 2px 8px 0  #1B2B1E12, 0 1px 3px -1px #1B2B1E0A; }
-.shadow-enb-lg { box-shadow: 0 8px 24px 0 #1B2B1E14, 0 2px 8px  -2px #1B2B1E10; }
-.shadow-enb-green { box-shadow: 0 4px 16px 0 #1A6B3C25; }
+.shadow-enb-sm { box-shadow: 0 1px 3px 0 rgba(27,43,30,0.08), 0 1px 2px -1px rgba(27,43,30,0.06); }
+.shadow-enb    { box-shadow: 0 2px 8px 0 rgba(27,43,30,0.08), 0 1px 3px -1px rgba(27,43,30,0.05); }
+.shadow-enb-lg { box-shadow: 0 8px 24px 0 rgba(27,43,30,0.10), 0 2px 8px -2px rgba(27,43,30,0.08); }
+.shadow-enb-green { box-shadow: 0 4px 16px 0 rgba(26,107,60,0.22); }
 
 /* ═══════════════════════════════════════════════════════════════════════
    COMPONENT UTILITIES
-   Reusable classes — use across page files for consistency.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* Cards */
 .card-standard {
-  @apply bg-enb-surface-raised rounded-2xl border border-enb-border p-4 md:p-5;
-  box-shadow: 0 2px 8px 0 #1B2B1E10;
+  @apply bg-white rounded-2xl border border-enb-border p-5;
+  box-shadow: 0 2px 8px 0 rgba(27,43,30,0.07);
 }
 .card-highlight {
-  @apply bg-enb-surface-raised rounded-2xl border-l-4 border-l-enb-green border-t border-r border-b border-enb-border-light p-4 md:p-5;
-  box-shadow: 0 2px 8px 0 #1B2B1E10;
+  @apply bg-white rounded-2xl border-l-4 border-l-enb-green border-t border-r border-b border-enb-border-light p-5;
+  box-shadow: 0 2px 8px 0 rgba(27,43,30,0.07);
 }
-.card-green {
-  @apply bg-enb-green-faint rounded-2xl border border-enb-green/20 p-4 md:p-5;
-}
-.card-gold {
-  @apply bg-enb-gold-faint rounded-2xl border border-enb-gold/20 p-4 md:p-5;
-}
+.card-green { @apply bg-enb-green-faint rounded-2xl border border-enb-green/20 p-5; }
+.card-gold  { @apply bg-enb-gold-faint  rounded-2xl border border-enb-gold/20  p-5; }
 
-/* Buttons */
 .btn-primary {
-  @apply bg-enb-green text-white rounded-xl min-h-[48px] px-6 font-semibold text-[15px]
+  @apply bg-enb-green text-white rounded-xl min-h-[48px] px-6 font-semibold
          hover:bg-enb-green-light active:bg-enb-green-dark active:scale-[0.98]
          transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
          flex items-center justify-center;
-  box-shadow: 0 2px 8px 0 #1A6B3C30;
+  box-shadow: 0 2px 8px 0 rgba(26,107,60,0.28);
 }
 .btn-secondary {
-  @apply bg-enb-teal text-white rounded-xl min-h-[48px] px-6 font-semibold text-[15px]
-         hover:bg-enb-teal-light active:scale-[0.98]
-         transition-all duration-150 flex items-center justify-center;
-  box-shadow: 0 2px 8px 0 #00796B30;
+  @apply bg-enb-teal text-white rounded-xl min-h-[48px] px-6 font-semibold
+         hover:bg-enb-teal-light active:scale-[0.98] transition-all duration-150
+         flex items-center justify-center;
+  box-shadow: 0 2px 8px 0 rgba(0,121,107,0.28);
 }
 .btn-ghost {
   @apply bg-transparent text-enb-text-primary rounded-xl min-h-[44px] px-4 font-medium
@@ -263,93 +233,57 @@
          flex items-center justify-center;
 }
 .btn-outline {
-  @apply bg-white text-enb-green border border-enb-green/30 rounded-xl min-h-[48px] px-5 font-semibold text-[15px]
+  @apply bg-white text-enb-green border border-enb-green/30 rounded-xl min-h-[48px] px-5 font-semibold
          hover:bg-enb-green-faint hover:border-enb-green/60 active:scale-[0.98]
          transition-all duration-150 flex items-center justify-center;
 }
 
-/* Inputs */
 .input-standard {
-  @apply h-[48px] rounded-xl border border-enb-border px-4 bg-white text-enb-text-primary
-         placeholder:text-enb-text-muted text-[15px]
+  @apply h-12 rounded-xl border border-enb-border px-4 bg-white text-enb-text-primary
+         placeholder:text-enb-text-muted
          focus:outline-none focus:ring-2 focus:ring-enb-green/25 focus:border-enb-green/50
          transition-all duration-150 w-full;
 }
 
-/* Typography scale */
-.text-hero      { @apply font-bold text-3xl md:text-5xl text-enb-text-primary tracking-tight leading-tight; }
-.text-section   { @apply font-semibold text-xl md:text-2xl text-enb-text-primary tracking-tight; }
-.text-body      { @apply text-[15px] leading-relaxed text-enb-text-primary; }
-.text-body-sm   { @apply text-sm leading-relaxed text-enb-text-primary; }
-.text-label     { @apply font-semibold text-xs uppercase tracking-wide text-enb-text-secondary; }
-.text-muted     { @apply text-sm text-enb-text-muted; }
-.text-amount    { @apply font-bold text-xl md:text-2xl text-enb-gold tabular-nums tracking-tight; }
-.text-amount-lg { @apply font-bold text-3xl md:text-4xl text-enb-gold tabular-nums tracking-tight; }
-.text-code      { @apply font-mono text-xs text-enb-text-secondary bg-enb-surface px-1.5 py-0.5 rounded-md; }
+/* Typography */
+.text-hero      { @apply font-bold tracking-tight leading-tight; font-size: 2.2rem; }
+.text-section   { @apply font-semibold tracking-tight; font-size: 1.375rem; }
+.text-body      { @apply leading-relaxed text-enb-text-primary; font-size: 1rem; }
+.text-body-sm   { @apply leading-relaxed text-enb-text-primary; font-size: 0.9rem; }
+.text-label     { @apply font-semibold uppercase tracking-wide text-enb-text-secondary; font-size: 0.72rem; }
+.text-muted     { @apply text-enb-text-muted; font-size: 0.875rem; }
+.text-amount    { @apply font-bold text-enb-gold tabular-nums tracking-tight; font-size: 1.5rem; }
+.text-amount-lg { @apply font-bold text-enb-gold tabular-nums tracking-tight; font-size: 2.25rem; }
+.text-code      { @apply font-mono text-enb-text-secondary bg-enb-surface px-1.5 py-0.5 rounded-md; font-size: 0.8rem; }
 
-/* Badges / chips */
-.badge-enb  { @apply inline-flex items-center gap-1 bg-enb-green/10  text-enb-green  text-xs font-semibold px-2.5 py-1 rounded-full; }
-.badge-gold { @apply inline-flex items-center gap-1 bg-enb-gold/10   text-enb-gold-dark text-xs font-semibold px-2.5 py-1 rounded-full; }
-.badge-teal { @apply inline-flex items-center gap-1 bg-enb-teal/10   text-enb-teal   text-xs font-semibold px-2.5 py-1 rounded-full; }
-.badge-gray { @apply inline-flex items-center gap-1 bg-gray-100      text-gray-600   text-xs font-semibold px-2.5 py-1 rounded-full; }
+/* Badges */
+.badge-enb  { @apply inline-flex items-center gap-1 bg-enb-green/10 text-enb-green  font-semibold px-2.5 py-1 rounded-full; font-size: 0.75rem; }
+.badge-gold { @apply inline-flex items-center gap-1 bg-enb-gold/10  text-enb-gold-dark font-semibold px-2.5 py-1 rounded-full; font-size: 0.75rem; }
+.badge-teal { @apply inline-flex items-center gap-1 bg-enb-teal/10  text-enb-teal   font-semibold px-2.5 py-1 rounded-full; font-size: 0.75rem; }
+.badge-gray { @apply inline-flex items-center gap-1 bg-gray-100     text-gray-600   font-semibold px-2.5 py-1 rounded-full; font-size: 0.75rem; }
 
-/* Stat cards — dashboard numbers */
-.stat-card {
-  @apply bg-white rounded-2xl border border-enb-border p-4;
-  box-shadow: 0 1px 4px 0 #1B2B1E0C;
-}
-.stat-card-green {
-  @apply bg-enb-green-faint rounded-2xl border border-enb-green/15 p-4;
-}
-.stat-card-gold {
-  @apply bg-enb-gold-faint rounded-2xl border border-enb-gold/15 p-4;
-}
+.stat-card       { @apply bg-white rounded-2xl border border-enb-border p-5; box-shadow: 0 1px 4px 0 rgba(27,43,30,0.07); }
+.stat-card-green { @apply bg-enb-green-faint rounded-2xl border border-enb-green/15 p-5; }
+.stat-card-gold  { @apply bg-enb-gold-faint  rounded-2xl border border-enb-gold/15  p-5; }
 
-/* Page section header */
-.section-header {
-  @apply font-bold text-lg text-enb-text-primary mb-3 flex items-center gap-2;
-}
-
-/* Divider */
+.section-header { @apply font-bold text-enb-text-primary mb-3 flex items-center gap-2; font-size: 1.0625rem; }
 .divider { @apply border-t border-enb-border-light my-4; }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ANIMATION UTILITIES
+   ANIMATIONS
    ═══════════════════════════════════════════════════════════════════════ */
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out both;
-}
-.animate-slide-up {
-  animation: slideUp 0.25s ease-out both;
-}
-.animate-scale-in {
-  animation: scaleIn 0.2s ease-out both;
-}
+.animate-fade-in  { animation: fadeIn  0.2s ease-out both; }
+.animate-slide-up { animation: slideUp 0.25s ease-out both; }
+.animate-scale-in { animation: scaleIn 0.2s ease-out both; }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
-}
+@keyframes fadeIn  { from { opacity: 0; }                              to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(8px); }  to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.96); }      to { opacity: 1; transform: scale(1); } }
 
 /* ═══════════════════════════════════════════════════════════════════════
    URDU / RTL SUPPORT
    ═══════════════════════════════════════════════════════════════════════ */
-.font-urdu {
-  font-family: 'Noto Nastaliq Urdu', serif;
-  line-height: 2;
-}
+.font-urdu { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2; }
 [dir="rtl"] .rotate-rtl  { transform: scaleX(-1); }
 [dir="rtl"] .space-y-4 > * + * { margin-top: 1rem; }
-:lang(ur) {
-  font-family: 'Noto Nastaliq Urdu', serif;
-  direction: rtl;
-  line-height: 2;
-}
+:lang(ur) { font-family: 'Noto Nastaliq Urdu', serif; direction: rtl; line-height: 2; }

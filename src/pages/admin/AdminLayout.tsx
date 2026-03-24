@@ -117,8 +117,8 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto h-[calc(100vh-64px)] md:h-screen p-6">
-        <div className="max-w-5xl mx-auto">
+      <main className="flex-1 overflow-y-auto h-[calc(100vh-64px)] md:h-screen p-4 md:p-6">
+        <div className="max-w-3xl mx-auto">
           <Outlet />
         </div>
       </main>
