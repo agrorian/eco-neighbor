@@ -62,10 +62,11 @@ export default function AdminLayout() {
               <p className="text-xs text-enb-text-secondary">Eco-Neighbor</p>
             </div>
           </div>
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="md:hidden">
+          <Link to="/" className="md:hidden">
+            <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-xl font-semibold text-sm">
               <LogOut className="w-4 h-4" />
-            </Button>
+              Exit
+            </div>
           </Link>
         </div>
 
