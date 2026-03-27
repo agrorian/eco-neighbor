@@ -42,9 +42,7 @@ function NavCard({ path, icon: Icon, label, isActive }: {
 function AccountCard() {
   return (
     <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-      <div className="w-12 h-12 rounded-2xl bg-gray-100 border border-white shadow-sm flex items-center justify-center overflow-hidden">
-        <AccountSwitcher compact={true} />
-      </div>
+      <AccountSwitcher compact={true} />
       <span className="text-[11px] font-semibold text-gray-500">Account</span>
     </div>
   );
