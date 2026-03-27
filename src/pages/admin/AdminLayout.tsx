@@ -6,17 +6,17 @@ import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
 const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-  { icon: CheckSquare,     label: 'Queue',     path: '/admin/queue' },
-  { icon: Users,           label: 'Users',     path: '/admin/users' },
-  { icon: Megaphone,       label: 'Campaigns', path: '/admin/campaigns' },
-  { icon: Store,           label: 'Partners',  path: '/admin/partners' },
-  { icon: ArrowRightLeft,  label: 'Bridge',    path: '/admin/bridge' },
-  { icon: Shield,          label: 'Mod Queue', path: '/admin/mod-queue' },
-  { icon: AlertTriangle,   label: 'Escalations', path: '/admin/escalation' },
-  { icon: Bug,             label: 'Bug Reports', path: '/admin/bugs' },
-  { icon: Store,           label: 'Onboarding',  path: '/admin/onboarding' },
-  { icon: ClipboardList,   label: 'Daily Log', path: '/my-log' },
+  { icon: LayoutDashboard, label: 'Dashboard',   path: '/admin',            color: 'text-enb-green',  bg: 'bg-enb-green/10' },
+  { icon: CheckSquare,     label: 'Queue',        path: '/admin/queue',      color: 'text-blue-600',   bg: 'bg-blue-50' },
+  { icon: Users,           label: 'Users',        path: '/admin/users',      color: 'text-purple-600', bg: 'bg-purple-50' },
+  { icon: Megaphone,       label: 'Campaigns',    path: '/admin/campaigns',  color: 'text-enb-teal',   bg: 'bg-teal-50' },
+  { icon: Store,           label: 'Partners',     path: '/admin/partners',   color: 'text-enb-gold',   bg: 'bg-amber-50' },
+  { icon: ArrowRightLeft,  label: 'Bridge',       path: '/admin/bridge',     color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  { icon: Shield,          label: 'Mod Queue',    path: '/admin/mod-queue',  color: 'text-enb-green',  bg: 'bg-enb-green/10' },
+  { icon: AlertTriangle,   label: 'Escalations',  path: '/admin/escalation', color: 'text-orange-500', bg: 'bg-orange-50' },
+  { icon: Bug,             label: 'Bug Reports',  path: '/admin/bugs',       color: 'text-red-500',    bg: 'bg-red-50' },
+  { icon: Store,           label: 'Onboarding',   path: '/admin/onboarding', color: 'text-enb-teal',   bg: 'bg-teal-50' },
+  { icon: ClipboardList,   label: 'Daily Log',    path: '/my-log',           color: 'text-gray-600',   bg: 'bg-gray-100' },
 ];
 
 export default function AdminLayout() {
@@ -52,6 +52,8 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       <aside className="bg-white border-b md:border-b-0 md:border-r border-gray-200 w-full md:w-64 flex-shrink-0">
+
+        {/* Header */}
         <div className="p-4 border-b border-gray-100 flex justify-between items-center md:block">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-enb-text-primary rounded-lg flex items-center justify-center text-white font-bold">A</div>
@@ -67,39 +69,51 @@ export default function AdminLayout() {
           </Link>
         </div>
 
-        {/* Mobile: icon grid — now 5 columns to fit 9 items neatly */}
-        <nav className="md:hidden p-3 grid grid-cols-5 gap-2">
+        {/* ── Mobile: card grid — 4 columns, prominent cards ── */}
+        <nav className="md:hidden p-3 grid grid-cols-4 gap-2.5">
           {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = item.path === '/admin'
+              ? location.pathname === '/admin'
+              : location.pathname.startsWith(item.path);
             return (
               <Link key={item.path} to={item.path}>
-                <div className={`flex flex-col items-center gap-1 px-1 py-2 rounded-xl text-xs font-medium transition-colors ${
-                  isActive ? 'bg-enb-text-primary text-white' : 'text-gray-500 hover:bg-gray-100'
+                <div className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${
+                  isActive
+                    ? 'bg-enb-dark shadow-lg'
+                    : `${item.bg} shadow-sm border border-white`
                 }`}>
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : item.label === 'Escalations' ? 'text-orange-400' : 'text-gray-400'}`} />
-                  <span className="text-[9px] text-center leading-tight">{item.label}</span>
+                  {/* Icon container */}
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ${
+                    isActive ? 'bg-white/20' : 'bg-white'
+                  }`}>
+                    <item.icon className={`w-6 h-6 ${isActive ? 'text-white' : item.color}`} />
+                  </div>
+                  {/* Label */}
+                  <span className={`text-[11px] font-semibold text-center leading-tight ${
+                    isActive ? 'text-white' : 'text-gray-700'
+                  }`}>
+                    {item.label}
+                  </span>
                 </div>
               </Link>
             );
           })}
         </nav>
 
-        {/* Desktop: vertical list */}
-        <nav className="hidden md:flex flex-col p-4 gap-2">
+        {/* ── Desktop: vertical list ── */}
+        <nav className="hidden md:flex flex-col p-4 gap-1">
           {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = item.path === '/admin'
+              ? location.pathname === '/admin'
+              : location.pathname.startsWith(item.path);
             return (
               <Link key={item.path} to={item.path}>
                 <button className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors w-full whitespace-nowrap ${
                   isActive
                     ? 'bg-enb-text-primary text-white shadow-md'
-                    : item.label === 'Escalations'
-                    ? 'text-orange-600 hover:bg-orange-50'
                     : 'text-gray-500 hover:bg-gray-100'
                 }`}>
-                  <item.icon className={`w-5 h-5 ${
-                    isActive ? 'text-white' : item.label === 'Escalations' ? 'text-orange-400' : 'text-gray-400'
-                  }`} />
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : item.color}`} />
                   {item.label}
                 </button>
               </Link>
