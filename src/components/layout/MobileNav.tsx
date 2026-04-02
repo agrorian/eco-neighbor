@@ -2,33 +2,31 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, PlusCircle, Wallet, Store, MoreHorizontal, ShieldCheck, Shield } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
+import { useT } from '@/contexts/LanguageContext';
 
-// Per-item colour config
 const ITEM_STYLES: Record<string, { color: string; bg: string; activeBg: string }> = {
-  'Home':            { color: 'text-enb-green',  bg: 'bg-enb-green/10',  activeBg: 'bg-enb-green' },
-  'Action':          { color: 'text-blue-600',   bg: 'bg-blue-50',       activeBg: 'bg-blue-600' },
-  'Wallet':          { color: 'text-amber-500',  bg: 'bg-amber-50',      activeBg: 'bg-amber-500' },
-  'Directory':       { color: 'text-enb-teal',   bg: 'bg-teal-50',       activeBg: 'bg-enb-teal' },
-  'More':            { color: 'text-gray-600',   bg: 'bg-gray-100',      activeBg: 'bg-gray-500' },
-  'Admin':           { color: 'text-slate-700',  bg: 'bg-slate-100',     activeBg: 'bg-slate-700' },
-  'Mod Queue':       { color: 'text-orange-500', bg: 'bg-orange-50',     activeBg: 'bg-orange-500' },
-  'Biz Onboarding':  { color: 'text-purple-600', bg: 'bg-purple-50',     activeBg: 'bg-purple-600' },
-  'My Offers':       { color: 'text-enb-teal',   bg: 'bg-teal-50',       activeBg: 'bg-enb-teal' },
-  'Scan QR':         { color: 'text-enb-green',  bg: 'bg-enb-green/10',  activeBg: 'bg-enb-green' },
-  'History':         { color: 'text-purple-600', bg: 'bg-purple-50',     activeBg: 'bg-purple-600' },
-  'Float':           { color: 'text-indigo-600', bg: 'bg-indigo-50',     activeBg: 'bg-indigo-600' },
+  'dashboard':       { color: 'text-enb-green',  bg: 'bg-enb-green/10',  activeBg: 'bg-enb-green' },
+  'submitAction':    { color: 'text-blue-600',   bg: 'bg-blue-50',       activeBg: 'bg-blue-600' },
+  'wallet':          { color: 'text-amber-500',  bg: 'bg-amber-50',      activeBg: 'bg-amber-500' },
+  'directory':       { color: 'text-enb-teal',   bg: 'bg-teal-50',       activeBg: 'bg-enb-teal' },
+  'more':            { color: 'text-gray-600',   bg: 'bg-gray-100',      activeBg: 'bg-gray-500' },
+  'admin':           { color: 'text-slate-700',  bg: 'bg-slate-100',     activeBg: 'bg-slate-700' },
+  'modQueue':        { color: 'text-orange-500', bg: 'bg-orange-50',     activeBg: 'bg-orange-500' },
+  'bizOnboarding':   { color: 'text-purple-600', bg: 'bg-purple-50',     activeBg: 'bg-purple-600' },
+  'myOffers':        { color: 'text-enb-teal',   bg: 'bg-teal-50',       activeBg: 'bg-enb-teal' },
+  'scanQR':          { color: 'text-enb-green',  bg: 'bg-enb-green/10',  activeBg: 'bg-enb-green' },
+  'history':         { color: 'text-purple-600', bg: 'bg-purple-50',     activeBg: 'bg-purple-600' },
+  'float':           { color: 'text-indigo-600', bg: 'bg-indigo-50',     activeBg: 'bg-indigo-600' },
 };
 
-function NavCard({ path, icon: Icon, label, isActive }: {
-  path: string; icon: any; label: string; isActive: boolean;
+function NavCard({ path, icon: Icon, styleKey, label, isActive }: {
+  path: string; icon: any; styleKey: string; label: string; isActive: boolean;
 }) {
-  const s = ITEM_STYLES[label] || { color: 'text-gray-500', bg: 'bg-gray-100', activeBg: 'bg-gray-500' };
+  const s = ITEM_STYLES[styleKey] || { color: 'text-gray-500', bg: 'bg-gray-100', activeBg: 'bg-gray-500' };
   return (
     <Link to={path} className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-        isActive
-          ? `${s.activeBg} shadow-md`
-          : `${s.bg} shadow-sm border border-white`
+        isActive ? `${s.activeBg} shadow-md` : `${s.bg} shadow-sm border border-white`
       }`}>
         <Icon className={`w-6 h-6 ${isActive ? 'text-white' : s.color}`} strokeWidth={isActive ? 2.5 : 2} />
       </div>
@@ -54,6 +52,7 @@ const NAV_ROW = "flex items-end pb-3 pt-2 px-3 gap-2";
 export default function MobileNav() {
   const location = useLocation();
   const { user } = useUserStore();
+  const { l } = useT();
 
   if (!user) return null;
 
@@ -83,17 +82,17 @@ export default function MobileNav() {
 
     const bizItems = isBusinessSection
       ? [
-          { path: '/business/offers',  icon: Store,       label: 'My Offers' },
-          { path: '/scan',             icon: ShieldCheck, label: 'Scan QR' },
-          { path: '/business/history', icon: Wallet,      label: 'History' },
-          { path: '/partner-float',    icon: Shield,      label: 'Float' },
+          { path: '/business/offers',  icon: Store,       styleKey: 'myOffers',  label: 'My Offers' },
+          { path: '/scan',             icon: ShieldCheck, styleKey: 'scanQR',    label: 'Scan QR' },
+          { path: '/business/history', icon: Wallet,      styleKey: 'history',   label: 'History' },
+          { path: '/partner-float',    icon: Shield,      styleKey: 'float',     label: 'Float' },
         ]
       : [
-          { path: '/',          icon: Home,          label: 'Home' },
-          { path: '/submit',    icon: PlusCircle,    label: 'Action' },
-          { path: '/wallet',    icon: Wallet,        label: 'Wallet' },
-          { path: '/directory', icon: Store,         label: 'Directory' },
-          { path: '/more',      icon: MoreHorizontal,label: 'More' },
+          { path: '/',          icon: Home,          styleKey: 'dashboard',   label: l('nav', 'dashboard') },
+          { path: '/submit',    icon: PlusCircle,    styleKey: 'submitAction',label: l('nav', 'submitAction') },
+          { path: '/wallet',    icon: Wallet,        styleKey: 'wallet',      label: l('nav', 'wallet') },
+          { path: '/directory', icon: Store,         styleKey: 'directory',   label: l('nav', 'directory') },
+          { path: '/more',      icon: MoreHorizontal,styleKey: 'more',        label: l('nav', 'more') },
         ];
 
     return (
@@ -101,7 +100,8 @@ export default function MobileNav() {
         {toggleBar}
         <div className={NAV_ROW}>
           {bizItems.map(item => (
-            <NavCard key={item.path} path={item.path} icon={item.icon} label={item.label}
+            <NavCard key={item.path} path={item.path} icon={item.icon}
+              styleKey={item.styleKey} label={item.label}
               isActive={location.pathname === item.path} />
           ))}
           <AccountCard />
@@ -112,20 +112,20 @@ export default function MobileNav() {
 
   // ── All other roles ────────────────────────────────────────────────────────
   const navItems = [
-    { path: '/',       icon: Home,       label: 'Home' },
-    { path: '/submit', icon: PlusCircle, label: 'Action' },
-    { path: '/wallet', icon: Wallet,     label: 'Wallet' },
+    { path: '/',       icon: Home,       styleKey: 'dashboard',   label: l('nav', 'dashboard') },
+    { path: '/submit', icon: PlusCircle, styleKey: 'submitAction',label: l('nav', 'submitAction') },
+    { path: '/wallet', icon: Wallet,     styleKey: 'wallet',      label: l('nav', 'wallet') },
     ...(user.role === 'admin'
-      ? [{ path: '/admin',             icon: ShieldCheck,    label: 'Admin' },
-         { path: '/more',              icon: MoreHorizontal, label: 'More' }]
+      ? [{ path: '/admin',            icon: ShieldCheck,    styleKey: 'admin',        label: l('nav', 'admin') },
+         { path: '/more',             icon: MoreHorizontal, styleKey: 'more',         label: l('nav', 'more') }]
       : user.role === 'moderator'
-      ? [{ path: '/mod-queue',         icon: Shield,         label: 'Mod Queue' },
-         { path: '/more',              icon: MoreHorizontal, label: 'More' }]
+      ? [{ path: '/mod-queue',        icon: Shield,         styleKey: 'modQueue',     label: l('nav', 'modQueue') },
+         { path: '/more',             icon: MoreHorizontal, styleKey: 'more',         label: l('nav', 'more') }]
       : user.role === 'onboarding_team'
-      ? [{ path: '/onboarding-queue',  icon: Store,          label: 'Biz Onboarding' },
-         { path: '/more',              icon: MoreHorizontal, label: 'More' }]
-      : [{ path: '/directory',         icon: Store,          label: 'Directory' },
-         { path: '/more',              icon: MoreHorizontal, label: 'More' }]
+      ? [{ path: '/onboarding-queue', icon: Store,          styleKey: 'bizOnboarding',label: 'Biz Onboarding' },
+         { path: '/more',             icon: MoreHorizontal, styleKey: 'more',         label: l('nav', 'more') }]
+      : [{ path: '/directory',        icon: Store,          styleKey: 'directory',    label: l('nav', 'directory') },
+         { path: '/more',             icon: MoreHorizontal, styleKey: 'more',         label: l('nav', 'more') }]
     ),
   ];
 
@@ -140,7 +140,7 @@ export default function MobileNav() {
             : location.pathname.startsWith(item.path);
           return (
             <NavCard key={item.path} path={item.path} icon={item.icon}
-              label={item.label} isActive={isActive} />
+              styleKey={item.styleKey} label={item.label} isActive={isActive} />
           );
         })}
         <AccountCard />

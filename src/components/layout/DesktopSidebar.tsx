@@ -5,21 +5,23 @@ import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft,
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import LanguageToggle from '@/components/LanguageToggle';
+import { useT } from '@/contexts/LanguageContext';
 
 export default function DesktopSidebar() {
   const location = useLocation();
   const { user } = useUserStore();
+  const { l } = useT();
 
   if (!user) return null;
 
   const memberNav = [
-    { path: '/', icon: Home, label: 'Dashboard' },
-    { path: '/submit', icon: PlusCircle, label: 'Submit Action' },
-    { path: '/wallet', icon: Wallet, label: 'Wallet' },
-    { path: '/directory', icon: Store, label: 'Business Directory' },
-    { path: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
-    { path: '/bridge', icon: ArrowRightLeft, label: 'Bridge' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/',           icon: Home,          label: l('nav', 'dashboard') },
+    { path: '/submit',     icon: PlusCircle,    label: l('nav', 'submitAction') },
+    { path: '/wallet',     icon: Wallet,        label: l('nav', 'wallet') },
+    { path: '/directory',  icon: Store,         label: l('nav', 'directory') },
+    { path: '/leaderboard',icon: Trophy,        label: l('nav', 'leaderboard') },
+    { path: '/bridge',     icon: ArrowRightLeft,label: l('nav', 'bridge') },
+    { path: '/settings',   icon: Settings,      label: l('nav', 'settings') },
   ];
 
   const volunteerNav = !['onboarding_team', 'admin', 'moderator', 'founder'].includes(user?.role || '') ? [
@@ -28,12 +30,12 @@ export default function DesktopSidebar() {
 
   const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
   const modNav = ['moderator', 'admin'].includes(user?.role || '') ? [
-    { path: '/mod-queue', icon: Shield, label: 'Mod Queue' },
+    { path: '/mod-queue', icon: Shield, label: l('nav', 'modQueue') },
   ] : [];
   const roleBasedNav = ALLOWED_LOG_ROLES.includes(user?.role || '') ? [
-    { path: '/my-log', icon: ClipboardList, label: 'Daily Log' },
-    { path: '/impact', icon: Globe, label: 'Community Impact' },
-    { path: '/governance', icon: BarChart2, label: 'Governance' },
+    { path: '/my-log',    icon: ClipboardList, label: l('nav', 'dailyLog') },
+    { path: '/impact',    icon: Globe,         label: l('nav', 'communityImpact') },
+    { path: '/governance',icon: BarChart2,     label: l('nav', 'governance') },
   ] : [];
 
   const onboardingNav = user?.role === 'onboarding_team' ? [
@@ -41,22 +43,22 @@ export default function DesktopSidebar() {
   ] : [];
 
   const adminNav = [
-    { path: '/admin', icon: Home, label: 'Overview' },
-    { path: '/admin/users', icon: Users, label: 'Members' },
-    { path: '/admin/campaigns', icon: Megaphone, label: 'Campaigns' },
-    { path: '/admin/partners', icon: Store, label: 'Partners' },
-    { path: '/admin/bridge', icon: ArrowRightLeft, label: 'Bridge Manager' },
-    { path: '/admin/mod-queue', icon: CheckSquare, label: 'Mod Queue' },
+    { path: '/admin',            icon: Home,          label: 'Overview' },
+    { path: '/admin/users',      icon: Users,         label: 'Members' },
+    { path: '/admin/campaigns',  icon: Megaphone,     label: 'Campaigns' },
+    { path: '/admin/partners',   icon: Store,         label: 'Partners' },
+    { path: '/admin/bridge',     icon: ArrowRightLeft,label: 'Bridge Manager' },
+    { path: '/admin/mod-queue',  icon: CheckSquare,   label: 'Mod Queue' },
     { path: '/admin/escalation', icon: AlertTriangle, label: 'Escalations' },
   ];
 
   const businessNav = [
-    { path: '/business', icon: Home, label: 'Dashboard' },
-    { path: '/scan', icon: Store, label: 'Scan QR' },
-    { path: '/business/offers', icon: Megaphone, label: 'My Offers' },
-    { path: '/business/history', icon: BarChart2, label: 'Redemption History' },
-    { path: '/partner-float', icon: ArrowRightLeft, label: 'Float Monitor' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/business',         icon: Home,          label: l('nav', 'dashboard') },
+    { path: '/scan',             icon: Store,         label: 'Scan QR' },
+    { path: '/business/offers',  icon: Megaphone,     label: 'My Offers' },
+    { path: '/business/history', icon: BarChart2,     label: 'Redemption History' },
+    { path: '/partner-float',    icon: ArrowRightLeft,label: 'Float Monitor' },
+    { path: '/settings',         icon: Settings,      label: l('nav', 'settings') },
   ];
 
   const isAdminSection = location.pathname.startsWith('/admin');
@@ -123,7 +125,7 @@ export default function DesktopSidebar() {
         </div>
       )}
 
-      {/* Nav items — larger text and touch targets */}
+      {/* Nav items */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = item.path === '/admin'

@@ -6,6 +6,7 @@ import { ArrowRight, Clock, Star, MapPin, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore, getTier } from '@/store/user';
+import { useT } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 
 const ActiveCampaignBanner = () => {
@@ -147,8 +148,8 @@ const ImpactCounter = () => {
           <Card className="bg-enb-green/5 border-enb-green/10 hover:border-enb-green/30 transition-colors cursor-pointer min-h-[80px]">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-enb-green mb-1">{stats.actions.toLocaleString()}</div>
-              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">Verified Actions</div>
-              <div className="text-xs text-enb-green/50 mt-1">tap to view ↗</div>
+              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">{l('dashboard', 'verifiedActions')}</div>
+              <div className="text-xs text-enb-green/50 mt-1">{l('dashboard', 'tapToView')} ↗</div>
             </CardContent>
           </Card>
         </button>
@@ -156,8 +157,8 @@ const ImpactCounter = () => {
           <Card className="bg-enb-gold/5 border-enb-gold/10 hover:border-enb-gold/30 transition-colors cursor-pointer min-h-[80px]">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-enb-gold mb-1">{(stats.enb / 1000).toFixed(1)}k</div>
-              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">ENB Distributed</div>
-              <div className="text-xs text-enb-gold/50 mt-1">tap to view ↗</div>
+              <div className="text-xs text-enb-text-secondary uppercase tracking-wider">{l('dashboard', 'enbDistributed')}</div>
+              <div className="text-xs text-enb-gold/50 mt-1">{l('dashboard', 'tapToView')} ↗</div>
             </CardContent>
           </Card>
         </button>
@@ -231,6 +232,7 @@ const ImpactCounter = () => {
 
 const RecentActivity = () => {
   const { user } = useUserStore();
+  const { l } = useT();
   const [transactions, setTransactions] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -253,11 +255,11 @@ const RecentActivity = () => {
 
   return (
     <div className="space-y-3">
-      <h3 className="font-bold text-enb-text-primary text-lg">Recent Activity</h3>
+      <h3 className="font-bold text-enb-text-primary text-lg">{l('dashboard', 'recentActivity')}</h3>
       {loading && <div className="text-sm text-enb-text-secondary text-center py-4">Loading...</div>}
       {!loading && transactions.length === 0 && (
         <div className="text-sm text-enb-text-secondary text-center py-8 bg-gray-50 rounded-xl">
-          No activity yet — submit your first community action!
+          {l('dashboard', 'noActivity')}
         </div>
       )}
       {transactions.map((item, i) => (
@@ -304,6 +306,7 @@ const getTierIcon = (repScore: number) => {
 
 export default function MemberDashboard() {
   const { user, setUser } = useUserStore();
+  const { l } = useT();
 
   React.useEffect(() => {
     if (!user?.id) return;
@@ -323,7 +326,7 @@ export default function MemberDashboard() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary">
-            Hi, {user.full_name?.split(' ')[0] || user.email} {getTierIcon(user.rep_score)}
+            {l('dashboard', 'greeting')}, {user.full_name?.split(' ')[0] || user.email} {getTierIcon(user.rep_score)}
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-sm text-enb-text-secondary font-medium bg-gray-100 px-2 py-0.5 rounded-md">{tier} Tier</span>
@@ -335,7 +338,7 @@ export default function MemberDashboard() {
         </div>
         <div className="text-right">
           <div className="text-3xl font-bold text-enb-gold">{(user.enb_local_bal || 0).toLocaleString()}</div>
-          <div className="text-xs text-enb-text-secondary uppercase tracking-wider font-medium">ENB.LOCAL</div>
+          <div className="text-xs text-enb-text-secondary uppercase tracking-wider font-medium">{l('dashboard', 'balance')}</div>
         </div>
       </div>
 
@@ -345,19 +348,19 @@ export default function MemberDashboard() {
         <Link to="/submit">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
             <ENBLeaf size={24} />
-            <span className="text-xs font-medium">Submit Action</span>
+            <span className="text-xs font-medium">{l('dashboard', 'submitAction')}</span>
           </Button>
         </Link>
         <Link to="/directory">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
             <MapPin className="w-6 h-6 text-enb-teal" />
-            <span className="text-xs font-medium">Find Business</span>
+            <span className="text-xs font-medium">{l('dashboard', 'findBusiness')}</span>
           </Button>
         </Link>
         <Link to="/history">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 bg-white hover:bg-gray-50 border-gray-200">
             <History className="w-6 h-6 text-enb-gold" />
-            <span className="text-xs font-medium">My History</span>
+            <span className="text-xs font-medium">{l('dashboard', 'myHistory')}</span>
           </Button>
         </Link>
       </div>
