@@ -82,6 +82,7 @@ const formatAction = (raw: string) =>
   ACTION_LABELS[raw] || raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
 const ImpactCounter = () => {
+  const { l } = useT();
   const [stats, setStats] = React.useState({ actions: 0, enb: 0 });
 
   React.useEffect(() => {
