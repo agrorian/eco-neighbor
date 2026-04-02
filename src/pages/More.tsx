@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug } from 'lucide-react';
 import { useUserStore } from '@/store/user';
+import LanguageToggle from '@/components/LanguageToggle';
+import { useLang } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
 const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
@@ -10,6 +12,7 @@ const STAFF_ROLES = ['admin', 'moderator', 'founder', 'organiser', 'onboarding_t
 
 export default function More() {
   const { user, logout } = useUserStore();
+  const { lang } = useLang();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -46,6 +49,19 @@ export default function More() {
         <h1 className="text-2xl font-bold text-enb-text-primary">More</h1>
         <p className="text-enb-text-secondary">Explore additional features</p>
       </header>
+
+      {/* Language toggle — prominent card, always first on mobile */}
+      <div className="bg-white rounded-xl border border-enb-border shadow-sm p-4 flex items-center justify-between">
+        <div>
+          <p className="font-semibold text-enb-text-primary">
+            {lang === 'en' ? 'Language / زبان' : 'زبان / Language'}
+          </p>
+          <p className="text-xs text-enb-text-secondary mt-0.5">
+            {lang === 'en' ? 'Switch to Urdu' : 'Switch to English'}
+          </p>
+        </div>
+        <LanguageToggle />
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         {allItems.map((item) => (
