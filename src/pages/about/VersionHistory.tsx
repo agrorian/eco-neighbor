@@ -355,7 +355,7 @@ export default function VersionHistory() {
           <div className="flex items-center justify-center gap-4 text-xs">
             <Link to="/" className="text-enb-green hover:underline">Launch App</Link>
             <Link to="/about" className="text-enb-text-secondary hover:text-enb-green">What is ENB?</Link>
-            <a href="https://giveth.io" target="_blank" rel="noopener noreferrer" className="text-enb-text-secondary hover:text-enb-green">Giveth Profile</a>
+            <a href="https://giveth.io/project/eco-neighbor-enb" target="_blank" rel="noopener noreferrer" className="text-enb-text-secondary hover:text-enb-green">Giveth Profile</a>
           </div>
         </div>
       </div>
