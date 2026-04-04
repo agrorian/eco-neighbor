@@ -173,7 +173,7 @@ export default function ReferralHub() {
                 <Clock className="w-4 h-4 text-orange-500" />
                 <div>
                   <div className="text-sm font-medium text-orange-800">{e.enb_amount.toLocaleString()} ENB</div>
-                  <div className="text-xs text-orange-600">{e.escrow_type === 'FIRST_ACTION' ? {l('wallet', 'refFirstAction')} : 'Helper milestone'}</div>
+                  <div className="text-xs text-orange-600">{e.escrow_type === 'FIRST_ACTION' ? l('wallet', 'refFirstAction') : 'Helper milestone'}</div>
                 </div>
               </div>
               <div className="text-xs text-orange-500">
