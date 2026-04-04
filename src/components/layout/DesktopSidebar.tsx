@@ -84,7 +84,7 @@ export default function DesktopSidebar() {
           </div>
           <div>
             <span className="font-bold text-xl tracking-tight text-enb-text-primary block">Eco-Neighbor</span>
-            <span className="text-xs text-enb-text-muted font-medium">$ENB · v4.7</span>
+            <span className="text-xs text-enb-text-muted font-medium">$ENB · App v1.0.0</span>
           </div>
         </div>
       </div>
