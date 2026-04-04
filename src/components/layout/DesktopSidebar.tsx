@@ -82,9 +82,13 @@ export default function DesktopSidebar() {
           <div className="bg-enb-green p-2.5 rounded-xl flex-shrink-0">
             <ENBLeaf size={30} />
           </div>
-          <div>
-            <span className="font-bold text-xl tracking-tight text-enb-text-primary block">Eco-Neighbor</span>
-            <span className="text-xs text-enb-text-muted font-medium" dir="ltr">$ENB · App v1.0.0</span>
+          <div className="overflow-hidden">
+            <span className="font-bold text-xl tracking-tight text-enb-text-primary block truncate">Eco-Neighbor</span>
+            <span
+              className="text-xs text-enb-text-muted font-medium"
+              dir="ltr"
+              style={{ unicodeBidi: 'embed', direction: 'ltr', display: 'block' }}
+            >$ENB · App v1.0.0</span>
           </div>
         </div>
       </div>
