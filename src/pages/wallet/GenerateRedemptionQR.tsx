@@ -257,7 +257,7 @@ export default function GenerateRedemptionQR() {
 
           <Button onClick={handleGenerate} disabled={!selectedBiz || !enbAmount || loading}
             className="w-full bg-enb-green hover:bg-enb-green/90 text-white">
-            {loading ? {l('common', 'loading')} : l('wallet', 'qrGenerateBtn')}
+            {loading ? l('common', 'loading') : l('wallet', 'qrGenerateBtn')}
           </Button>
 
           <p className="text-xs text-center text-gray-400">
