@@ -4,6 +4,7 @@ import { ArrowRight, ArrowLeft, RefreshCw, AlertCircle, CheckCircle, Lock, Loade
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
+import { useT } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
@@ -18,6 +19,7 @@ interface EligibilityData {
 }
 
 export default function MaturationBridge() {
+  const { l } = useT();
   const { user } = useUserStore();
   const [eligibility, setEligibility] = useState<EligibilityData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,9 +91,9 @@ export default function MaturationBridge() {
             <CheckCircle className="w-12 h-12 text-enb-gold" />
           </div>
         </motion.div>
-        <h1 className="text-3xl font-bold text-enb-text-primary">Bridge Request Submitted!</h1>
+        <h1 className="text-3xl font-bold text-enb-text-primary">{l('wallet', 'bridgePending')}</h1>
         <p className="text-enb-text-secondary max-w-xs mx-auto">
-          Your request is pending admin review. ENB.GLOBAL will be sent to your Solana wallet within 24–48 hours.
+          {l('wallet', 'bridgePendingBody')}
         </p>
         <Link to="/wallet">
           <Button className="mt-6 bg-enb-gold hover:bg-enb-gold/90 text-white">Return to Wallet</Button>
@@ -140,8 +142,8 @@ export default function MaturationBridge() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-enb-text-primary">Maturation Bridge</h1>
-          <p className="text-sm text-enb-text-secondary">Convert ENB.LOCAL → ENB.GLOBAL</p>
+          <h1 className="text-xl font-bold text-enb-text-primary">{l('wallet', 'bridgeTitle')}</h1>
+          <p className="text-sm text-enb-text-secondary">{l('wallet', 'bridgeSubtitle')}</p>
         </div>
       </header>
 
@@ -212,7 +214,7 @@ export default function MaturationBridge() {
             </Card>
           ) : (
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm text-orange-700">
-              <p className="font-bold mb-1">Not Yet Eligible</p>
+              <p className="font-bold mb-1">{l('wallet', 'bridgeNotEligible')}</p>
               <p>Complete all 4 conditions above to unlock the Maturation Bridge.</p>
             </div>
           )}

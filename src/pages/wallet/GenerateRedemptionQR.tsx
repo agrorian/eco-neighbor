@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useUserStore } from '@/store/user';
+import { useT } from '@/contexts/LanguageContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
@@ -25,6 +26,7 @@ interface BusinessOffer {
 }
 
 export default function GenerateRedemptionQR() {
+  const { l } = useT();
   const { user, setUser } = useUserStore();
   const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -153,7 +155,7 @@ export default function GenerateRedemptionQR() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-enb-text-primary">Spend ENB</h1>
+          <h1 className="text-xl font-bold text-enb-text-primary">{l('wallet', 'qrTitle')}</h1>
           <p className="text-sm text-enb-text-secondary">Generate a one-time redemption code</p>
         </div>
       </header>
@@ -167,7 +169,7 @@ export default function GenerateRedemptionQR() {
         <div className="space-y-4">
           {/* Business selector */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-enb-text-primary">Select Business</label>
+            <label className="text-sm font-medium text-enb-text-primary">{l('wallet', 'qrSelectBusiness')}</label>
             <div className="relative">
               <select
                 value={selectedBiz}
@@ -255,7 +257,7 @@ export default function GenerateRedemptionQR() {
 
           <Button onClick={handleGenerate} disabled={!selectedBiz || !enbAmount || loading}
             className="w-full bg-enb-green hover:bg-enb-green/90 text-white">
-            {loading ? 'Generating...' : 'Generate QR Code'}
+            {loading ? {l('common', 'loading')} : l('wallet', 'qrGenerateBtn')}
           </Button>
 
           <p className="text-xs text-center text-gray-400">

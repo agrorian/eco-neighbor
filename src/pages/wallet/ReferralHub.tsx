@@ -3,6 +3,7 @@ import { Share2, Users, Copy, CheckCircle, ArrowLeft, Loader2, Clock } from 'luc
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
+import { useT } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +17,7 @@ interface EscrowItem {
 }
 
 export default function ReferralHub() {
+  const { l } = useT();
   const { user, setUser } = useUserStore();
   const [copied, setCopied] = useState(false);
   const [referrals, setReferrals] = useState<ReferredUser[]>([]);
@@ -117,7 +119,7 @@ export default function ReferralHub() {
           <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
             <Users className="w-7 h-7 text-enb-green" />
           </div>
-          <h2 className="text-lg font-bold text-enb-text-primary">Invite Friends, Earn Rewards</h2>
+          <h2 className="text-lg font-bold text-enb-text-primary">{l('wallet', 'refTitle')}</h2>
           <p className="text-sm text-enb-text-secondary max-w-xs mx-auto">
             When your friend completes their first verified action: <span className="font-bold text-enb-green">500 ENB</span>.
             If they reach Helper Tier within 90 days: <span className="font-bold text-enb-green">+500 ENB bonus</span> (1,000 total).
@@ -126,11 +128,11 @@ export default function ReferralHub() {
           <div className="grid grid-cols-2 gap-3 mt-2">
             <div className="bg-white/70 rounded-lg p-3">
               <div className="text-xl font-bold text-enb-gold">{releasedTotal.toLocaleString()}</div>
-              <div className="text-xs text-gray-500">ENB Earned</div>
+              <div className="text-xs text-gray-500">{l('wallet', 'refEnbEarned')}</div>
             </div>
             <div className="bg-white/70 rounded-lg p-3">
               <div className="text-xl font-bold text-orange-500">{pendingEscrow.toLocaleString()}</div>
-              <div className="text-xs text-gray-500">In Escrow</div>
+              <div className="text-xs text-gray-500">{l('wallet', 'refInEscrow')}</div>
             </div>
           </div>
         </CardContent>
@@ -148,10 +150,10 @@ export default function ReferralHub() {
               </Button>
             </div>
             <Button onClick={handleShare} className="w-full h-11 bg-enb-green hover:bg-enb-green/90 text-white shadow-lg shadow-enb-green/20">
-              <Share2 className="w-4 h-4 mr-2" /> Share Referral Link
+              <Share2 className="w-4 h-4 mr-2" /> {l('wallet', 'refShareLink')}
             </Button>
             <p className="text-xs text-gray-400 text-center">
-              Your link: <span className="font-mono text-enb-text-secondary">{referralLink}</span>
+              {l('wallet', 'refYourLink')} <span className="font-mono text-enb-text-secondary">{referralLink}</span>
             </p>
           </>
         ) : (
@@ -171,11 +173,11 @@ export default function ReferralHub() {
                 <Clock className="w-4 h-4 text-orange-500" />
                 <div>
                   <div className="text-sm font-medium text-orange-800">{e.enb_amount.toLocaleString()} ENB</div>
-                  <div className="text-xs text-orange-600">{e.escrow_type === 'FIRST_ACTION' ? 'First action bonus' : 'Helper milestone'}</div>
+                  <div className="text-xs text-orange-600">{e.escrow_type === 'FIRST_ACTION' ? {l('wallet', 'refFirstAction')} : 'Helper milestone'}</div>
                 </div>
               </div>
               <div className="text-xs text-orange-500">
-                Releases {new Date(e.release_date).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}
+                {l('wallet', 'refReleases')} {new Date(e.release_date).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}
               </div>
             </div>
           ))}
@@ -184,13 +186,13 @@ export default function ReferralHub() {
 
       {/* Your Referrals List */}
       <div className="space-y-3">
-        <h3 className="font-bold text-enb-text-primary">Your Referrals ({referrals.length})</h3>
+        <h3 className="font-bold text-enb-text-primary">{l('wallet', 'refYourReferrals')} ({referrals.length})</h3>
         {loading ? (
           <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-gray-300" /></div>
         ) : referrals.length === 0 ? (
           <div className="text-center py-8 text-gray-400 bg-white rounded-xl border border-gray-100">
             <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No referrals yet. Share your code to start earning!</p>
+            <p className="text-sm">{l('wallet', 'refNoReferrals')}</p>
           </div>
         ) : (
           referrals.map(r => (
