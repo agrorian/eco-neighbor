@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { ArrowRight, Info } from 'lucide-react';
+import { ArrowRight, Info, GitBranch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useT } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -68,6 +68,23 @@ export default function Welcome() {
               <div className={`text-xs text-gray-500 ${isUrdu ? 'font-urdu' : ''}`}>{l('welcome', 'whatIsEnbSub')}</div>
             </div>
             <ArrowRight className={`w-4 h-4 text-enb-green/50 group-hover:text-enb-green transition-all flex-shrink-0 ${isUrdu ? 'rotate-180' : ''}`} />
+          </motion.div>
+        </Link>
+
+        {/* Development History link */}
+        <Link to="/dev-history">
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            className="w-full mt-2 flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3 hover:border-enb-green/40 hover:bg-enb-green/5 transition-all group shadow-sm"
+          >
+            <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <GitBranch className="w-5 h-5 text-enb-text-secondary group-hover:text-enb-green transition-colors" />
+            </div>
+            <div className={`text-left flex-1 ${isUrdu ? 'text-right' : ''}`}>
+              <div className="text-sm font-bold text-enb-text-primary group-hover:text-enb-green transition-colors">View Development History</div>
+              <div className="text-xs text-gray-400">Whitepaper versions · App build log</div>
+            </div>
+            <ArrowRight className={`w-4 h-4 text-gray-300 group-hover:text-enb-green transition-all flex-shrink-0 ${isUrdu ? 'rotate-180' : ''}`} />
           </motion.div>
         </Link>
       </div>
