@@ -76,15 +76,15 @@ export default function DesktopSidebar() {
   return (
     <aside className="hidden md:flex flex-col w-72 h-screen bg-white border-r border-enb-border fixed left-0 top-0 z-50">
 
-      {/* Logo */}
-      <div className="px-5 py-5 border-b border-enb-border">
+      {/* Logo — always LTR regardless of language direction */}
+      <div className="px-5 py-5 border-b border-enb-border" dir="ltr">
         <div className="flex items-center gap-3">
           <div className="bg-enb-green p-2.5 rounded-xl flex-shrink-0">
             <ENBLeaf size={30} />
           </div>
           <div>
             <span className="font-bold text-xl tracking-tight text-enb-text-primary block">Eco-Neighbor</span>
-            <span className="text-xs text-enb-text-muted font-medium">$ENB · App v1.0.0</span>
+            <span className="text-xs text-enb-text-muted font-medium" dir="ltr">$ENB · App v1.0.0</span>
           </div>
         </div>
       </div>
