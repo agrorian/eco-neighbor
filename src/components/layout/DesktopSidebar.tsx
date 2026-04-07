@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe } from 'lucide-react';
+import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -15,13 +15,16 @@ export default function DesktopSidebar() {
   if (!user) return null;
 
   const memberNav = [
-    { path: '/',           icon: Home,          label: l('nav', 'dashboard') },
-    { path: '/submit',     icon: PlusCircle,    label: l('nav', 'submitAction') },
-    { path: '/wallet',     icon: Wallet,        label: l('nav', 'wallet') },
-    { path: '/directory',  icon: Store,         label: l('nav', 'directory') },
-    { path: '/leaderboard',icon: Trophy,        label: l('nav', 'leaderboard') },
-    { path: '/bridge',     icon: ArrowRightLeft,label: l('nav', 'bridge') },
-    { path: '/settings',   icon: Settings,      label: l('nav', 'settings') },
+    { path: '/',              icon: Home,          label: l('nav', 'dashboard') },
+    { path: '/submit',        icon: PlusCircle,    label: l('nav', 'submitAction') },
+    { path: '/wallet',        icon: Wallet,        label: l('nav', 'wallet') },
+    { path: '/directory',     icon: Store,         label: l('nav', 'directory') },
+    { path: '/leaderboard',   icon: Trophy,        label: l('nav', 'leaderboard') },
+    { path: '/impact',        icon: Globe,         label: l('nav', 'communityImpact') },
+    { path: '/food-sharing',  icon: Apple,         label: 'Food Sharing' },
+    { path: '/governance',    icon: Vote,          label: l('nav', 'governance') },
+    { path: '/bridge',        icon: ArrowRightLeft,label: l('nav', 'bridge') },
+    { path: '/settings',      icon: Settings,      label: l('nav', 'settings') },
   ];
 
   const volunteerNav = !['onboarding_team', 'admin', 'moderator', 'founder'].includes(user?.role || '') ? [
@@ -33,9 +36,7 @@ export default function DesktopSidebar() {
     { path: '/mod-queue', icon: Shield, label: l('nav', 'modQueue') },
   ] : [];
   const roleBasedNav = ALLOWED_LOG_ROLES.includes(user?.role || '') ? [
-    { path: '/my-log',    icon: ClipboardList, label: l('nav', 'dailyLog') },
-    { path: '/impact',    icon: Globe,         label: l('nav', 'communityImpact') },
-    { path: '/governance',icon: BarChart2,     label: l('nav', 'governance') },
+    { path: '/my-log', icon: ClipboardList, label: l('nav', 'dailyLog') },
   ] : [];
 
   const onboardingNav = user?.role === 'onboarding_team' ? [
