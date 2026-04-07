@@ -1,8 +1,51 @@
 import { useState } from 'react';
-import { Bug, X, Send, Loader2, CheckCircle } from 'lucide-react';
+import { Bug, X, Send, Loader2, CheckCircle, MapPin } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { useLocation } from 'react-router-dom';
+
+const SCREEN_NAMES: Record<string, string> = {
+  '/':                    'Dashboard',
+  '/submit':              'Submit Action',
+  '/wallet':              'Wallet',
+  '/wallet/redeem':       'Generate QR',
+  '/wallet/referrals':    'Referral Hub',
+  '/bridge':              'Maturation Bridge',
+  '/directory':           'Business Directory',
+  '/leaderboard':         'Leaderboard',
+  '/impact':              'Community Impact',
+  '/food-sharing':        'Food Sharing',
+  '/governance':          'Governance',
+  '/history':             'My History',
+  '/my-log':              'Daily Log',
+  '/profile':             'Profile',
+  '/settings':            'Settings',
+  '/more':                'More',
+  '/partner-signup':      'Become a Partner',
+  '/volunteer-apply':     'Join Onboarding Team',
+  '/onboarding-queue':    'Onboarding Queue',
+  '/mod-queue':           'Mod Queue',
+  '/admin':               'Admin Dashboard',
+  '/admin/users':         'Admin — Members',
+  '/admin/campaigns':     'Admin — Campaigns',
+  '/admin/partners':      'Admin — Partners',
+  '/admin/bridge':        'Admin — Bridge Manager',
+  '/admin/escalation':    'Admin — Escalation Queue',
+  '/admin/bug-reports':   'Admin — Bug Reports',
+  '/admin/onboarding':    'Admin — Onboarding',
+  '/partner-float':       'Float Monitor',
+  '/founder-sale':        'Founder Sale Gate',
+  '/report':              'Report Submission',
+};
+
+function getScreenName(pathname: string): string {
+  if (SCREEN_NAMES[pathname]) return SCREEN_NAMES[pathname];
+  const partial = Object.keys(SCREEN_NAMES).find(k => k !== '/' && pathname.startsWith(k));
+  if (partial) return SCREEN_NAMES[partial];
+  return pathname;
+}
+
+const HIDDEN_PATHS = ['/login', '/signup/step1', '/signup/step2', '/about', '/bug-report'];
 
 export default function FloatingBugButton() {
   const { user } = useUserStore();
@@ -14,25 +57,27 @@ export default function FloatingBugButton() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Don't show on bug report page or auth pages
-  const hiddenPaths = ['/bug-report', '/login', '/signup', '/', '/about'];
-  if (hiddenPaths.includes(location.pathname) && location.pathname === '/') return null;
-  if (['/login', '/signup/step1', '/signup/step2', '/about'].includes(location.pathname)) return null;
+  const screenName = getScreenName(location.pathname);
+
+  if (HIDDEN_PATHS.includes(location.pathname)) return null;
 
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim()) return;
     setSubmitting(true);
+
     await supabase.from('bug_reports').insert({
       title: title.trim(),
       description: description.trim(),
-      screen: location.pathname,
+      screen: screenName,
+      screen_path: location.pathname,
       severity,
       user_id: user?.id || null,
       email: user?.email || null,
-      browser_info: navigator.userAgent,
+      browser_info: navigator.userAgent.substring(0, 200),
       source: 'floating_button',
       status: 'open',
     });
+
     setSuccess(true);
     setSubmitting(false);
     setTimeout(() => {
@@ -44,29 +89,33 @@ export default function FloatingBugButton() {
     }, 2000);
   };
 
+  const handleClose = () => {
+    setOpen(false);
+    setTitle('');
+    setDescription('');
+    setSeverity('medium');
+  };
+
   return (
     <>
-      {/* Floating button */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
           className="fixed bottom-24 md:bottom-6 right-4 z-40 w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
-          title="Report a bug"
+          title={`Report a bug on ${screenName}`}
         >
           <Bug className="w-4 h-4" />
         </button>
       )}
 
-      {/* Bug report panel */}
       {open && (
         <div className="fixed bottom-20 md:bottom-6 right-4 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-          {/* Header */}
           <div className="bg-red-500 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-white">
               <Bug className="w-4 h-4" />
               <span className="font-semibold text-sm">Report a Bug</span>
             </div>
-            <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white">
+            <button onClick={handleClose} className="text-white/80 hover:text-white">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -79,8 +128,14 @@ export default function FloatingBugButton() {
             </div>
           ) : (
             <div className="p-4 space-y-3">
-              <div className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-1.5">
-                📍 Screen: <span className="font-mono font-medium">{location.pathname}</span>
+
+              {/* Auto-detected screen — locked */}
+              <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-red-400 font-medium uppercase tracking-wide">Reported from</div>
+                  <div className="text-sm font-bold text-red-600 truncate">{screenName}</div>
+                </div>
               </div>
 
               <input
@@ -93,7 +148,7 @@ export default function FloatingBugButton() {
 
               <textarea
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-200 h-20"
-                placeholder="What happened? What did you expect? *"
+                placeholder="What happened? What did you expect?"
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 maxLength={500}
@@ -105,7 +160,7 @@ export default function FloatingBugButton() {
                     className={`flex-1 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
                       severity === s
                         ? s === 'critical' ? 'bg-red-500 text-white'
-                          : s === 'high' ? 'bg-orange-500 text-white'
+                          : s === 'high'   ? 'bg-orange-500 text-white'
                           : s === 'medium' ? 'bg-yellow-500 text-white'
                           : 'bg-blue-500 text-white'
                         : 'bg-gray-100 text-gray-500'
