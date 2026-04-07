@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Leaf, Users, Store, CheckCircle, Share2, Coins } from 'lucide-react';
+import { Leaf, Users, Store, CheckCircle, Share2, Coins, Apple, Flame, BarChart2, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -11,6 +11,9 @@ interface Stats {
   totalActions: number;
   totalEnbDistributed: number;
   totalPartners: number;
+  totalFoodDonations: number;
+  totalKgDiverted: number;
+  pendingActions: number;
 }
 
 interface MonthlyData {
@@ -19,77 +22,116 @@ interface MonthlyData {
   enb: number;
 }
 
-// v4.7 Token Distribution — 10,000,000,000 total supply
+// Canonical v4.9 Tokenomics — 10,000,000,000 total supply
 const TOKEN_ALLOCATION = [
-  { label: 'Community Rewards Pool', amount: '5,000,000,000', pct: 50, color: 'bg-enb-green' },
-  { label: 'Business Partner Reserve', amount: '1,500,000,000', pct: 15, color: 'bg-enb-teal' },
-  { label: 'ENB.GLOBAL Liquidity Pool', amount: '1,000,000,000', pct: 10, color: 'bg-blue-500' },
-  { label: 'Impact Grants & Marketing', amount: '1,000,000,000', pct: 10, color: 'bg-enb-gold' },
-  { label: 'Founding Contributors', amount: '500,000,000', pct: 5, color: 'bg-purple-500' },
-  { label: 'Development Fund', amount: '500,000,000', pct: 5, color: 'bg-orange-400' },
-  { label: 'Emergency Reserve', amount: '500,000,000', pct: 5, color: 'bg-red-400' },
+  { label: 'Community Rewards Pool',   amount: '5,000,000,000', pct: 50, color: 'bg-enb-green',  note: 'Earned via verified civic actions only' },
+  { label: 'Business Partner Reserve', amount: '1,500,000,000', pct: 15, color: 'bg-enb-teal',   note: '50 Founding Partners + ongoing onboarding' },
+  { label: 'ENB.GLOBAL Liquidity Pool',amount: '1,000,000,000', pct: 10, color: 'bg-blue-500',   note: 'Raydium DEX · locked 12 months via Streamflow' },
+  { label: 'Impact Grants & Marketing',amount: '1,000,000,000', pct: 10, color: 'bg-enb-gold',   note: 'Gitcoin, Celo, municipal grants, events' },
+  { label: 'Founding Contributors',    amount: '500,000,000',   pct: 5,  color: 'bg-purple-500', note: '12-month cliff · 36-month vest' },
+  { label: 'Development Fund',         amount: '500,000,000',   pct: 5,  color: 'bg-orange-400', note: 'Platform infrastructure · 12-month cliff' },
+  { label: 'Emergency Reserve',        amount: '500,000,000',   pct: 5,  color: 'bg-red-400',    note: '5-of-7 multi-sig governance controlled' },
+];
+
+// CFSP v4.9 Priority Waterfall
+const CFSP_TIERS = [
+  { tier: 1, name: 'Direct Human Consumption', desc: 'Workers, elderly, schools & orphanages', color: 'bg-enb-green', textColor: 'text-enb-green', note: 'Paediatric safety standard applies' },
+  { tier: 2, name: 'Community Kitchen',         desc: 'Hot meals at Community Food Hubs',       color: 'bg-enb-teal',  textColor: 'text-enb-teal',  note: '' },
+  { tier: 3, name: 'Processed / Value-Added',   desc: 'Pickling, preservation, cooking classes',color: 'bg-blue-400',  textColor: 'text-blue-600',  note: '' },
+  { tier: 4, name: 'Animal Feed',               desc: 'Livestock owners & animal shelters',     color: 'bg-enb-gold',  textColor: 'text-yellow-700',note: '' },
+  { tier: 5, name: 'Composting / Biogas',       desc: 'Unusable produce composted or biogas',   color: 'bg-gray-400',  textColor: 'text-gray-600',  note: '' },
 ];
 
 export default function ImpactDashboard() {
-  const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalActions: 0, totalEnbDistributed: 0, totalPartners: 0 });
+  const [stats, setStats] = useState<Stats>({
+    totalUsers: 0, totalActions: 0, totalEnbDistributed: 0,
+    totalPartners: 0, totalFoodDonations: 0, totalKgDiverted: 0, pendingActions: 0,
+  });
   const [chartData, setChartData] = useState<MonthlyData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
-      const [usersRes, actionsRes, txRes, partnersRes] = await Promise.all([
+
+      // Step 1: Core counts
+      const [usersRes, approvedRes, pendingRes, partnersRes] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
-        supabase.from('users').select('lifetime_earned'),
+        supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('business_partners').select('id', { count: 'exact', head: true }).eq('is_active', true),
       ]);
 
-      const totalEnb = (txRes.data || []).reduce((sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0);
+      // Step 2: ENB distributed from users lifetime_earned
+      const { data: enbData } = await supabase.from('users').select('lifetime_earned');
+      const totalEnb = (enbData || []).reduce((sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0);
+
+      // Step 3: Food donations
+      const { data: foodData, count: foodCount } = await supabase
+        .from('food_donations')
+        .select('quantity_kg', { count: 'exact' })
+        .eq('status', 'completed');
+      const totalKg = (foodData || []).reduce((sum: number, f: any) => sum + (Number(f.quantity_kg) || 0), 0);
+
       setStats({
         totalUsers: usersRes.count || 0,
-        totalActions: actionsRes.count || 0,
+        totalActions: approvedRes.count || 0,
+        pendingActions: pendingRes.count || 0,
         totalEnbDistributed: totalEnb,
         totalPartners: partnersRes.count || 0,
+        totalFoodDonations: foodCount || 0,
+        totalKgDiverted: totalKg,
       });
 
+      // Step 4: Monthly chart — 6 months
       const months: MonthlyData[] = [];
       for (let i = 5; i >= 0; i--) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
         const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
-        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString();
+        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59).toISOString();
         const label = d.toLocaleString('default', { month: 'short' });
-        const [aRes, tRes] = await Promise.all([
-          supabase.from('submissions').select('id', { count: 'exact', head: true })
-            .eq('status', 'approved').gte('reviewed_at', monthStart).lte('reviewed_at', monthEnd),
-          supabase.from('transactions').select('enb_amount')
-            .eq('type', 'earn').gte('created_at', monthStart).lte('created_at', monthEnd),
-        ]);
-        const monthEnb = (tRes.data || []).reduce((sum, t) => sum + (t.enb_amount || 0), 0);
-        months.push({ month: label, actions: aRes.count || 0, enb: monthEnb });
+
+        const { count: aCount } = await supabase
+          .from('submissions')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'approved')
+          .gte('reviewed_at', monthStart)
+          .lte('reviewed_at', monthEnd);
+
+        const { data: tData } = await supabase
+          .from('transactions')
+          .select('enb_amount')
+          .eq('type', 'earn')
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
+
+        const monthEnb = (tData || []).reduce((sum, t) => sum + (t.enb_amount || 0), 0);
+        months.push({ month: label, actions: aCount || 0, enb: monthEnb });
       }
       setChartData(months);
       setLoading(false);
     };
+
     fetchStats();
   }, []);
 
   const handleShare = () => {
-    const text = `Our community has distributed ${stats.totalEnbDistributed.toLocaleString()} ENB across ${stats.totalActions} verified eco-actions! Join us on Eco-Neighbor.`;
+    const text = `Our Rawalpindi community has verified ${stats.totalActions} civic actions and distributed ${stats.totalEnbDistributed.toLocaleString()} ENB to informal workers. Join Eco-Neighbor ($ENB) — your neighborhood work has value! 🌿`;
     if (navigator.share) {
-      navigator.share({ title: 'Eco-Neighbor Community Impact', text, url: window.location.href });
+      navigator.share({ title: 'Eco-Neighbor Community Impact', text, url: 'https://eco-neighbor.vercel.app' });
     } else {
-      navigator.clipboard.writeText(text).then(() => alert('Impact stats copied to clipboard!'));
+      navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
     }
   };
 
   const statCards = [
-    { icon: Users, value: stats.totalUsers.toLocaleString(), label: 'Active Members', color: 'bg-enb-green/10 text-enb-green' },
-    { icon: CheckCircle, value: stats.totalActions.toLocaleString(), label: 'Verified Actions', color: 'bg-enb-teal/10 text-enb-teal' },
-    { icon: Leaf, value: `${(stats.totalEnbDistributed / 1000).toFixed(1)}k`, label: 'ENB Distributed', color: 'bg-enb-gold/10 text-enb-gold' },
-    { icon: Store, value: stats.totalPartners.toLocaleString(), label: 'Business Partners', color: 'bg-purple-100 text-purple-600' },
-    { icon: Coins, value: '10B', label: 'Total ENB Supply', color: 'bg-enb-green/10 text-enb-green' },
+    { icon: Users,        value: stats.totalUsers.toLocaleString(),                           label: 'Community Members',    color: 'bg-enb-green/10 text-enb-green' },
+    { icon: CheckCircle,  value: stats.totalActions.toLocaleString(),                         label: 'Verified Actions',     color: 'bg-enb-teal/10 text-enb-teal' },
+    { icon: Coins,        value: stats.totalEnbDistributed > 0 ? `${(stats.totalEnbDistributed / 1000).toFixed(1)}k` : '0', label: 'ENB Distributed', color: 'bg-enb-gold/10 text-enb-gold' },
+    { icon: Store,        value: stats.totalPartners.toLocaleString(),                        label: 'Partner Businesses',   color: 'bg-purple-100 text-purple-600' },
+    { icon: Apple,        value: stats.totalFoodDonations.toLocaleString(),                   label: 'Food Donations',       color: 'bg-orange-100 text-orange-600' },
+    { icon: Leaf,         value: stats.totalKgDiverted > 0 ? `${stats.totalKgDiverted.toFixed(1)} kg` : '0 kg', label: 'Food from Landfill', color: 'bg-enb-green/10 text-enb-green' },
   ];
 
   return (
@@ -97,24 +139,24 @@ export default function ImpactDashboard() {
       <header className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary">Community Impact</h1>
-          <p className="text-sm text-enb-text-secondary mt-1">Real change, verified on-chain</p>
+          <p className="text-sm text-enb-text-secondary mt-1">Real change, verified on-chain · Rawalpindi Pilot</p>
         </div>
         <Button variant="outline" size="sm" onClick={handleShare}>
           <Share2 className="w-4 h-4 mr-1" /> Share
         </Button>
       </header>
 
-      {/* Live stats */}
+      {/* Live stats grid */}
       {loading ? (
         <div className="grid grid-cols-2 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {statCards.map((s, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
               <Card className="border-gray-100 shadow-sm">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${s.color}`}>
@@ -131,34 +173,12 @@ export default function ImpactDashboard() {
         </div>
       )}
 
-      {/* Token Distribution — v4.7 */}
-      <Card className="border-gray-100 shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-bold text-enb-text-primary">Token Distribution</CardTitle>
-          <p className="text-xs text-enb-text-secondary">10,000,000,000 ENB total supply · v4.7</p>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {TOKEN_ALLOCATION.map((item) => (
-            <div key={item.label}>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm text-enb-text-primary font-medium">{item.label}</span>
-                <span className="text-xs text-enb-text-secondary font-mono">{item.amount}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-2 rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
-                </div>
-                <span className="text-xs text-gray-400 w-8 text-right">{item.pct}%</span>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
       {/* Monthly Activity Chart */}
       <Card className="border-gray-100 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base font-bold text-enb-text-primary">Monthly Activity</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-enb-green" /> Monthly Activity
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -168,12 +188,75 @@ export default function ImpactDashboard() {
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="actions" fill="#1A6B3C" name="Actions" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="actions" fill="#1A6B3C" name="Verified Actions" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
+          <p className="text-xs text-gray-400 text-center mt-2">Verified civic actions per month — Chaklala Scheme 3 pilot</p>
+        </CardContent>
+      </Card>
+
+      {/* CFSP Waterfall v4.9 */}
+      <Card className="border-gray-100 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
+            <Apple className="w-4 h-4 text-orange-500" /> Community Food Sharing Programme
+          </CardTitle>
+          <p className="text-xs text-enb-text-secondary">v4.9 Priority Waterfall — food is never wasted</p>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {CFSP_TIERS.map((t) => (
+            <div key={t.tier} className="flex items-start gap-3">
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${t.color} text-white text-xs font-bold`}>
+                {t.tier}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-bold ${t.textColor}`}>{t.name}</div>
+                <div className="text-xs text-enb-text-secondary">{t.desc}</div>
+                {t.note && (
+                  <div className="text-xs text-orange-600 font-medium mt-0.5">⚠ {t.note}</div>
+                )}
+              </div>
+            </div>
+          ))}
+          <div className="pt-2 mt-2 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-400">
+            <Flame className="w-3.5 h-3.5 text-orange-400" />
+            Every kg diverted generates an on-chain carbon offset record (Verra VCS in development)
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Token Distribution v4.9 */}
+      <Card className="border-gray-100 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-enb-green" /> Token Distribution
+          </CardTitle>
+          <p className="text-xs text-enb-text-secondary">10,000,000,000 ENB fixed supply · v4.9</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {TOKEN_ALLOCATION.map((item) => (
+            <div key={item.label}>
+              <div className="flex justify-between items-start mb-1">
+                <div>
+                  <span className="text-sm text-enb-text-primary font-medium">{item.label}</span>
+                  <div className="text-xs text-gray-400">{item.note}</div>
+                </div>
+                <div className="text-right flex-shrink-0 ml-2">
+                  <div className="text-xs text-enb-text-secondary font-mono">{item.amount}</div>
+                  <div className="text-xs font-bold text-gray-500">{item.pct}%</div>
+                </div>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className={`h-2 rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
+              </div>
+            </div>
+          ))}
+          <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">
+            Mint authority renounced at genesis. Freeze authority renounced forever. Community Rewards Pool releases only via verified civic actions.
+          </p>
         </CardContent>
       </Card>
     </div>

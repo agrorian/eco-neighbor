@@ -17,6 +17,7 @@ import ScanRedemption from '@/pages/dashboard/ScanRedemption';
 import Leaderboard from '@/pages/Leaderboard';
 import ImpactDashboard from '@/pages/community/ImpactDashboard';
 import Governance from '@/pages/community/Governance';
+import FoodSharing from '@/pages/community/FoodSharing';
 import Profile from '@/pages/Profile';
 import MaturationBridge from '@/pages/wallet/MaturationBridge';
 import GenerateRedemptionQR from '@/pages/wallet/GenerateRedemptionQR';
@@ -202,6 +203,7 @@ export default function App() {
                       <Route path="/leaderboard" element={<Leaderboard />} />
                       <Route path="/impact" element={<ImpactDashboard />} />
                       <Route path="/governance" element={<Governance />} />
+                      <Route path="/food-sharing" element={<FoodSharing />} />
                       <Route path="/profile" element={<Profile />} />
                       <Route path="/bridge" element={<MaturationBridge />} />
                       <Route path="/wallet/redeem" element={<GenerateRedemptionQR />} />

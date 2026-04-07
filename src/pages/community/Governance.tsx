@@ -1,15 +1,36 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Vote, CheckCircle, Clock, AlertCircle, ArrowRight, Lock, Loader2, Plus } from 'lucide-react';
+import { Vote, CheckCircle, Clock, AlertCircle, Lock, Loader2, TrendingUp, Plus, Zap, Users, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
 interface Proposal {
-  id: string; title: string; status: string; votes_for: number; votes_against: number;
-  ends_at: string; description: string; created_by: string; created_at: string;
+  id: string;
+  title: string;
+  description: string;
+  proposal_type: string;
+  status: string;
+  min_tier_to_vote: string;
+  votes_for: number;
+  votes_against: number;
+  quorum_required: number;
+  voting_ends_at: string;
+  metadata: Record<string, any>;
+  created_at: string;
 }
+
+const PROPOSAL_TYPE_META: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
+  earn_rate_change:        { label: 'Earn Rate',        color: 'text-enb-green',  bg: 'bg-enb-green/10',  icon: TrendingUp },
+  new_action_type:         { label: 'New Action',       color: 'text-blue-600',   bg: 'bg-blue-50',        icon: Plus },
+  partner_onboarding:      { label: 'New Partner',      color: 'text-enb-teal',   bg: 'bg-enb-teal/10',   icon: Users },
+  cgr_milestone_adjustment:{ label: 'CGR Milestone',    color: 'text-purple-600', bg: 'bg-purple-50',      icon: Zap },
+  emergency_reserve_usage: { label: 'Emergency Reserve',color: 'text-red-600',    bg: 'bg-red-50',         icon: Shield },
+  general:                 { label: 'General',          color: 'text-gray-600',   bg: 'bg-gray-100',       icon: Vote },
+};
+
+const TIER_ORDER = ['Newcomer', 'Helper', 'Guardian', 'Pillar', 'Founder Tier'];
 
 export default function Governance() {
   const { user } = useUserStore();
@@ -20,10 +41,13 @@ export default function Governance() {
   const [userVotes, setUserVotes] = useState<Record<string, 'for' | 'against'>>({});
 
   if (!user) return null;
-  const isPillar = ['Pillar', 'Founder'].includes(user.tier);
+
+  const userTierIndex = TIER_ORDER.indexOf(user.tier);
+  const isPillarOrAbove = userTierIndex >= TIER_ORDER.indexOf('Pillar');
 
   useEffect(() => {
     fetchProposals();
+    fetchUserVotes();
   }, []);
 
   const fetchProposals = async () => {
@@ -35,29 +59,43 @@ export default function Governance() {
 
     if (data && !error) {
       setProposals(data);
-    } else {
-      // Fallback to sample proposals if table doesn't exist yet
-      setProposals([
-        { id: '1', title: 'Expand Recycling Centers to North District', status: 'active', votes_for: 1240, votes_against: 120, ends_at: new Date(Date.now() + 172800000).toISOString(), description: 'Proposal to allocate 50,000 ENB from the community treasury to set up 3 new recycling hubs in North District.', created_by: 'admin', created_at: new Date().toISOString() },
-        { id: '2', title: 'Increase Community Cleanup Rewards by 20%', status: 'active', votes_for: 850, votes_against: 200, ends_at: new Date(Date.now() + 432000000).toISOString(), description: 'Boost ENB rewards for verified cleanup actions by 20% for the next quarter.', created_by: 'admin', created_at: new Date().toISOString() },
-        { id: '3', title: 'Partner with Local Schools Programme', status: 'passed', votes_for: 2100, votes_against: 150, ends_at: new Date(Date.now() - 86400000).toISOString(), description: 'Launch an educational program in 5 local schools to teach sustainability.', created_by: 'admin', created_at: new Date().toISOString() },
-      ]);
     }
     setLoading(false);
   };
 
+  const fetchUserVotes = async () => {
+    const { data } = await supabase
+      .from('governance_votes')
+      .select('proposal_id, vote')
+      .eq('user_id', user.id);
+    if (data) {
+      const votes: Record<string, 'for' | 'against'> = {};
+      data.forEach((v: any) => { votes[v.proposal_id] = v.vote; });
+      setUserVotes(votes);
+    }
+  };
+
+  const canVoteOnProposal = (proposal: Proposal) => {
+    const requiredIndex = TIER_ORDER.indexOf(proposal.min_tier_to_vote);
+    return userTierIndex >= requiredIndex;
+  };
+
   const handleVote = async (proposal: Proposal, voteType: 'for' | 'against') => {
-    if (!isPillar || userVotes[proposal.id]) return;
+    if (!canVoteOnProposal(proposal) || userVotes[proposal.id]) return;
     setVoting(proposal.id);
     try {
-      // Try to call governance RPC, fall back to direct insert
       const { error } = await supabase.from('governance_votes').insert({
-        proposal_id: proposal.id, voter_id: user.id, vote: voteType,
-        voting_power: user.rep_score,
+        proposal_id: proposal.id,
+        user_id: user.id,
+        vote: voteType,
       });
       if (!error) {
         setUserVotes(prev => ({ ...prev, [proposal.id]: voteType }));
-        // Optimistically update count
+        // Update vote counts via RPC or optimistically
+        await supabase.from('governance_proposals').update({
+          votes_for: proposal.votes_for + (voteType === 'for' ? 1 : 0),
+          votes_against: proposal.votes_against + (voteType === 'against' ? 1 : 0),
+        }).eq('id', proposal.id);
         setProposals(prev => prev.map(p => p.id === proposal.id
           ? { ...p, votes_for: p.votes_for + (voteType === 'for' ? 1 : 0), votes_against: p.votes_against + (voteType === 'against' ? 1 : 0) }
           : p));
@@ -69,128 +107,236 @@ export default function Governance() {
     }
   };
 
-  const filtered = proposals.filter(p => activeTab === 'active' ? p.status === 'active' : p.status !== 'active');
+  const filtered = proposals.filter(p =>
+    activeTab === 'active' ? p.status === 'active' : p.status !== 'active'
+  );
+
+  const activeCount = proposals.filter(p => p.status === 'active').length;
 
   return (
     <div className="space-y-6 pb-24">
       <header>
         <h1 className="text-2xl font-bold text-enb-text-primary">Governance</h1>
-        <p className="text-sm text-enb-text-secondary">Vote on the future of Eco-Neighbor</p>
+        <p className="text-sm text-enb-text-secondary mt-1">Shape the future of Eco-Neighbor</p>
       </header>
 
-      {/* Voting Power */}
+      {/* Voting Power Card */}
       <Card className="bg-gradient-to-r from-enb-text-primary to-gray-800 text-white border-none shadow-lg">
         <CardContent className="p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <div className="text-sm text-white/70 uppercase tracking-wider">Your Voting Power</div>
-              <div className="text-3xl font-bold mt-1">{user.rep_score.toLocaleString()} VP</div>
+              <div className="text-xs text-white/60 uppercase tracking-wider mb-1">Your Reputation Score</div>
+              <div className="text-3xl font-bold">{user.rep_score.toLocaleString()}</div>
+              <div className="text-xs text-white/60 mt-1">Tier: <span className="text-enb-gold font-bold">{user.tier}</span></div>
             </div>
-            <div className="bg-white/10 p-2 rounded-lg"><Vote className="w-6 h-6 text-white" /></div>
+            <div className="bg-white/10 p-3 rounded-xl">
+              <Vote className="w-6 h-6 text-white" />
+            </div>
           </div>
-          {!isPillar ? (
-            <div className="bg-white/10 rounded-lg p-3 text-sm flex items-start gap-3">
+
+          {!isPillarOrAbove ? (
+            <div className="bg-white/10 rounded-xl p-3 text-sm flex items-start gap-3">
               <Lock className="w-5 h-5 text-enb-gold shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold text-enb-gold">Voting Locked</span>
-                <p className="text-white/80 text-xs mt-1">Reach <span className="font-bold">Pillar Tier</span> (50,000 Rep) to unlock voting rights.</p>
+                <p className="text-white/70 text-xs mt-1">
+                  Reach <span className="font-bold text-white">Pillar Tier</span> (50,000 Rep) to unlock voting on standard proposals.
+                  Emergency Reserve proposals require Pillar tier minimum.
+                </p>
+                <div className="mt-2 bg-white/10 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-enb-gold rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (user.rep_score / 50000) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-white/50 text-xs mt-1">{user.rep_score.toLocaleString()} / 50,000</p>
               </div>
             </div>
           ) : (
-            <div className="bg-enb-green/20 rounded-lg p-3 text-sm flex items-center gap-2 text-enb-green font-bold border border-enb-green/30">
-              <CheckCircle className="w-4 h-4" /> Eligible to vote
+            <div className="bg-enb-green/20 rounded-xl p-3 text-sm flex items-center gap-2 text-enb-green font-bold border border-enb-green/30">
+              <CheckCircle className="w-4 h-4" /> Eligible to vote · {activeCount} active proposal{activeCount !== 1 ? 's' : ''}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* How Governance Works */}
+      <Card className="border-gray-100 shadow-sm bg-enb-green/5">
+        <CardContent className="p-4">
+          <h3 className="font-bold text-enb-text-primary text-sm mb-3">How Governance Works</h3>
+          <div className="space-y-2">
+            {[
+              { tier: 'Helper+', desc: 'Vote on earn rate changes and new action types', color: 'text-enb-teal' },
+              { tier: 'Guardian+', desc: 'Vote on partner onboarding and CGR adjustments', color: 'text-blue-600' },
+              { tier: 'Pillar+', desc: 'Vote on all proposals including Emergency Reserve usage', color: 'text-enb-green' },
+            ].map((row, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs">
+                <span className={`font-bold min-w-[70px] ${row.color}`}>{row.tier}</span>
+                <span className="text-enb-text-secondary">{row.desc}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">
+            Proposals are submitted by the Founding Team. Voting power is one member, one vote.
+            Each proposal specifies a quorum — minimum votes needed to be binding.
+          </p>
         </CardContent>
       </Card>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200">
         {(['active', 'past'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`flex-1 pb-3 text-sm font-medium transition-colors relative ${activeTab === tab ? 'text-enb-green' : 'text-gray-400 hover:text-gray-600'}`}>
-            {tab === 'active' ? 'Active Proposals' : 'Past Votes'}
-            {activeTab === tab && <motion.div layoutId="govtab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-enb-green" />}
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 pb-3 text-sm font-medium transition-colors relative ${activeTab === tab ? 'text-enb-green' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            {tab === 'active' ? `Active Proposals${activeCount > 0 ? ` (${activeCount})` : ''}` : 'Past Votes'}
+            {activeTab === tab && (
+              <motion.div layoutId="govtab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-enb-green" />
+            )}
           </button>
         ))}
       </div>
 
+      {/* Proposals */}
       {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-enb-green" /></div>
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-enb-green" />
+        </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map(p => {
+          {filtered.map((p, i) => {
             const totalVotes = p.votes_for + p.votes_against;
             const forPct = totalVotes > 0 ? (p.votes_for / totalVotes) * 100 : 50;
-            const endsIn = new Date(p.ends_at);
-            const hoursLeft = Math.max(0, Math.round((endsIn.getTime() - Date.now()) / 3600000));
+            const quorumPct = Math.min(100, (totalVotes / p.quorum_required) * 100);
+            const quorumMet = totalVotes >= p.quorum_required;
+            const endsAt = new Date(p.voting_ends_at);
+            const hoursLeft = Math.max(0, Math.round((endsAt.getTime() - Date.now()) / 3600000));
             const myVote = userVotes[p.id];
+            const canVote = canVoteOnProposal(p);
+            const typeMeta = PROPOSAL_TYPE_META[p.proposal_type] || PROPOSAL_TYPE_META.general;
+            const TypeIcon = typeMeta.icon;
 
             return (
-              <Card key={p.id} className="border-gray-100 shadow-sm">
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                      {p.status === 'active' ? 'Active' : 'Passed'}
-                    </span>
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
-                      <Clock className="w-3 h-3" />
-                      {p.status === 'active' ? (hoursLeft > 48 ? `${Math.round(hoursLeft/24)}d left` : `${hoursLeft}h left`) : 'Ended'}
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+              >
+                <Card className="border-gray-100 shadow-sm">
+                  <CardContent className="p-5">
+                    {/* Header row */}
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${typeMeta.bg} ${typeMeta.color}`}>
+                          <TypeIcon className="w-3 h-3" />
+                          {typeMeta.label}
+                        </span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          p.status === 'active' ? 'bg-green-100 text-green-700' :
+                          p.status === 'passed' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-500'
+                        }`}>
+                          {p.status === 'active' ? 'Active' : p.status === 'passed' ? 'Passed' : 'Rejected'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-400 shrink-0 ml-2">
+                        <Clock className="w-3 h-3" />
+                        {p.status === 'active'
+                          ? (hoursLeft > 48 ? `${Math.round(hoursLeft / 24)}d left` : `${hoursLeft}h left`)
+                          : 'Ended'}
+                      </div>
                     </div>
-                  </div>
 
-                  <h3 className="font-bold text-enb-text-primary mb-2">{p.title}</h3>
-                  <p className="text-sm text-enb-text-secondary mb-3 line-clamp-2">{p.description}</p>
+                    <h3 className="font-bold text-enb-text-primary mb-2">{p.title}</h3>
+                    <p className="text-sm text-enb-text-secondary mb-4 line-clamp-3">{p.description}</p>
 
-                  {/* Vote bar */}
-                  <div className="mb-3">
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>For: {p.votes_for.toLocaleString()}</span>
-                      <span>Against: {p.votes_against.toLocaleString()}</span>
+                    {/* Vote bar */}
+                    <div className="mb-2">
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span className="text-enb-green font-medium">👍 {p.votes_for} For</span>
+                        <span className="text-red-500 font-medium">👎 {p.votes_against} Against</span>
+                      </div>
+                      <div className="h-2 bg-red-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-enb-green rounded-full transition-all"
+                          style={{ width: `${forPct}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-enb-green rounded-full transition-all" style={{ width: `${forPct}%` }} />
-                    </div>
-                  </div>
 
-                  {/* Vote buttons */}
-                  {p.status === 'active' && isPillar && (
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleVote(p, 'for')}
-                        disabled={!!myVote || voting === p.id}
-                        className={`flex-1 ${myVote === 'for' ? 'bg-enb-green text-white' : 'bg-enb-green/10 text-enb-green hover:bg-enb-green hover:text-white'}`}>
-                        {voting === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : myVote === 'for' ? '✓ Voted For' : '👍 Vote For'}
-                      </Button>
-                      <Button size="sm" onClick={() => handleVote(p, 'against')}
-                        disabled={!!myVote || voting === p.id}
-                        className={`flex-1 ${myVote === 'against' ? 'bg-red-500 text-white' : 'bg-red-50 text-red-600 hover:bg-red-500 hover:text-white'}`}>
-                        {myVote === 'against' ? '✓ Voted Against' : '👎 Vote Against'}
-                      </Button>
+                    {/* Quorum tracker */}
+                    <div className="mb-4">
+                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>Quorum: {totalVotes}/{p.quorum_required} votes</span>
+                        <span className={quorumMet ? 'text-enb-green font-bold' : 'text-gray-400'}>
+                          {quorumMet ? '✓ Met' : `${p.quorum_required - totalVotes} more needed`}
+                        </span>
+                      </div>
+                      <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${quorumMet ? 'bg-enb-green' : 'bg-enb-gold'}`}
+                          style={{ width: `${quorumPct}%` }}
+                        />
+                      </div>
                     </div>
-                  )}
-                  {p.status === 'active' && !isPillar && (
-                    <Button size="sm" disabled className="w-full bg-gray-100 text-gray-400 cursor-not-allowed">
-                      <Lock className="w-3 h-3 mr-1" /> Pillar Tier Required
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+
+                    {/* Required tier */}
+                    <div className="text-xs text-gray-400 mb-3">
+                      Min. tier to vote: <span className="font-bold text-gray-600">{p.min_tier_to_vote}</span>
+                    </div>
+
+                    {/* Vote buttons */}
+                    {p.status === 'active' && (
+                      <>
+                        {myVote ? (
+                          <div className={`text-center text-sm font-bold py-2 rounded-xl ${myVote === 'for' ? 'bg-enb-green/10 text-enb-green' : 'bg-red-50 text-red-500'}`}>
+                            {myVote === 'for' ? '✓ You voted For' : '✓ You voted Against'}
+                          </div>
+                        ) : canVote ? (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleVote(p, 'for')}
+                              disabled={voting === p.id}
+                              className="flex-1 bg-enb-green/10 text-enb-green hover:bg-enb-green hover:text-white font-bold"
+                            >
+                              {voting === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : '👍 Vote For'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleVote(p, 'against')}
+                              disabled={voting === p.id}
+                              className="flex-1 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white font-bold"
+                            >
+                              👎 Vote Against
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl p-3">
+                            <Lock className="w-4 h-4 shrink-0" />
+                            <span>Requires <strong>{p.min_tier_to_vote}</strong> tier to vote on this proposal</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
             );
           })}
 
           {filtered.length === 0 && (
             <div className="text-center py-12 text-gray-400">
               <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p>No {activeTab} proposals.</p>
+              <p className="font-medium">No {activeTab} proposals</p>
+              <p className="text-xs mt-1">Check back soon — proposals are submitted by the founding team.</p>
             </div>
           )}
         </div>
       )}
-
-      <div className="bg-blue-50 p-4 rounded-xl flex items-start gap-3 text-sm text-blue-700">
-        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-        Governance is live for Pillar Tier and above (50,000+ Rep). Proposals are submitted by the core team.
-      </div>
     </div>
   );
 }
