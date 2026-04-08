@@ -124,6 +124,11 @@ const APP_VERSIONS = [
     version: "v1.0.0", date: "24 Mar 2026", type: "MAJOR",
     title: "Brand Design System + Tailored Action Forms",
     summary: "Full ENB brand design system: typography scale, color variables, warm surface, shadow scale. Tailored submission forms for all 10 civic action types with custom fields. Dashboard routing fixed. Business partner white screen resolved. Urdu Phase 1 complete."
+  },
+  {
+    version: "v1.1.0", date: "7 Apr 2026", type: "FEATURE",
+    title: "Governance Live, CFSP Page, Community Impact v4.9, Bug Reporting Fixes",
+    summary: "Governance wired to live DB: real proposals, tier-based voting, quorum tracker, proposal type badges. Dedicated Community Food Sharing Programme page with 3 roles, 3 collection modes, v4.9 Priority Waterfall, and Food Runner registration. Community Impact rebuilt with v4.9 tokenomics and food stats. Desktop sidebar now shows Food Sharing, Community Impact and Governance for all members. Bug reporting fixed: screen source auto-detected, screen_path and source columns added to DB, silent insert failures resolved. telegram_id column dropped from DB."
   }
 ];
 
