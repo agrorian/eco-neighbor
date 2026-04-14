@@ -183,11 +183,10 @@ export default function SignUpStep2() {
   };
 
   // Validation
-  const isPkValid = isPakistan
-    ? isValidCNIC(cnicNumber) && !cnicError && cnicPhotoUrl
-    : true;
+  // CNIC is optional for everyone — but if entered, must be valid
+  const isPkValid = !cnicNumber || (isValidCNIC(cnicNumber) && !cnicError);
 
-  const canProceed = name && neighborhood && profession && isPkValid && !loading && !cnicUploading && !checkingCnic;
+  const canProceed = name && neighborhood && profession && isPkValid && !loading && !checkingCnic;
 
   const handleNext = async () => {
     setLoading(true);
@@ -355,7 +354,7 @@ export default function SignUpStep2() {
 
               <p className="text-xs text-enb-text-secondary">
                 {isPakistan
-                  ? 'Your CNIC ensures one account per person and protects the community from fraud. Required for Pakistan members.'
+                  ? 'Your CNIC is optional at signup, but your earned ENB will be locked until your identity is verified. One account per person — protects the whole community.'
                   : 'International members may optionally provide a National ID or Passport number for identity verification.'}
               </p>
 
@@ -364,7 +363,7 @@ export default function SignUpStep2() {
                 <>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-enb-text-primary">
-                      CNIC Number <span className="text-red-500">*</span>
+                      CNIC Number <span className="text-gray-400 font-normal text-xs ml-1">(Optional — but required to unlock ENB)</span>
                     </label>
                     <div className="relative">
                       <Input
@@ -392,7 +391,7 @@ export default function SignUpStep2() {
                   {/* CNIC Photo */}
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-enb-text-primary">
-                      Photo of CNIC <span className="text-red-500">*</span>
+                      Photo of CNIC <span className="text-gray-400 font-normal text-xs ml-1">(Optional)</span>
                     </label>
                     <p className="text-xs text-gray-400">Take a clear photo of your CNIC card. Both sides if possible.</p>
 
@@ -481,10 +480,12 @@ export default function SignUpStep2() {
               : <>Continue <ArrowRight className="w-4 h-4 ml-2" /></>}
           </Button>
 
-          {isPakistan && neighborhood && (
-            <p className="text-xs text-center text-gray-400">
-              Your CNIC is encrypted and stored securely. It will only be used for identity verification.
-            </p>
+          {neighborhood && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <p className="text-xs text-amber-700 leading-relaxed text-center">
+                ⚠️ <strong>Skipping identity verification?</strong> You can still join and submit actions, but your earned ENB will remain <strong>locked</strong> until you verify your CNIC from the dashboard.
+              </p>
+            </div>
           )}
         </div>
       </div>

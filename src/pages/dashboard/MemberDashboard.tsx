@@ -2,7 +2,7 @@ import React from 'react';
 import ENBLeaf from '@/components/ENBLeaf';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'motion/react';
-import { ArrowRight, Clock, Star, MapPin, History } from 'lucide-react';
+import { ArrowRight, Clock, Star, MapPin, History, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore, getTier } from '@/store/user';
@@ -326,22 +326,62 @@ export default function MemberDashboard() {
   return (
     <div className="space-y-6">
       <CnicPrompt />
+      {/* Greeting header with avatar + verification status */}
       <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold text-enb-text-primary">
-            {l('dashboard', 'greeting')}, {user.full_name?.split(' ')[0] || user.email} {getTierIcon(user.rep_score)}
-          </h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-enb-text-secondary font-medium bg-gray-100 px-2 py-0.5 rounded-md">{tier} Tier</span>
-            <span className="text-sm text-enb-text-secondary">•</span>
-            <span className="text-sm text-enb-text-secondary font-medium flex items-center gap-1">
-              <Star className="w-3 h-3 text-enb-gold fill-current" />{user.rep_score} Rep
-            </span>
+        <div className="flex items-start gap-3">
+          {/* Avatar with verification ring + lock badge */}
+          <div className="relative flex-shrink-0 mt-1">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm ${
+              user.cnic_verified
+                ? 'ring-2 ring-enb-green ring-offset-2'
+                : 'ring-2 ring-amber-400 ring-offset-2'
+            } bg-enb-green`}>
+              {user.profile_pic_url
+                ? <img src={user.profile_pic_url} alt="" className="w-full h-full rounded-full object-cover" />
+                : (user.full_name?.charAt(0) || user.email?.charAt(0) || '?').toUpperCase()
+              }
+            </div>
+            {!user.cnic_verified && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center shadow-sm border-2 border-white">
+                <Lock className="w-2.5 h-2.5 text-white" />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-bold text-enb-text-primary">
+              {l('dashboard', 'greeting')}, {user.full_name?.split(' ')[0] || user.email} {getTierIcon(user.rep_score)}
+            </h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-sm text-enb-text-secondary font-medium bg-gray-100 px-2 py-0.5 rounded-md">{tier} Tier</span>
+              <span className="text-sm text-enb-text-secondary">•</span>
+              <span className="text-sm text-enb-text-secondary font-medium flex items-center gap-1">
+                <Star className="w-3 h-3 text-enb-gold fill-current" />{user.rep_score} Rep
+              </span>
+              {!user.cnic_verified && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                  <Lock className="w-2.5 h-2.5" /> Unverified
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-enb-gold">{(user.enb_local_bal || 0).toLocaleString()}</div>
-          <div className="text-xs text-enb-text-secondary uppercase tracking-wider font-medium">{l('dashboard', 'balance')}</div>
+
+        <div className="text-right flex-shrink-0">
+          {user.cnic_verified ? (
+            <>
+              <div className="text-3xl font-bold text-enb-gold">{(user.enb_local_bal || 0).toLocaleString()}</div>
+              <div className="text-xs text-enb-text-secondary uppercase tracking-wider font-medium">{l('dashboard', 'balance')}</div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-end gap-1.5">
+                <Lock className="w-4 h-4 text-amber-500" />
+                <div className="text-3xl font-bold text-amber-500">{(user.enb_local_bal || 0).toLocaleString()}</div>
+              </div>
+              <div className="text-xs text-amber-600 font-medium">Locked · Verify ID</div>
+            </>
+          )}
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, QrCode, Users } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, QrCode, Users, Lock } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
@@ -86,24 +86,44 @@ export default function Wallet() {
             <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">ENB.LOCAL</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-enb-green mb-1">
-              {(user.enb_local_bal || 0).toLocaleString()}
-            </div>
-            <p className="text-xs text-enb-text-secondary mb-5">{l('wallet', 'nonTransfer')}</p>
-            <div className="grid grid-cols-2 gap-2">
-              <Link to="/wallet/redeem">
-                <Button variant="outline" size="sm" className="w-full">
-                  <QrCode className="w-4 h-4 mr-2 flex-shrink-0" />
-                  {l('wallet', 'redeem')}
-                </Button>
-              </Link>
-              <Link to="/bridge">
-                <Button variant="outline" size="sm" className="w-full text-enb-gold border-enb-gold/20 hover:bg-enb-gold/5">
-                  <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0" />
-                  {l('wallet', 'bridge')}
-                </Button>
-              </Link>
-            </div>
+            {user.cnic_verified ? (
+              <>
+                <div className="text-4xl font-bold text-enb-green mb-1">
+                  {(user.enb_local_bal || 0).toLocaleString()}
+                </div>
+                <p className="text-xs text-enb-text-secondary mb-5">{l('wallet', 'nonTransfer')}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link to="/wallet/redeem">
+                    <Button variant="outline" size="sm" className="w-full">
+                      <QrCode className="w-4 h-4 mr-2 flex-shrink-0" />
+                      {l('wallet', 'redeem')}
+                    </Button>
+                  </Link>
+                  <Link to="/bridge">
+                    <Button variant="outline" size="sm" className="w-full text-enb-gold border-enb-gold/20 hover:bg-enb-gold/5">
+                      <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0" />
+                      {l('wallet', 'bridge')}
+                    </Button>
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-1">
+                  <Lock className="w-5 h-5 text-amber-500" />
+                  <div className="text-4xl font-bold text-amber-500">
+                    {(user.enb_local_bal || 0).toLocaleString()}
+                  </div>
+                </div>
+                <p className="text-xs text-amber-600 font-medium mb-2">Locked — pending identity verification</p>
+                <p className="text-xs text-enb-text-secondary mb-4">Your ENB is safe and accumulating. Submit your CNIC from the dashboard to unlock spending and redemption.</p>
+                <Link to="/">
+                  <Button size="sm" className="w-full bg-amber-500 hover:bg-amber-600 text-white">
+                    <Lock className="w-3 h-3 mr-2" /> Verify Identity to Unlock
+                  </Button>
+                </Link>
+              </>
+            )}
           </CardContent>
         </Card>
 

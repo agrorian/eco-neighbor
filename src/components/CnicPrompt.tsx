@@ -164,11 +164,11 @@ export default function CnicPrompt() {
             <Shield className="w-5 h-5 text-enb-gold" />
           </div>
           <div>
-            <p className="font-semibold text-enb-text-primary text-sm">Verify Your Identity</p>
+            <p className="font-semibold text-enb-text-primary text-sm">🔒 Your ENB is Locked</p>
             <p className="text-xs text-enb-text-secondary">
               {isPakistan
-                ? 'Submit your CNIC to secure your account and unlock full trust status'
-                : 'Optional: add a National ID or Passport number for identity verification'}
+                ? 'Submit your CNIC to verify your identity and unlock your earned ENB tokens'
+                : 'Optional: verify your identity to unlock full account access'}
             </p>
           </div>
         </div>
