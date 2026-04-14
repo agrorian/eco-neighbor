@@ -47,7 +47,13 @@ export default function SubmitAction() {
     setSubmitError('');
 
     try {
-      const rewards = ACTION_REWARDS[selectedAction] || { enb: 500, rep: 200 };
+      // Use formData.actionType as source of truth — selectedAction may reset between steps
+      const actionKey = formData.actionType || selectedAction;
+      const rewards = ACTION_REWARDS[actionKey];
+      if (!rewards) {
+        console.error('No rewards found for action:', actionKey);
+        throw new Error(`Unknown action type: ${actionKey}`);
+      }
       
       // Parse GPS
       let lat: number | null = null;
