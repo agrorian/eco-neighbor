@@ -129,6 +129,7 @@ export default function UserManagement() {
                 <th className="px-5 py-4 font-medium text-gray-500">Tier</th>
                 <th className="px-5 py-4 font-medium text-gray-500 text-right">Rep</th>
                 <th className="px-5 py-4 font-medium text-gray-500 text-right">ENB Balance</th>
+                <th className="px-5 py-4 font-medium text-gray-500 text-center">Identity</th>
                 <th className="px-5 py-4 font-medium text-gray-500 text-right">Status</th>
                 <th className="px-5 py-4 font-medium text-gray-500 text-right">Actions</th>
               </tr>
@@ -160,6 +161,23 @@ export default function UserManagement() {
                   </td>
                   <td className="px-5 py-3 text-right font-mono text-sm">{(u.rep_score || 0).toLocaleString()}</td>
                   <td className="px-5 py-3 text-right font-mono text-sm">{(u.enb_local_bal || 0).toLocaleString()}</td>
+                  <td className="px-5 py-3 text-center">
+                    {u.cnic_submitted_at ? (
+                      u.cnic_verified ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                          <CheckCircle className="w-3 h-3" /> Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-50 text-amber-600">
+                          <Clock className="w-3 h-3" /> Pending
+                        </span>
+                      )
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-400">
+                        <XCircle className="w-3 h-3" /> None
+                      </span>
+                    )}
+                  </td>
                   <td className="px-5 py-3 text-right">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {u.is_active !== false ? 'Active' : 'Suspended'}
