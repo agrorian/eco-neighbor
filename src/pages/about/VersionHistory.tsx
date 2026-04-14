@@ -121,14 +121,14 @@ const APP_VERSIONS = [
     summary: "Escalation queue with side-by-side mod decisions, 45-second timer, 750 ENB reward. My Log rebuilt with Reports tab: weekly/monthly navigation, attendance cards, multi-page PDF download. Profile and business partner photo upload."
   },
   {
-    version: "v1.0.0", date: "24 Mar 2026", type: "MAJOR",
+    version: "v1.0.0", date: "24 Mar 2026", type: "FEATURE",
     title: "Brand Design System + Tailored Action Forms",
     summary: "Full ENB brand design system: typography scale, color variables, warm surface, shadow scale. Tailored submission forms for all 10 civic action types with custom fields. Dashboard routing fixed. Business partner white screen resolved. Urdu Phase 1 complete."
   },
   {
-    version: "v1.1.0", date: "7 Apr 2026", type: "FEATURE",
-    title: "Governance Live, CFSP Page, Community Impact v4.9, Bug Reporting Fixes",
-    summary: "Governance wired to live DB: real proposals, tier-based voting, quorum tracker, proposal type badges. Dedicated Community Food Sharing Programme page with 3 roles, 3 collection modes, v4.9 Priority Waterfall, and Food Runner registration. Community Impact rebuilt with v4.9 tokenomics and food stats. Desktop sidebar now shows Food Sharing, Community Impact and Governance for all members. Bug reporting fixed: screen source auto-detected, screen_path and source columns added to DB, silent insert failures resolved. telegram_id column dropped from DB."
+    version: "v1.1.0", date: "14 Apr 2026", type: "CURRENT",
+    title: "CNIC Identity Verification + Welcome Email + Account Recovery",
+    summary: "CNIC-based identity system: Pakistan users submit 13-digit CNIC with live camera photo during signup; international users get optional free-text ID field. Duplicate CNIC blocks registration instantly. Existing users see dashboard prompt to submit CNIC. Admin panel gains Identity column (Verified/Pending/None) with full verification modal showing ID photo. Welcome email sent via Resend Edge Function on every new signup — covers tier system, action types, earning guide, referral code, and next steps. Account Recovery screen lets users find their account via CNIC + full name match, revealing a masked email and sending a secure access link. Development History page added at /dev-history. Urdu translation system Phase 1 complete across all major screens."
   }
 ];
 
