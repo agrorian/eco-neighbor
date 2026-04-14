@@ -185,12 +185,22 @@ export default function Login() {
               {/* Footer links */}
               <div className="flex items-center justify-center gap-4 pt-2 text-sm text-gray-400">
                 {mode === 'login' ? (
-                  <span>
-                    Don't have an account?{' '}
-                    <button onClick={() => navigate('/signup/step1')} className="text-enb-green font-medium hover:underline">
-                      Sign up
-                    </button>
-                  </span>
+                  <div className="text-center space-y-2">
+                    <span>
+                      Don't have an account?{' '}
+                      <button onClick={() => navigate('/signup/step1')} className="text-enb-green font-medium hover:underline">
+                        Sign up
+                      </button>
+                    </span>
+                    <div>
+                      <button
+                        onClick={() => navigate('/account-recovery')}
+                        className="text-xs text-gray-400 hover:text-enb-green hover:underline transition-colors"
+                      >
+                        Can't access your account?
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <button onClick={() => { setMode('login'); setError(''); }} className="text-enb-green font-medium hover:underline">
                     Back to Login

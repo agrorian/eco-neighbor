@@ -50,6 +50,7 @@ const MyHistory = lazy(() => import('@/pages/MyHistory'));
 import Welcome from '@/pages/onboarding/Welcome';
 import About from '@/pages/onboarding/About';
 import VersionHistory from '@/pages/about/VersionHistory';
+import AccountRecovery from '@/pages/onboarding/AccountRecovery';
 import BusinessOffers from '@/pages/business/BusinessOffers';
 import BusinessDashboard from '@/pages/dashboard/BusinessDashboard';
 import AdminOnboarding from '@/pages/admin/AdminOnboarding';
@@ -174,6 +175,7 @@ export default function App() {
           <Route path="/signup/step2" element={<SignUpStep2 />} />
           <Route path="/about" element={<About />} />
           <Route path="/dev-history" element={<VersionHistory />} />
+          <Route path="/account-recovery" element={<AccountRecovery />} />
 
           {user ? (
             <>

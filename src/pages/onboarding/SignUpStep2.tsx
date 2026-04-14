@@ -252,6 +252,17 @@ export default function SignUpStep2() {
         sessionStorage.removeItem('referralCode');
       }
 
+      // Fire welcome email — non-blocking, don't await
+      supabase.functions.invoke('send-welcome-email', {
+        body: {
+          to: user.email,
+          full_name: name,
+          neighbourhood: neighborhood,
+          profession: profession,
+          referral_code: (await supabase.from('users').select('referral_code').eq('id', user.id).single()).data?.referral_code,
+        }
+      }).catch((e: any) => console.warn('Welcome email failed silently:', e));
+
       navigate('/onboarding/wallet');
     } catch (err: any) {
       setError(err.message || 'Failed to save profile.');
