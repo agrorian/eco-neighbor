@@ -126,7 +126,10 @@ export default function GenerateRedemptionQR() {
         setEnbAmount('');
         setSelectedOffer(null);
       }
-    } catch { /* silent */ }
+    } catch (err: any) {
+      console.error('Cancel QR error:', err?.message || err);
+      alert('Cancel failed: ' + (err?.message || 'Please try again'));
+    }
     setCancelling(false);
   };
 
