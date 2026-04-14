@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { useT } from '@/contexts/LanguageContext';
 
 import { BUSINESS_CATEGORIES } from '@/lib/constants';
 const CATEGORIES = ['All', ...BUSINESS_CATEGORIES];
@@ -137,6 +138,7 @@ function LeafletMap({ businesses, onSelect }: { businesses: Business[]; onSelect
 }
 
 export default function BusinessDirectory() {
+  const { l } = useT();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [mapSelectedBusiness, setMapSelectedBusiness] = useState<Business | null>(null);
@@ -195,7 +197,7 @@ export default function BusinessDirectory() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
-            placeholder="Search businesses..."
+            {...{placeholder: l('directory', 'searchPlaceholder')}}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-white border-gray-200"
@@ -241,7 +243,7 @@ export default function BusinessDirectory() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-enb-text-secondary bg-gray-50 rounded-xl">
           <MapIcon className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="font-medium">No businesses found.</p>
+          <p className="font-medium">{l('directory', 'noResults')}</p>
           <p className="text-sm mt-1">
             {businesses.length === 0
               ? 'No verified partner businesses yet.'

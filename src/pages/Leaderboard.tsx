@@ -4,6 +4,7 @@ import { Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
+import { useT } from '@/contexts/LanguageContext';
 
 const NEIGHBOURHOODS = ['All', 'Bahria Town', 'Chaklala Scheme 3', 'DHA Phase 1', 'Soan Garden', 'PWD Housing Society', 'Gulrez Housing Society', 'Koral Town'];
 const METRICS = [
@@ -29,6 +30,7 @@ interface LeaderEntry {
 }
 
 export default function Leaderboard() {
+  const { l } = useT();
   const { user } = useUserStore();
   const [metric, setMetric] = useState('enb_local_bal');
   const [neighbourhood, setNeighbourhood] = useState('All');
@@ -85,8 +87,8 @@ export default function Leaderboard() {
   return (
     <div className="space-y-6 pb-24">
       <header>
-        <h1 className="text-2xl font-bold text-enb-text-primary">Leaderboard</h1>
-        <p className="text-sm text-enb-text-secondary mt-1">Top contributors this month</p>
+        <h1 className="text-2xl font-bold text-enb-text-primary">{l('leaderboard', 'title')}</h1>
+        <p className="text-sm text-enb-text-secondary mt-1">{l('leaderboard', 'subtitle')}</p>
       </header>
 
       {/* Metric Toggle */}
@@ -132,7 +134,7 @@ export default function Leaderboard() {
         ) : data.length === 0 ? (
           <div className="text-center py-12 text-enb-text-secondary">
             <Trophy className="w-10 h-10 mx-auto mb-3 text-gray-200" />
-            <p className="text-sm">No data yet for this filter.</p>
+            <p className="text-sm">{l('leaderboard', 'noData')}</p>
           </div>
         ) : (
           data.map((entry, i) => {

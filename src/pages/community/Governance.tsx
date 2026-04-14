@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
+import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
 interface Proposal {
@@ -45,6 +46,7 @@ export default function Governance() {
   if (!user) return null;
 
   const userTierIndex = TIER_ORDER.indexOf(user.tier);
+  const { l } = useT();
   const isPillarOrAbove = userTierIndex >= TIER_ORDER.indexOf('Pillar');
   const isAdminOrFounder = user.role === 'admin' || user.role === 'founder';
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -154,7 +156,7 @@ export default function Governance() {
   return (
     <div className="space-y-6 pb-24">
       <header>
-        <h1 className="text-2xl font-bold text-enb-text-primary">Governance</h1>
+        <h1 className="text-2xl font-bold text-enb-text-primary">{l('governance', 'title')}</h1>
         <p className="text-sm text-enb-text-secondary mt-1">Shape the future of Eco-Neighbor</p>
       </header>
 
@@ -176,7 +178,7 @@ export default function Governance() {
             <div className="bg-white/10 rounded-xl p-3 text-sm flex items-start gap-3">
               <Lock className="w-5 h-5 text-enb-gold shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold text-enb-gold">Voting Locked</span>
+                <span className="font-bold text-enb-gold">{l('governance', 'locked')}</span>
                 <p className="text-white/70 text-xs mt-1">
                   Reach <span className="font-bold text-white">Pillar Tier</span> (50,000 Rep) to unlock voting on standard proposals.
                   Emergency Reserve proposals require Pillar tier minimum.
