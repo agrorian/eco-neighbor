@@ -99,7 +99,7 @@ export default function CnicPrompt() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', 'enb_photos');
+      formData.append('upload_preset', 'enb_cnic_private');
       formData.append('folder', 'enb_cnic');
       const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', { method: 'POST', body: formData });
       const data = await res.json();
@@ -256,6 +256,22 @@ export default function CnicPrompt() {
               <label className="text-sm font-medium text-enb-text-primary">
                 Photo of CNIC <span className="text-red-500">*</span>
               </label>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-2.5 space-y-1.5">
+                <p className="text-xs text-blue-700 font-medium">📋 Place front + back side by side → take 1 photo</p>
+                <div className="flex items-center gap-1.5 bg-white rounded-lg px-2 py-1 border border-blue-100">
+                  <div className="flex-1 text-center bg-gray-100 rounded px-1 py-1">
+                    <p className="text-[10px] font-bold text-gray-600">FRONT</p>
+                  </div>
+                  <span className="text-gray-400 text-xs font-bold">+</span>
+                  <div className="flex-1 text-center bg-gray-100 rounded px-1 py-1">
+                    <p className="text-[10px] font-bold text-gray-600">BACK</p>
+                  </div>
+                  <span className="text-gray-400 text-xs">→</span>
+                  <div className="flex-1 text-center bg-enb-green/10 rounded px-1 py-1 border border-enb-green/30">
+                    <p className="text-[10px] font-bold text-enb-green">1 PHOTO</p>
+                  </div>
+                </div>
+              </div>
 
               {cameraActive && (
                 <div className="relative rounded-xl overflow-hidden bg-black">

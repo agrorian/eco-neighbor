@@ -197,7 +197,7 @@ export default function SignUpStep2() {
         const file = new File([blob], `cnic_${Date.now()}.jpg`, { type: 'image/jpeg' });
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('upload_preset', 'enb_photos');
+        formData.append('upload_preset', 'enb_cnic_private');
         formData.append('folder', 'enb_cnic');
         const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', {
           method: 'POST', body: formData,
@@ -431,7 +431,28 @@ export default function SignUpStep2() {
                     <label className="text-sm font-medium text-enb-text-primary">
                       Photo of CNIC <span className="text-gray-400 font-normal text-xs ml-1">(Optional)</span>
                     </label>
-                    <p className="text-xs text-gray-400">Take a clear photo of your CNIC card. Both sides if possible.</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+                      <p className="text-xs text-blue-700 font-medium">📋 How to photograph your CNIC</p>
+                      <p className="text-xs text-blue-600 leading-relaxed">
+                        Place your CNIC <strong>front and back side by side</strong> on a flat surface, then take <strong>one photo of both sides together</strong>. This allows our team to verify both sides at once and speeds up your approval.
+                      </p>
+                      <div className="flex items-center gap-2 bg-white rounded-lg p-2 border border-blue-100">
+                        <div className="flex-1 text-center bg-gray-100 rounded px-2 py-1.5">
+                          <p className="text-xs font-bold text-gray-600">FRONT</p>
+                          <p className="text-[10px] text-gray-400">Photo side</p>
+                        </div>
+                        <span className="text-gray-400 text-sm font-bold">+</span>
+                        <div className="flex-1 text-center bg-gray-100 rounded px-2 py-1.5">
+                          <p className="text-xs font-bold text-gray-600">BACK</p>
+                          <p className="text-[10px] text-gray-400">ID number side</p>
+                        </div>
+                        <span className="text-gray-400 text-sm">→</span>
+                        <div className="flex-1 text-center bg-enb-green/10 rounded px-2 py-1.5 border border-enb-green/30">
+                          <p className="text-xs font-bold text-enb-green">1 PHOTO</p>
+                          <p className="text-[10px] text-enb-green/70">Both together</p>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Camera viewfinder */}
                     {cnicCameraActive && (
