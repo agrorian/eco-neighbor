@@ -6,6 +6,7 @@ import { ArrowRight, Clock, Star, MapPin, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore, getTier } from '@/store/user';
+import CnicPrompt from '@/components/CnicPrompt';
 import { useT } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 
@@ -324,6 +325,7 @@ export default function MemberDashboard() {
 
   return (
     <div className="space-y-6">
+      <CnicPrompt />
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary">

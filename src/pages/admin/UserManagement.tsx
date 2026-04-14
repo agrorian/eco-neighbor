@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Zap, MoreVertical, User, Shield, AlertTriangle, Loader2 } from 'lucide-react';
+import { Search, Zap, MoreVertical, User, Shield, AlertTriangle, Loader2, CheckCircle, Clock, XCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -11,6 +11,7 @@ interface DBUser {
   id: string; full_name: string; email: string; role: string;
   rep_score: number; enb_local_bal: number; tier: string;
   whatsapp_number?: string; neighbourhood?: string; is_active: boolean;
+  cnic_number?: string; cnic_photo_url?: string; cnic_verified?: boolean; cnic_submitted_at?: string;
 }
 
 export default function UserManagement() {
@@ -24,6 +25,9 @@ export default function UserManagement() {
   const [airdropping, setAirdropping] = useState(false);
   const [airdropSuccess, setAirdropSuccess] = useState('');
   const [airdropError, setAirdropError] = useState('');
+  const [verifyTarget, setVerifyTarget] = useState<DBUser | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifySuccess, setVerifySuccess] = useState('');
 
   useEffect(() => { fetchUsers(); }, []);
 
@@ -31,7 +35,7 @@ export default function UserManagement() {
     setLoading(true);
     const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, is_active')
+      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at')
       .order('rep_score', { ascending: false });
     if (!error && data) setUsers(data);
     setLoading(false);
@@ -69,6 +73,21 @@ export default function UserManagement() {
   const handleChangeRole = async (u: DBUser, newRole: string) => {
     const { error } = await supabase.from('users').update({ role: newRole }).eq('id', u.id);
     if (!error) fetchUsers();
+  };
+
+  const handleVerify = async () => {
+    if (!verifyTarget) return;
+    setVerifying(true);
+    const { error } = await supabase
+      .from('users')
+      .update({ cnic_verified: true })
+      .eq('id', verifyTarget.id);
+    setVerifying(false);
+    if (!error) {
+      setVerifySuccess('✅ Identity verified successfully');
+      fetchUsers();
+      setTimeout(() => { setVerifyTarget(null); setVerifySuccess(''); }, 2000);
+    }
   };
 
   const filteredUsers = users.filter(u =>
@@ -223,6 +242,63 @@ export default function UserManagement() {
                   </Button>
                 </div>
               </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Identity Verification Modal */}
+      <Dialog open={!!verifyTarget} onOpenChange={(open) => !open && setVerifyTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <div className="space-y-4 p-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-enb-green/10 rounded-full flex items-center justify-center">
+                <Shield className="w-5 h-5 text-enb-green" />
+              </div>
+              <div>
+                <h3 className="font-bold text-enb-text-primary">Verify Identity</h3>
+                <p className="text-xs text-gray-500">{verifyTarget?.full_name}</p>
+              </div>
+            </div>
+
+            {verifySuccess ? (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-700 text-center font-medium">
+                {verifySuccess}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-gray-50 rounded-xl p-3 space-y-1 text-sm">
+                  <div><span className="font-medium text-gray-500">ID Number:</span> <span className="font-mono text-enb-text-primary">{verifyTarget?.cnic_number || '—'}</span></div>
+                  <div><span className="font-medium text-gray-500">Submitted:</span> <span>{verifyTarget?.cnic_submitted_at ? new Date(verifyTarget.cnic_submitted_at).toLocaleDateString('en-PK') : '—'}</span></div>
+                  <div><span className="font-medium text-gray-500">Neighbourhood:</span> <span>{verifyTarget?.neighbourhood}</span></div>
+                </div>
+                {verifyTarget?.cnic_photo_url && (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-gray-500">ID Photo</p>
+                    <a href={verifyTarget.cnic_photo_url} target="_blank" rel="noopener noreferrer">
+                      <img src={verifyTarget.cnic_photo_url} alt="CNIC" className="w-full h-36 object-cover rounded-xl border border-gray-200 hover:opacity-90 transition-opacity" />
+                      <p className="text-xs text-center text-enb-green mt-1 flex items-center justify-center gap-1">
+                        <ExternalLink className="w-3 h-3" /> Open full size
+                      </p>
+                    </a>
+                  </div>
+                )}
+                {!verifyTarget?.cnic_photo_url && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+                    ⚠️ No ID photo submitted. International member or photo upload failed.
+                  </div>
+                )}
+                <p className="text-xs text-gray-400">
+                  By clicking Verify, you confirm you have reviewed the ID and it matches the user's profile.
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setVerifyTarget(null)} className="flex-1">Cancel</Button>
+                  <Button onClick={handleVerify} disabled={verifying}
+                    className="flex-1 bg-enb-green hover:bg-enb-green/90 text-white">
+                    {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : '✓ Mark as Verified'}
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </DialogContent>

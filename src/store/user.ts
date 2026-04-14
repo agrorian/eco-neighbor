@@ -30,6 +30,10 @@ interface UserState {
     referred_by?: string;
     referral_code?: string;
     consecutive_absences?: number;
+    cnic_number?: string;
+    cnic_photo_url?: string;
+    cnic_verified?: boolean;
+    cnic_submitted_at?: string;
   } | null;
   setUser: (user: UserState['user']) => void;
   logout: () => void;
