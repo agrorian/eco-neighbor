@@ -191,6 +191,11 @@ export default function UserManagement() {
                         </div>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
+                        {u.cnic_submitted_at && !u.cnic_verified && (
+                          <DropdownMenuItem onClick={() => setVerifyTarget(u)} className="text-enb-green">
+                            <CheckCircle className="w-4 h-4 mr-2" /> Verify Identity
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => setAirdropTarget(u)}>
                           <Zap className="w-4 h-4 mr-2 text-enb-gold" /> Airdrop ENB
                         </DropdownMenuItem>
