@@ -14,21 +14,162 @@ const MAX_PHOTOS = 5;
 
 // Behavioural CAPTCHA — 15 questions, randomised correct answer positions
 const CAPTCHA_QUESTIONS = [
-  { q: 'Kaunsa kaam ek achha shehri karta hai?', options: ['Kachra bin mein daalna', 'Sadak par phenkna'], correct: 0 },
-  { q: 'Apne mohalle ki safai karna kaisi baat hai?', options: ['Galat hai, bekar kaam', 'Bahut achhi baat hai'], correct: 1 },
-  { q: 'Dost ko recycle karne ki targhib dena?', options: ['Bilkul sahi hai', 'Bekar kaam hai'], correct: 0 },
-  { q: 'Paani ki boond boond bachana kyun zaroori hai?', options: ['Zaroori nahi', 'Paani qeemti cheez hai'], correct: 1 },
-  { q: 'Bijli bachane se kya hota hai?', options: ['Kuch nahi hota', 'Paisa bachta hai aur maahol behtar hota hai'], correct: 1 },
-  { q: 'Sadak par kachra phenkna?', options: ['Bilkul galat hai', 'Thik hai agar koi na dekhe'], correct: 0 },
-  { q: 'Darak hue nalkay ki marammat karwana kyun zaroori hai?', options: ['Zaroori nahi', 'Paani barbad hone se rokta hai'], correct: 1 },
-  { q: 'Apne ghar ke qareeb koi pauda lagana?', options: ['Faaida nahi', 'Maahol ke liye bahut acha hai'], correct: 1 },
-  { q: 'What is the right thing to do with plastic waste?', options: ['Throw it on the street', 'Put it in the recycling bin'], correct: 1 },
-  { q: 'Why should we save water?', options: ['Water is precious and scarce', 'There is no reason to save it'], correct: 0 },
-  { q: 'Planting a tree in your neighbourhood is:', options: ['A waste of time', 'Good for air quality and the environment'], correct: 1 },
-  { q: 'If you see litter on the street, the right action is:', options: ['Pick it up and bin it', 'Ignore it — not your problem'], correct: 0 },
-  { q: 'Turning off lights when leaving a room helps:', options: ['Save electricity and reduce bills', 'Nothing at all'], correct: 0 },
-  { q: 'Composting food scraps instead of throwing them away:', options: ['Is too much effort', 'Reduces waste and helps soil'], correct: 1 },
-  { q: 'Encouraging your neighbours to keep streets clean is:', options: ['A community responsibility', 'Not your concern'], correct: 0 },
+
+  // ── CATEGORY 1: LOCAL KNOWLEDGE (proves they know Rawalpindi / Pakistan) ──
+  {
+    q: 'Chaklala Scheme 3 kis shehar mein hai?',
+    options: ['Lahore', 'Rawalpindi', 'Karachi', 'Peshawar'],
+    correct: 1,
+  },
+  {
+    q: 'Pakistan mein qaumi shanaakhti card ka naam kya hai?',
+    options: ['Aadhar Card', 'CNIC', 'NIC', 'Smart Card'],
+    correct: 1,
+  },
+  {
+    q: 'Pakistan mein rozana kitni namazein farz hain?',
+    options: ['3', '4', '5', '6'],
+    correct: 2,
+  },
+  {
+    q: 'Rawalpindi kis sube mein hai?',
+    options: ['Sindh', 'KPK', 'Punjab', 'Balochistan'],
+    correct: 2,
+  },
+  {
+    q: 'Pakistan ka qaumi khel kaunsa hai?',
+    options: ['Cricket', 'Hockey', 'Football', 'Kabaddi'],
+    correct: 1,
+  },
+  {
+    q: 'Mohalle ki safai ke liye kaun zimmedar hai?',
+    options: ['Sirf government', 'Har mohalle wala', 'Sirf safai wale', 'Koi nahi'],
+    correct: 1,
+  },
+  {
+    q: 'Pakistan ka qaumi phool kaunsa hai?',
+    options: ['Gulab', 'Chameli', 'Yasmin', 'Lotus'],
+    correct: 1,
+  },
+
+  // ── CATEGORY 2: ENB ECOSYSTEM KNOWLEDGE (proves they read the app) ──
+  {
+    q: 'ENB ka matlab kya hai?',
+    options: ['Eco-Neighbor', 'Energy Building', 'Earn Now Better', 'Eco Network Bank'],
+    correct: 0,
+  },
+  {
+    q: 'Helper Tier ke liye kitne Rep Score chahiye?',
+    options: ['1,000', '2,500', '5,000', '10,000'],
+    correct: 2,
+  },
+  {
+    q: 'Kya ENB.LOCAL ko DEX par becha ja sakta hai?',
+    options: ['Haan, kabhi bhi', 'Nahi, yeh non-tradeable hai', 'Haan, sirf Pillar Tier ke liye', 'Haan, 1 saal baad'],
+    correct: 1,
+  },
+  {
+    q: 'Har submission ko kitne moderators review karte hain?',
+    options: ['1', '2', '3', '4'],
+    correct: 1,
+  },
+  {
+    q: 'CNIC verify nahi hua toh aapke ENB ka kya hoga?',
+    options: ['Delete ho jayenge', 'Locked rahenge', 'Double ho jayenge', 'Kuch nahi hoga'],
+    correct: 1,
+  },
+  {
+    q: 'Neighbourhood Cleanup karne par kitne ENB milte hain?',
+    options: ['500', '750', '1,000', '2,000'],
+    correct: 2,
+  },
+  {
+    q: 'Maturation Bridge ke liye minimum Rep Score kya hai?',
+    options: ['5,000', '20,000', '50,000', '100,000'],
+    correct: 2,
+  },
+  {
+    q: 'ENB app mein action submit karte waqt photo kaise leni chahiye?',
+    options: ['Gallery se koi bhi photo', 'Live camera se', 'Internet se download karke', 'Screenshot se'],
+    correct: 1,
+  },
+  {
+    q: 'Tree planting karne par kitne ENB milte hain?',
+    options: ['500', '1,000', '1,500', '2,000'],
+    correct: 3,
+  },
+  {
+    q: 'ENB community channel kaun sa hai?',
+    options: ['Telegram', 'WhatsApp', 'Facebook', 'Discord'],
+    correct: 1,
+  },
+  {
+    q: 'Referral code se apne dost ko join karane par kitne ENB milte hain?',
+    options: ['100', '250', '500', '1,000'],
+    correct: 2,
+  },
+
+  // ── CATEGORY 3: CIVIC AWARENESS (reinforces mission values) ──
+  {
+    q: 'Agar aap sadak par illegal kachra dekhen toh kya karein?',
+    options: ['Ignore karein', 'ENB app mein report karein', 'Khud bhi wahan daalein', 'Doosron ko batayein aur chalte rahein'],
+    correct: 1,
+  },
+  {
+    q: 'Inme se kaunsa ENB community action hai?',
+    options: ['TV dekhna', 'Social media chalana', 'Darakhton ki plantng', 'Dukan mein baithna'],
+    correct: 2,
+  },
+  {
+    q: 'Apne mohalle ki safai karna kaisi baat hai?',
+    options: ['Bekar kaam', 'Sirf government ka kaam', 'Puri community ki zimmedari', 'Waste of time'],
+    correct: 2,
+  },
+  {
+    q: 'Khanay ki fizool barbadi rokne se kya faida hota hai?',
+    options: ['Koi faida nahi', 'Maahol behtar hota hai aur zarooratmandoN ki madad hoti hai', 'Sirf paisa bachta hai', 'Koi farq nahi padta'],
+    correct: 1,
+  },
+  {
+    q: 'Hunar sikhana (skill workshop) ENB mein kyun reward hota hai?',
+    options: ['Kyunke yeh asaan hai', 'Kyunke yeh community ko strong banata hai', 'Kyunke yeh fun hai', 'Kyunke rules mein hai'],
+    correct: 1,
+  },
+  {
+    q: 'Which of these is a valid ENB civic action?',
+    options: ['Watching TV at home', 'Planting a tree in the neighbourhood', 'Sleeping all day', 'Shopping at a mall'],
+    correct: 1,
+  },
+  {
+    q: 'If you see a broken streetlight, the right action is:',
+    options: ['Ignore it', 'Report it on the ENB app to earn ENB', 'Break another one', 'Tell your friends and forget about it'],
+    correct: 1,
+  },
+  {
+    q: 'Why does ENB reward carpooling?',
+    options: ['It saves money only', 'It reduces traffic and air pollution', 'It is faster than driving alone', 'It is a fun activity'],
+    correct: 1,
+  },
+  {
+    q: 'Food sharing in ENB is rewarded because:',
+    options: ['It is easy to do', 'It reduces waste and feeds people in need', 'It is a tradition', 'It earns the most ENB'],
+    correct: 1,
+  },
+  {
+    q: 'What makes ENB different from regular money?',
+    options: ['You can invest it in stocks', 'It is earned only through verified community service — not bought', 'It can be exchanged for dollars', 'It expires after one month'],
+    correct: 1,
+  },
+  {
+    q: 'ENB.LOCAL tokens ka maqsad kya hai?',
+    options: ['DEX par trading karna', 'Mahalle mein services aur discounts ke liye kharch karna', 'Bank mein jama karna', 'Online shopping ke liye'],
+    correct: 1,
+  },
+  {
+    q: 'Ek achha shehri apne mohalle ke liye kya karta hai?',
+    options: ['Sirf apne ghar ki fikr karta hai', 'Doosron ki madad karta hai aur maahol behtar banata hai', 'Bahar nahi jaata', 'Sirf social media use karta hai'],
+    correct: 1,
+  },
 ];
 
 interface PhotoItem {
