@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Shield, Camera, X, CheckCircle, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Shield, Camera, X, CheckCircle, Loader2, AlertCircle, ChevronDown, ChevronUp, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
@@ -81,6 +81,35 @@ export default function CnicPrompt() {
       }, 100);
     } catch {
       setError('Camera access denied.');
+    }
+  };
+
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setError('Please select an image file.'); return; }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => setCnicPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    setCnicUploading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'enb_photos');
+      formData.append('folder', 'enb_cnic');
+      const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      setCnicPhotoUrl(data.secure_url || '');
+    } catch {
+      setError('Upload failed. Please try again.');
+      setCnicPreview('');
+    } finally {
+      setCnicUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -260,11 +289,18 @@ export default function CnicPrompt() {
               )}
 
               {!cnicPreview && !cameraActive && (
-                <Button onClick={openCamera} variant="outline"
-                  className="w-full h-16 border-dashed border-enb-green/40 text-enb-green hover:bg-enb-green/5 flex gap-2">
-                  <Camera className="w-5 h-5" />
-                  <span className="text-xs">Take Photo of CNIC</span>
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button onClick={openCamera} variant="outline"
+                    className="h-16 border-dashed border-enb-green/40 text-enb-green hover:bg-enb-green/5 flex flex-col gap-1">
+                    <Camera className="w-5 h-5" />
+                    <span className="text-xs">Take Photo</span>
+                  </Button>
+                  <label className="h-16 border-2 border-dashed border-enb-green/40 text-enb-green hover:bg-enb-green/5 flex flex-col gap-1 items-center justify-center rounded-md cursor-pointer transition-colors">
+                    <ImagePlus className="w-5 h-5" />
+                    <span className="text-xs">Upload from Gallery</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleGalleryUpload} />
+                  </label>
+                </div>
               )}
             </div>
           )}

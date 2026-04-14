@@ -138,6 +138,44 @@ export default function SignUpStep2() {
     }
   };
 
+
+  const handleCnicGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate it's an image
+    if (!file.type.startsWith('image/')) {
+      setCnicError('Please select an image file (JPG, PNG, etc.)');
+      return;
+    }
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (ev) => setCnicPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    setCnicUploading(true);
+    setCnicError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'enb_photos');
+      formData.append('folder', 'enb_cnic');
+      const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', {
+        method: 'POST', body: formData,
+      });
+      const data = await res.json();
+      setCnicPhotoUrl(data.secure_url || '');
+    } catch {
+      setCnicError('Upload failed. Please try again.');
+      setCnicPreview('');
+    } finally {
+      setCnicUploading(false);
+      // Reset input so same file can be re-selected
+      e.target.value = '';
+    }
+  };
+
   const captureCnicPhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
@@ -433,16 +471,28 @@ export default function SignUpStep2() {
                       </div>
                     )}
 
-                    {/* Open camera button */}
+                    {/* Camera + Gallery options — CNIC only, not for action submissions */}
                     {!cnicPreview && !cnicCameraActive && (
-                      <Button
-                        onClick={openCnicCamera}
-                        variant="outline"
-                        className="w-full h-20 border-2 border-dashed border-enb-green/40 text-enb-green hover:bg-enb-green/5 flex flex-col gap-1"
-                      >
-                        <Camera className="w-6 h-6" />
-                        <span className="text-xs">Open Camera to Photograph CNIC</span>
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          onClick={openCnicCamera}
+                          variant="outline"
+                          className="h-20 border-2 border-dashed border-enb-green/40 text-enb-green hover:bg-enb-green/5 flex flex-col gap-1"
+                        >
+                          <Camera className="w-5 h-5" />
+                          <span className="text-xs">Take Photo</span>
+                        </Button>
+                        <label className="h-20 border-2 border-dashed border-enb-green/40 text-enb-green hover:bg-enb-green/5 flex flex-col gap-1 items-center justify-center rounded-md cursor-pointer transition-colors hover:border-enb-green/70">
+                          <ImagePlus className="w-5 h-5" />
+                          <span className="text-xs">Upload from Gallery</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleCnicGalleryUpload}
+                          />
+                        </label>
+                      </div>
                     )}
                   </div>
                 </>
