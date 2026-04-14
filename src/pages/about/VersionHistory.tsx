@@ -128,7 +128,7 @@ const APP_VERSIONS = [
   {
     version: "v1.1.0", date: "14 Apr 2026", type: "CURRENT",
     title: "CNIC Identity Verification + Welcome Email + Account Recovery",
-    summary: "CNIC-based identity system: Pakistan users submit 13-digit CNIC with live camera photo during signup; international users get optional free-text ID field. Duplicate CNIC blocks registration instantly. Existing users see dashboard prompt to submit CNIC. Admin panel gains Identity column (Verified/Pending/None) with full verification modal showing ID photo. Welcome email sent via Resend Edge Function on every new signup — covers tier system, action types, earning guide, referral code, and next steps. Account Recovery screen lets users find their account via CNIC + full name match, revealing a masked email and sending a secure access link. Development History page added at /dev-history. Urdu translation system Phase 1 complete across all major screens."
+    summary: "CNIC identity system: verification is optional at signup but earned ENB is locked until verified. Pakistan users submit 13-digit auto-formatted CNIC + live camera photo; international users get optional free-text ID field. Duplicate CNIC blocks registration. Unverified accounts show amber avatar ring, lock badge overlay, Unverified pill, and amber locked ENB balance on dashboard and wallet. Existing users see locked ENB prompt banner. Admin panel gains Identity column (Verified/Pending/None) with verification modal. Welcome email via Resend Edge Function covers tier system, action types, earning guide and next steps. Account Recovery screen: CNIC + full name match reveals masked email and sends secure access link. Dev History page at /dev-history. Urdu Phase 1 complete."
   }
 ];
 
