@@ -41,360 +41,147 @@
 
 ---
 
-## 13 Mar 2026 — Session 1 — ~11:30 PM to ~03:00 AM PKT
-**Focus:** Complete moderation cycle, logo update, reporting system, fraud-proofing
+### 14 Apr 2026 — Session 18 — ~6:00 PM to ~11:00 PM PKT
+**Focus:** CNIC identity verification system, welcome email, account recovery, dev history page, Urdu Docs 02–04 wiring, version label fixes
 
 #### ✅ Completed
 | # | Action | Logic / Why |
 |---|--------|-------------|
-| 1 | Fixed ModQueue fetch query — was only showing mod1's assignments | `.is('decision1', null)` filter excluded mod2 entirely; replaced with per-user pending check |
-| 2 | Added toast notifications to ModQueue for all outcomes | Mods had no feedback after submitting decision; added "Both agreed / waiting / escalated" toasts |
-| 3 | Added MODERATOR_REWARD styling to TransactionHistory | Mod earnings showed as generic green; now blue with shield icon for clear distinction |
-| 4 | Added /mod-queue member-level route | Mods were blocked by AdminLayout (role=admin only); gave mods their own route outside /admin |
-| 5 | Added Mod Queue to moderator sidebar + mobile nav | Mods couldn't find their queue; added Shield icon tab to both desktop and mobile nav |
-| 6 | Fixed assign_moderators trigger — was excluding admin from being a mod | Trigger excluded submitter's ID but admin IS a moderator; changed to exclude only the submitter |
-| 7 | Fixed approve_submission function overload conflict | Two versions existed (bigint vs numeric params); dropped all, recreated single clean signature |
-| 8 | Added admin_set_user_password SQL function | Faisal Khan 2 couldn't reset via email; admin can now set any password directly from Supabase |
-| 9 | Fixed wallet blank page crash | Shield icon was imported from React instead of lucide-react in TransactionHistory.tsx |
-| 10 | Fixed approved submissions still showing in admin Queue | approve_submission wasn't updating status to 'approved'; fixed + manually patched test submissions |
-| 11 | Created My History page at /history | "My History" was just linking to /wallet; now a proper page with submission cards, status badges, ENB/rep earned |
-| 12 | Added Report This button on approved submissions | Entry point to ReportSubmission was missing; button now appears on each approved submission in history |
-| 13 | Built foolproof reporting system v2 | Original had no cost to report, no rep requirement, and auto-suspend on 3 flags was exploitable |
-| 14 | Added 30s minimum review timer to Mod Queue | Mods could rubber-stamp approvals instantly; timer forces 30s minimum with progress bar |
-| 15 | Added airdrop cap + public audit log | Admin could airdrop unlimited ENB to themselves; capped at 2,000/airdrop, 5,000/month/user, all logged |
-| 16 | Added GPS neighbourhood cross-check function | Submissions could be filed from anywhere; flags if GPS >10km from registered neighbourhood |
-| 17 | Added dynamic report stake (5% of balance, min 200, max 1,000 ENB) | Fixed 200 ENB stake was trivial for large wallets; stake now scales with reporter's balance |
-| 18 | Added same-account detection for reporter/target | Reward farming possible (submit fake, report it yourself); blocks same submitter, same neighbourhood + joined <7 days apart, referral relationships |
-| 19 | Replaced ENB leaf SVG with real logo image everywhere | Gemini-generated logo uploaded; background removed, resized to all needed dimensions, PWA icons updated |
-| 20 | Real logo deployed to sidebar, welcome screen, PWA icons | Generic Lucide <Leaf /> replaced with real ENBLeaf component using /enb-logo.png |
+| 1 | CNIC verification on SignUpStep2 — optional at signup, ENB locked until verified | Real users may not have CNIC handy; locking ENB creates incentive without blocking signup |
+| 2 | Pakistan vs International detection via neighbourhood dropdown | Chaklala Scheme 3 etc = PK required CNIC; "Other / International" = optional free-text ID |
+| 3 | Auto-format CNIC as XXXXX-XXXXXXX-X on every keystroke | Standard NADRA format; uniqueness check on blur prevents duplicate accounts |
+| 4 | Camera + Gallery upload for CNIC photo (CNIC only — not action submissions) | ID docs may already exist as photos; gallery allowed here, camera enforced for submissions |
+| 5 | CnicPrompt.tsx — collapsible amber banner on dashboard for existing users | 16 existing users have no CNIC; they see it on next login with locked ENB explanation |
+| 6 | Admin UserManagement Identity column — Verified/Pending/None badges | Admin needed visibility into who submitted CNIC and who hasn't |
+| 7 | Admin verify modal — shows ID number, submission date, photo, one-click verify | Admin must review photo against ID manually before marking verified |
+| 8 | Unverified account visual system — amber ring, lock badge, Unverified pill, locked ENB balance | Three simultaneous signals make the locked state unmissable |
+| 9 | Wallet locked state — amber ENB card with "Verify Identity to Unlock" CTA | Blocks Redeem and Bridge for unverified users |
+| 10 | CNIC photos use enb_cnic_private signed Cloudinary preset | Public preset would make CNIC photos guessable by URL; signed = server-token required |
+| 11 | Welcome email via Resend Edge Function (supabase/functions/send-welcome-email) | Every new signup gets a complete orientation email covering tier system, actions, referral |
+| 12 | Account Recovery screen at /account-recovery | Users who forget their email can find it via CNIC + full name match → masked email reveal |
+| 13 | "Can't access your account?" link added to Login page | Entry point to account recovery flow |
+| 14 | email_change_count column added — max 2 lifetime email changes | Prevents identity hopping while allowing genuine corrections |
+| 15 | Dev History page at /dev-history with whitepaper timeline + app build log | Public transparency page; linked from Welcome screen |
+| 16 | Urdu Docs 02 + 03 applied and wired — Login, Signup, Submit Action, Review, Success | All strings translated and useT() wired to components |
+| 17 | Urdu Doc 04 applied and wired — Wallet, Referral Hub, Bridge, Redemption QR | 34 new Urdu strings added and components wired |
+| 18 | App version corrected to v1.1.0 across sidebar, More.tsx, Settings.tsx | Was showing v4.7 (whitepaper version) instead of app semantic version |
+| 19 | Sidebar dir="ltr" + unicodeBidi fix for version string in Urdu mode | RTL page was reversing "$ENB · App v1.1.0" to display backwards |
 
 #### 🐛 Bugs Fixed
 | Bug | Root Cause | Fix Applied |
 |-----|-----------|-------------|
-| ModQueue showed 0 assignments for mod2 | `.is('decision1', null)` only checked mod1's field | Filter now checks per-user: mod1 checks decision1, mod2 checks decision2 |
-| Wallet blank page | `Shield` from lucide imported inside React import | Moved Shield to lucide-react import line |
-| approve_submission function conflict | Two overloads with different numeric types existed | Dropped all overloads, recreated single function with NUMERIC params |
-| Approved submissions still in Queue | approve_submission wasn't setting status='approved' | Fixed UPDATE statement + manually patched existing test submissions |
-| Faisal Khan 2 showed 2x MODERATOR_REWARD | evaluate_mod_decision may have fired twice | Noted in backlog — needs investigation |
-| Admin couldn't reset user passwords | No mechanism existed | Created admin_set_user_password() SQL function |
+| ENB/Rep always saving 500/200 regardless of action type | React Suspense reset selectedAction state to '' between steps; ACTION_REWARDS[''] = undefined → fallback 500/200 | Fixed: use formData.actionType (from ActionForm) as primary source of truth |
+| CNIC gallery JSX syntax error | `{l('common', 'loading')}` inside ternary expression added extra braces | Removed wrapping braces: `l('common', 'loading')` |
+| ReferralHub ternary JSX error | Same double-brace pattern in escrow_type ternary | Fixed to `? l('wallet', 'refFirstAction')` |
+| Identity column missing from UserManagement table | Python string replacement failed silently — header and cell code never inserted | Rewrote insertion directly targeting exact strings |
+| MobileNav translations never deployed | File generated in earlier session but never pushed to GitHub | Copied and pushed in this session |
+| Sidebar version showing whitepaper version v4.7 | Wrong version source used for label | Updated to App v1.1.0 with LTR enforcement |
 
 #### 🗄️ SQL Run
-| File | Purpose | Status |
-|------|---------|--------|
-| mod_assignment.sql | Dual mod auto-assignment trigger | ✅ |
-| mod_compensation.sql | Mod reward payment on decision | ✅ |
-| fix_mod_trigger_and_assign.sql | Fix trigger + manually assign test submission | ✅ |
-| fix_approve_and_admin_tools.sql | Fix function overload + password reset tool | ✅ |
-| fix_approve_permanent.sql | Clean rebuild of approve_submission + evaluate_mod_decision | ✅ |
-| debug_and_fix_approve.sql | Force-approve test submissions + credit submitter | ✅ |
-| file_report_rpc.sql | Initial file_report, confirm_report, dismiss_report | ✅ |
-| reporting_system_v2.sql | Full rebuild with all fraud protections | ⏳ PENDING |
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `ALTER TABLE users ADD COLUMN cnic_number TEXT UNIQUE` | Store CNIC for identity verification | ✅ |
+| `ALTER TABLE users ADD COLUMN cnic_photo_url TEXT` | Cloudinary URL for CNIC photo | ✅ |
+| `ALTER TABLE users ADD COLUMN cnic_verified BOOLEAN DEFAULT FALSE` | Track admin verification status | ✅ |
+| `ALTER TABLE users ADD COLUMN cnic_submitted_at TIMESTAMPTZ` | Submission timestamp | ✅ |
+| `ALTER TABLE users ADD COLUMN email_change_count INTEGER DEFAULT 0` | Limit email changes to 2 lifetime | ✅ |
+| `ALTER TABLE users DROP COLUMN IF EXISTS telegram_id` | Remove deprecated column | ✅ |
 
 #### 📁 Files Changed
 | File | Repo Path | Change Type |
 |------|-----------|-------------|
-| ModQueue.tsx | src/pages/admin/ModQueue.tsx | Rebuilt (cycle fix + timer) |
-| TransactionHistory.tsx | src/pages/wallet/TransactionHistory.tsx | Fix import + mod reward styling |
-| App.tsx | src/App.tsx | Added /mod-queue + /history routes |
-| DesktopSidebar.tsx | src/components/layout/DesktopSidebar.tsx | Mod Queue in moderator nav + real logo |
-| MobileNav.tsx | src/components/layout/MobileNav.tsx | Mod Queue tab for moderators |
-| AdminLayout.tsx | src/pages/admin/AdminLayout.tsx | Mobile nav grid layout |
-| UserManagement.tsx | src/pages/admin/UserManagement.tsx | Role assignment (already working) |
-| ENBLeaf.tsx | src/components/ENBLeaf.tsx | Replaced SVG with real image |
-| Welcome.tsx | src/pages/onboarding/Welcome.tsx | Real logo |
-| MemberDashboard.tsx | src/pages/dashboard/MemberDashboard.tsx | Real logo + /history link |
-| ReportSubmission.tsx | src/pages/ReportSubmission.tsx | Updated info banner with full protection details |
-| MyHistory.tsx | src/pages/MyHistory.tsx | NEW — submission history + Report This button |
-| enb-logo.png | public/enb-logo.png | NEW — real logo |
-| pwa-192x192.png | public/pwa-192x192.png | Updated with real logo |
-| pwa-512x512.png | public/pwa-512x512.png | Updated with real logo |
+| SignUpStep2.tsx | src/pages/onboarding/ | Modified — CNIC section + email trigger |
+| CnicPrompt.tsx | src/components/ | New |
+| AccountRecovery.tsx | src/pages/onboarding/ | New |
+| VersionHistory.tsx | src/pages/about/ | New |
+| send-welcome-email/index.ts | supabase/functions/ | New |
+| UserManagement.tsx | src/pages/admin/ | Modified — Identity column + verify modal |
+| MemberDashboard.tsx | src/pages/dashboard/ | Modified — amber ring, lock badge, locked ENB |
+| Wallet.tsx | src/pages/ | Modified — locked ENB card state |
+| DesktopSidebar.tsx | src/components/layout/ | Modified — version label + LTR fix |
+| MobileNav.tsx | src/components/layout/ | Modified — useT() wired (was never pushed) |
+| More.tsx | src/pages/ | Modified — version label |
+| Settings.tsx | src/pages/ | Modified — version label |
+| user.ts | src/store/ | Modified — cnic fields added to interface |
+| translations.ts | src/lib/ | Modified — Docs 02, 03, 04 + action descriptions |
+| Login.tsx | src/pages/onboarding/ | Modified — recovery link added |
+| App.tsx | src/ | Modified — /dev-history + /account-recovery routes |
 
 #### ⏭️ Next Plan of Action
-1. Run reporting_system_v2.sql in Supabase
-2. Push all pending files to GitHub
-3. Build Escalation UI — senior mod screen to resolve mod disagreements
-4. Wire Sale Gate enforcement logic (screens exist, logic not connected)
-5. Investigate double MODERATOR_REWARD entry for Faisal Khan 2
+1. Urdu Docs 05 + 06 — Muhammad translating; wire when ready
+2. RLS security hardening (Phase 1 + 2)
+3. FI Dashboard task review
 
 #### 📝 Notes / Decisions Made
-- Moderators access Mod Queue at /mod-queue (member route), not inside /admin — keeps separation of concerns clean
-- Report stake burns on dismiss (not returned) — this is intentional friction against false reports
-- GPS check is a SQL function only for now — not yet called from ActionForm (needs wiring next session)
-- Airdrop cap is 5,000 ENB/month per user — can be adjusted via SQL if needed
-- Real logo has transparent background — works on both light and dark backgrounds
-- ENB_BACKLOG.md should be added to GitHub repo for persistence across sessions
+- CNIC is optional at signup by design — friction must not block registration
+- Gallery upload allowed for CNIC ONLY — this is identity documentation, not fraud vector
+- Signed Cloudinary preset enb_cnic_private created — CNIC photos are not publicly accessible
+- Account recovery requires BOTH CNIC + full name match — prevents ID card theft misuse
+- WhatsApp Meta API deferred to Phase 2 — setup complexity too high before FI cohort
+- GitHub repo stays public — transparency is core to ENB's ReFi positioning
+- App version (v1.1.0) and Whitepaper version (v4.9) are now clearly separated
 
 ---
 
-
----
-
-## 13 Mar 2026 — Session 11 — Afternoon PKT
-**Focus:** Full codebase review (src.zip), resolve double-reward investigation, fix 9 bugs across 4 files
+### 15 Apr 2026 — Session 19 — ~12:00 AM to ~2:00 AM PKT
+**Focus:** RLS implementation (Phase 1 + 2), security audit, ENB/Rep bug fix, admin dashboard fixes, session documentation
 
 #### ✅ Completed
 | # | Action | Logic / Why |
 |---|--------|-------------|
-| 1 | Received and analysed full src.zip — all 60+ files mapped | First time complete codebase confirmed in one pass |
-| 2 | Resolved double MODERATOR_REWARD for Faisal Khan 2 | NOT a bug — he had no test airdrop; 2 mod rewards = correct |
-| 3 | Confirmed FounderSale, FounderHardship, PartnerFloat fully built | Screens existed but had no navigation entry points |
-| 4 | Fixed More.tsx — removed dead imports (useNavigate, Card) | Imported but never used |
-| 5 | Added Founder Sale Gate to More.tsx | Visible to admin/founder only — was unreachable |
-| 6 | Added Float Monitor to More.tsx | Visible to business/admin only — was unreachable |
-| 7 | Added My History to More.tsx | Visible to all — was only reachable from dashboard |
-| 8 | Fixed MemberDashboard campaign banner link | Was linking to /admin/campaigns — changed to /impact |
-| 9 | Fixed dashboard/AdminDashboard.tsx pending count | Excluded mod-assigned submissions (same fix as admin panel) |
-| 10 | Fixed Profile.tsx Edit button | Had no onClick — now navigates to /settings |
-| 11 | Fixed Profile.tsx logout | Was calling store logout() only without supabase.auth.signOut() |
+| 1 | JWT custom access token hook — public.custom_access_token_hook | Embeds user_role in JWT app_metadata on every login; enables RLS without circular reference |
+| 2 | Role synced to auth.users.raw_app_meta_data via trigger | sync_user_role_to_auth trigger fires on INSERT OR UPDATE OF role; keeps JWT role always current |
+| 3 | RLS Phase 1 — users table | 7 policies covering own row access + admin/moderator/onboarding read-all |
+| 4 | RLS Phase 2 — submissions table | 5 policies covering own + approved public + admin/mod full access |
+| 5 | RLS Phase 2 — moderator_assignments table | 4 policies covering admin full + mod select/insert/update |
+| 6 | Leaderboard public read policy | All authenticated users can read basic fields; leaderboard is intentionally public community feature |
+| 7 | Admin dashboard pending count fixed | Was excluding mod-assigned submissions from count; now shows ALL pending |
+| 8 | Queue removed from admin sidebar | Redundant with Mod Queue — caused confusion |
+| 9 | Security audit conducted and documented | Full report: ENB_Security_Audit_April2026.docx |
+| 10 | ENB/Rep reward bug fixed | formData.actionType used instead of selectedAction which resets between Suspense steps |
+| 11 | Dual-mod assignment confirmed working | moderator_assignments table has mod1_id/decision1 + mod2_id/decision2 per row |
+| 12 | Session Devlog, Backlog, Security Audit all generated | .md files + .docx versions created |
 
 #### 🐛 Bugs Fixed
 | Bug | Root Cause | Fix Applied |
 |-----|-----------|-------------|
-| Founder Sale Gate unreachable | Not in More.tsx nav | Added with admin/founder role gate |
-| Float Monitor unreachable | Not in More.tsx nav | Added with business/admin role gate |
-| My History missing from More | Not in nav list | Added for all users |
-| Campaign banner wrong link | Hardcoded /admin/campaigns | Changed to /impact |
-| Home dashboard pending count wrong | No exclusion of mod-assigned submissions | Two-step exclusion applied |
-| Profile Edit button non-functional | No onClick handler | navigate('/settings') added |
-| Profile logout broken | Only called store logout, not auth.signOut | Now calls both |
+| First RLS attempt broke all roles | Admin policy used SELECT FROM users to check role → circular reference (RLS blocks the check itself) | Switched to auth.jwt() -> 'app_metadata' ->> 'user_role' path |
+| Users table showing only 1 user after RLS | JWT token hadn't been refreshed since hook deployment | Log out + back in required to get new token with app_metadata role |
+| Leaderboard showing only self | users RLS select_own policy blocked cross-user reads | Added users_leaderboard_public policy for authenticated users |
+| Admin pending count showing 0 | Query excluded mod-assigned submissions | Removed exclusion — admin sees all pending |
+| Mod Queue showing wrong user roles | moderator_assignments had no RLS, queries returning empty | Enabled RLS + added 4 policies |
+| ENB/Rep always 500/200 on all submissions | selectedAction state reset by React Suspense between steps | Use formData.actionType from ActionForm as primary key for ACTION_REWARDS lookup |
 
 #### 🗄️ SQL Run
-| File | Purpose | Status |
-|------|---------|--------|
-| Manual query | Confirmed moderator_assignments columns | ✅ |
-| Manual query | Full transaction history for all mods | ✅ |
-| reporting_system_v2.sql | Full reporting system rebuild | ⏳ STILL PENDING |
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `ALTER TABLE users ENABLE ROW LEVEL SECURITY` + 7 policies | Phase 1 RLS | ✅ |
+| `ALTER TABLE submissions ENABLE ROW LEVEL SECURITY` + 5 policies | Phase 2 RLS | ✅ |
+| `ALTER TABLE moderator_assignments ENABLE ROW LEVEL SECURITY` + 4 policies | Phase 2 RLS | ✅ |
+| `CREATE FUNCTION public.custom_access_token_hook` | JWT role embedding | ✅ |
+| `CREATE FUNCTION public.sync_user_role_to_auth + trigger` | Role sync on change | ✅ |
+| `UPDATE auth.users SET raw_app_meta_data` | Backfill existing roles | ✅ |
+| RLS rollback SQL (ran once, then rolled back when circular ref discovered) | Emergency rollback | ✅ rolled back |
 
 #### 📁 Files Changed
 | File | Repo Path | Change Type |
 |------|-----------|-------------|
-| More.tsx | src/pages/More.tsx | Fixed |
-| MemberDashboard.tsx | src/pages/dashboard/MemberDashboard.tsx | Fixed |
-| AdminDashboard.tsx (home) | src/pages/dashboard/AdminDashboard.tsx | Fixed |
-| Profile.tsx | src/pages/Profile.tsx | Fixed |
+| SubmitAction.tsx | src/pages/ | Modified — rewards use formData.actionType |
+| AdminDashboard.tsx | src/pages/admin/ | Modified — pending count shows all |
+| AdminLayout.tsx | src/pages/admin/ | Modified — Queue removed from sidebar |
+| VersionHistory.tsx | src/pages/about/ | Modified — v1.1.0 added as CURRENT |
 
 #### ⏭️ Next Plan of Action
-1. Run reporting_system_v2.sql in Supabase
-2. Dual senior mod required to confirm reports
-3. CAPTCHA question pool rotation
-4. Mod pair rotation
-5. Responsibility Dashboard auto-reports (Whitepaper Section 26)
+1. Urdu Docs 05 + 06 — apply translations + wire components
+2. FI Dashboard tasks — review and map to ENB actions
+3. CAPTCHA pool expansion — 30+ questions, 3 categories, multiple choice
+4. Phase 3 RLS — remaining 6 tables (bug_reports, referral_escrow, campaigns, business_partners, partner_applications, bridge_requests)
+5. Whitepaper vs App gap analysis — ENB Founder Reports window
 
 #### 📝 Notes / Decisions Made
-- Complete src.zip received — all file paths and contents now confirmed for future sessions
-- ENB_BACKLOG.md and ENB_DEVLOG.md confirmed as primary cross-session context tools
-- Faisal Khan 2 balance discrepancy fully explained — optional equalisation airdrop available
-
----
-
-## 19 Mar 2026 — Session 13 — ~2:00 AM to ~5:00 AM PKT
-**Focus:** Referral system complete fix, auto-approval trigger, marketing site updates, Fi.co pitch prep
-
-#### ✅ Completed
-| # | Action | Logic / Why |
-|---|--------|-------------|
-| 1 | Fixed SignUpStep1 — captures ?ref= from URL | Was never reading URL params — referral code never reached localStorage |
-| 2 | Fixed SignUpStep2 — reads ref from URL param directly | localStorage unreliable in incognito/different devices — ref now travels in URL |
-| 3 | Fixed ReferralHub — saves referral_code to DB on first visit | Code was generated on-the-fly but never persisted — lookups always failed |
-| 4 | Rebuilt release_referral_escrow() SQL function | Old version only released after 14-day wait — rebuilt to trigger on first approved action |
-| 5 | Created trg_auto_evaluate_mod_decision DB trigger | Race condition in frontend caused submissions to stay pending — trigger fires on DB update, guaranteed |
-| 6 | Reduced ModQueue timer from 30s to 10s | Testing convenience — to be reverted before public launch |
-| 7 | Marketing site — Fi.co badge added to hero | Acceptance not visible on site |
-| 8 | Marketing site — Whitepaper links → email request | Whitepaper not ready for public — request via email instead |
-| 9 | Marketing site — Cloudflare email protection fix | mailto links were being mangled by Cloudflare CDN — fixed with JS onclick |
-| 10 | Marketing site — Giveth links added throughout | Old Gitcoin links replaced with live Giveth listing |
-| 11 | Marketing site — 5B stat overflow fixed | 5,000,000,000 was breaking card layout — changed to 5B |
-| 12 | Marketing site — Fi.co investor card added | New card in investors section |
-| 13 | README.md replaced | Gemini AI Studio template replaced with proper ENB README |
-| 14 | Manually fixed test users referred_by and escrow | goldennexusadvisory and intuitionalised — pre-fix users patched |
-| 15 | Cleaned up duplicate referral payment | Ran release twice by mistake — duplicate escrow row and transaction deleted |
-| 16 | Fi.co VIP Pitch Lounge — pitch script prepared | Event Mar 24 2026 — 1-sentence, 60-second, 3-minute versions + Q&A prep |
-
-#### 🐛 Bugs Fixed
-| Bug | Root Cause | Fix Applied |
-|-----|-----------|-------------|
-| referred_by never saved | SignUpStep1 never read ?ref= URL param | useSearchParams + pass ref via navigate URL |
-| Referral lookup always failed | referral_code not in DB for most users | ReferralHub saves code to DB on first visit |
-| Submissions stayed pending after mod approval | Race condition — frontend re-fetch returned stale data | DB trigger fires evaluate_mod_decision automatically |
-| Whitepaper mailto links gave 404 | Cloudflare intercepts mailto links on proxy | JS onclick splits email string to bypass scanner |
-| 5B stat overflowing card | Full number too long for card width | Changed to 5B with subtitle |
-
-#### 🗄️ SQL Run
-| Query | Purpose | Status |
-|-------|---------|--------|
-| Rebuild release_referral_escrow() | Immediate payout on first action | ✅ |
-| Manual referred_by + escrow fixes | Patch pre-fix test users | ✅ |
-| CREATE TRIGGER trg_auto_evaluate_mod_decision | Auto-approval on both mod decisions | ✅ |
-| Balance/transaction cleanup for TEST user | Remove duplicate credit | ⏳ Run at next session start |
-
-#### 📁 Files Changed
-| File | Repo Path | Change Type |
-|------|-----------|-------------|
-| SignUpStep1.tsx | src/pages/onboarding/SignUpStep1.tsx | Fixed — URL param capture |
-| SignUpStep2.tsx | src/pages/onboarding/SignUpStep2.tsx | Fixed — URL param referral claim |
-| ReferralHub.tsx | src/pages/wallet/ReferralHub.tsx | Fixed — saves code to DB |
-| ModQueue.tsx | src/pages/admin/ModQueue.tsx | Timer 30s → 10s |
-| README.md | README.md | Replaced with proper ENB README |
-| index.html | enb-site repo | Fi.co badge, Giveth links, email fix, 5B stat, investor card |
-
-#### ⏭️ Next Plan of Action
-1. Run TEST user balance cleanup SQL (if not done)
-2. Test full referral cycle end-to-end with fresh account
-3. Get devnet SOL from faucet.quicknode.com/solana/devnet
-4. Complete Solana token deployment on devnet
-5. Set up Gitcoin Passport at passport.gitcoin.co
-6. Prepare for Fi.co VIP Pitch Lounge — Mar 24, 2026
-
-#### 📝 Notes / Decisions Made
-- Referral code format (ENB-XXXX-XXXX) deferred to pre-launch — current hex codes work fine
-- ModQueue timer set to 10s for testing — must be changed back to 30s before public launch
-- Marketing whitepaper link → email request flow (not public PDF) until SECP company registered
-- DB trigger is now primary approval mechanism — frontend RPC call is backup
-- Fi.co pitch event Mar 24 — online, 12:00–1:30 PM PKT
-
----
-
-## 20 Mar 2026 — Session 14 — ~2:00 AM to ~8:00 AM PKT
-**Focus:** Deep audit, root cause fix for all submission approvals, bug reports, real-time updates, PDF fix
-
-#### ✅ Completed
-| # | Action | Detail |
-|---|--------|--------|
-| 1 | ROOT CAUSE FIXED — approve_submission | 3 wrong column names (start_date→starts_at, end_date→ends_at, reviewed_by→moderator_id) silently failing since day one |
-| 2 | evaluate_mod_decision rebuilt | PERFORM→SELECT INTO, captures result, checks success, added already_processed guard |
-| 3 | auto_evaluate_mod_decision trigger rebuilt | Escalation guard — won't re-escalate when senior mod clears flag |
-| 4 | Duplicate function resolved | Dropped INTEGER version, kept NUMERIC |
-| 5 | lifetime_earned backfilled | All users: SET lifetime_earned = enb_local_bal |
-| 6 | All 13 stuck submissions approved | Batch evaluate_mod_decision call |
-| 7 | Escalated submission approved | Direct approve_submission call |
-| 8 | Bug Report System | Marketing site modal + /bug-report app page + /admin/bugs panel + bug_reports table |
-| 9 | Multi-photo submissions | Up to 5 live photos, parallel Cloudinary upload, thumbnail strip |
-| 10 | Real-time balance updates | Supabase subscriptions on Wallet, MemberDashboard, TransactionHistory |
-| 11 | REFERRAL_REWARD transaction styling | Purple/Users icon |
-| 12 | PDF Daily Log Report fixed | jsPDF namespace fix, section parsing regex fix, error handling |
-| 13 | Clickable GPS map links | Google Maps link in ModQueue and SubmissionQueue |
-| 14 | Full datetime on submissions | Date + time not just date |
-| 15 | ENB Today vs All Time | Admin dashboard two separate metrics |
-| 16 | Escalation loop fixed | Trigger guard prevents re-escalation after senior mod resolves |
-| 17 | Duplicate More nav fixed | Mobile nav logic corrected for moderator role |
-| 18 | Admin panel white screen fixed | Stale TypeScript reference enbDistributedToday |
-| 19 | EscalationQueue payment fix | Removed broken supabase.rpc as any, added lifetime_earned update |
-| 20 | External code review analysis | Audited 9 claims — 3 genuine, 6 wrong/already fixed |
-
-#### 🐛 Root Causes Fixed
-| Bug | Root Cause | Fix |
-|-----|-----------|-----|
-| All submissions stayed pending | Wrong column names in approve_submission + PERFORM ignores errors | Fixed column names + SELECT INTO |
-| ENB distributed showed wrong values | transactions type='credit' doesn't exist | Changed to SUM(lifetime_earned) |
-| Escalation kept reappearing | Trigger re-evaluated after senior mod cleared flag | Added OLD.escalation_flag guard |
-| Admin panel white screen | enbDistributedToday referenced but renamed to enbDistributedAllTime | Fixed stale reference |
-| PDF showed no log content | Wrong regex for parsing sections | Use same \n\n(?=[A-Z ]+:) as UI |
-| jsPDF undefined error | window.jsPDF.jsPDF vs window.jspdf.jsPDF | Try both namespaces |
-
-#### 🗄️ SQL Run
-| Query | Status |
-|-------|--------|
-| Rebuild approve_submission (correct columns + lifetime_earned) | ✅ |
-| Rebuild evaluate_mod_decision (SELECT INTO) | ✅ |
-| Rebuild auto_evaluate_mod_decision trigger | ✅ |
-| Drop duplicate INTEGER approve_submission | ✅ |
-| Backfill lifetime_earned = enb_local_bal | ✅ |
-| CREATE TABLE bug_reports | ✅ |
-
-#### 📁 Files Changed
-| File | Change |
-|------|--------|
-| src/pages/admin/AdminDashboard.tsx | ENB Today + All Time separate metrics |
-| src/pages/admin/ModQueue.tsx | GPS map links, full datetime, race condition fix |
-| src/pages/admin/SubmissionQueue.tsx | GPS map links, full datetime |
-| src/pages/admin/EscalationQueue.tsx | Fixed broken payment code, lifetime_earned |
-| src/pages/admin/AdminBugReports.tsx | NEW — bug reports admin panel |
-| src/pages/admin/AdminLayout.tsx | Bug Reports nav item |
-| src/pages/BugReport.tsx | NEW — bug report form page |
-| src/pages/More.tsx | Bug Report link added |
-| src/pages/submit/ActionForm.tsx | Multi-photo (up to 5) |
-| src/pages/submit/SubmissionReview.tsx | Photo grid display |
-| src/pages/Wallet.tsx | Real-time Supabase subscription |
-| src/pages/wallet/TransactionHistory.tsx | Real-time + REFERRAL_REWARD styling |
-| src/pages/dashboard/MemberDashboard.tsx | Real-time subscription, live stats |
-| src/pages/dashboard/AdminDashboard.tsx | Live stats from correct source |
-| src/pages/community/ImpactDashboard.tsx | Live stats from correct source |
-| src/pages/MyLog.tsx | PDF error handling, jsPDF namespace, section parsing |
-| src/components/layout/MobileNav.tsx | Duplicate More nav fixed |
-| src/App.tsx | Bug report routes added |
-| index.html (enb-site) | Bug report modal, Fi.co badge, 5B stat, email fix |
-
-#### ⏭️ Next Session Priorities
-1. Multi-account switcher (tap user avatar → switch accounts — admin/mod only)
-2. Devnet SOL from faucet (24h+ passed)
-3. Sale gate enforcement logic
-4. Daily Log absence alerts
-5. Float auto-replenishment
-
-#### 📝 Key Decisions
-- Multi-account switcher: store Supabase session tokens in localStorage, switch via setSession() — never store passwords
-- lifetime_earned tracks total ever earned (never decreases on spend) — correct by design for Maturation Bridge
-- Ramzan Cleanup Drive 1.5x multiplier is why ENB awards show 750 instead of 500
-- External code review was partially correct — real-time subscriptions were genuine gap, most other claims were wrong
-
----
-
-## 22-23 Mar 2026 — Session 16
-**Focus:** Business partner UI, onboarding team system, partner manager fixes, directory improvements
-
-#### ✅ Completed
-| # | Action | Detail |
-|---|--------|--------|
-| 1 | Business Admin toggle | Same pattern as Member/Admin Panel, sidebar top |
-| 2 | BusinessDashboard | Real Supabase data, float bar, stats |
-| 3 | BusinessOffers | Discount + ENB Swap, photo upload, pause/resume |
-| 4 | BusinessHistory | Redemption history with totals |
-| 5 | Business mobile/desktop nav | Separate nav for business role |
-| 6 | Onboarding tab in sidebar | For onboarding_team role |
-| 7 | partner_applications table | Business signup workflow |
-| 8 | volunteer_applications table | DOB + CNIC columns |
-| 9 | business_offers table | photo_url column added |
-| 10 | PartnerSignup | Saves to Supabase, no discount at signup |
-| 11 | VolunteerApply | DOB, CNIC formatter, 1,000 ENB reward |
-| 12 | OnboardingQueue | 3-tab workflow |
-| 13 | AdminOnboarding | Partner + volunteer approval |
-| 14 | PartnerManager session fix | Admin stays logged in when creating business |
-| 15 | PartnerManager View Details | Float, GPS, email change modal |
-| 16 | Map panel overlay | Mini panel on pin click, stays on map |
-| 17 | Share button | navigator.share / clipboard |
-| 18 | Business category filters | From constants.ts |
-| 19 | constants.ts | 47 professions + 25 categories, both sorted A→Z |
-| 20 | New professions/categories | Allopathic/Homeopathic Doctor, Cobbler, Pansar, Electrical Shop, Electronic Appliances, Dry Fruit Merchant |
-| 21 | Settings white screen fix | useLang() never called in component |
-| 22 | Account switcher mobile overflow | Anchored to right edge |
-| 23 | Account switcher stale avatar | Always derived fresh from name |
-| 24 | Float Monitor visibility | Only for business role in More |
-| 25 | BusinessOffers Save button | Direct partner_id fetch |
-| 26 | Profession list scrollable | max-h increased |
-
-#### 🐛 Root Causes Fixed
-| Bug | Fix |
-|-----|-----|
-| Admin session hijacked by business creation | Save + restore session tokens around signUp() |
-| business_name vs name column confusion | Confirmed: column IS business_name |
-| Test Dhaba wrong owner_user_id | Deleted, recreated correctly |
-| Test Electrical Shop missing from business_partners | Inserted with correct owner_user_id |
-| Settings white screen | useLang imported but not called |
-| Account switcher off-screen mobile | right-0 instead of left-0 |
-
-#### 🗄️ SQL Run
-| Query | Status |
-|-------|--------|
-| business_offers.sql | ✅ |
-| partner_applications.sql | ✅ |
-| onboarding_team.sql | ✅ |
-| volunteer_dob_cnic.sql | ✅ |
-| add_offer_photo.sql | ✅ |
-| DELETE Test Dhaba + INSERT Test Electrical Shop | ✅ |
-
-#### ⏭️ Next Session
-1. Urdu Phase 2
-2. Domain setup (econeighbor.org)
-3. Business signup on marketing website
-4. Float auto-replenishment
-5. Fi.co pitch prep (March 24)
+- RLS is now live on 3 critical tables — users, submissions, moderator_assignments
+- JWT hook uses app_metadata path (not claims) — confirmed working after log out/in
+- 6 tables still without RLS — non-critical for pilot but must complete before scaling
+- Admin Queue page kept (route exists) but removed from sidebar — still accessible if needed
+- AI Vision Layer 3 is Phase 2 — DB columns (ai_confidence_score, ai_rejection_reason) exist but unused
+- Security Audit report generated with full status of all findings
