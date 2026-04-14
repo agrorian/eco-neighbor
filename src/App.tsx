@@ -104,6 +104,10 @@ export default function App() {
           referred_by: data.referred_by || undefined,
           referral_code: data.referral_code || undefined,
           consecutive_absences: Number(data.consecutive_absences) || 0,
+          cnic_number: data.cnic_number || undefined,
+          cnic_photo_url: data.cnic_photo_url || undefined,
+          cnic_verified: data.cnic_verified === true,
+          cnic_submitted_at: data.cnic_submitted_at || undefined,
         });
       } else {
         console.warn('No profile row, creating fallback. Error:', error?.message);
