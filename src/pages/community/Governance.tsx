@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Vote, CheckCircle, Clock, AlertCircle, Lock, Loader2, TrendingUp, Plus, Zap, Users, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
@@ -44,11 +46,47 @@ export default function Governance() {
 
   const userTierIndex = TIER_ORDER.indexOf(user.tier);
   const isPillarOrAbove = userTierIndex >= TIER_ORDER.indexOf('Pillar');
+  const isAdminOrFounder = user.role === 'admin' || user.role === 'founder';
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newProposal, setNewProposal] = useState({
+    title: '', description: '', proposal_type: 'general',
+    min_tier_to_vote: 'Pillar', quorum_required: 10,
+    voting_days: 7,
+  });
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   useEffect(() => {
     fetchProposals();
     fetchUserVotes();
   }, []);
+
+  const handleCreateProposal = async () => {
+    if (!newProposal.title.trim() || !newProposal.description.trim()) {
+      setCreateError('Title and description are required.');
+      return;
+    }
+    setCreating(true);
+    setCreateError('');
+    const endsAt = new Date();
+    endsAt.setDate(endsAt.getDate() + newProposal.voting_days);
+    const { error } = await supabase.from('governance_proposals').insert({
+      title: newProposal.title.trim(),
+      description: newProposal.description.trim(),
+      proposal_type: newProposal.proposal_type,
+      status: 'active',
+      min_tier_to_vote: newProposal.min_tier_to_vote,
+      quorum_required: newProposal.quorum_required,
+      votes_for: 0,
+      votes_against: 0,
+      voting_ends_at: endsAt.toISOString(),
+    });
+    setCreating(false);
+    if (error) { setCreateError(error.message); return; }
+    setShowCreateModal(false);
+    setNewProposal({ title: '', description: '', proposal_type: 'general', min_tier_to_vote: 'Pillar', quorum_required: 10, voting_days: 7 });
+    fetchProposals();
+  };
 
   const fetchProposals = async () => {
     setLoading(true);
@@ -160,25 +198,37 @@ export default function Governance() {
         </CardContent>
       </Card>
 
+      {/* Create Proposal button — admin only */}
+      {isAdminOrFounder && (
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          className="w-full bg-enb-green hover:bg-enb-green/90 text-white flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> Create New Proposal
+        </Button>
+      )}
+
       {/* How Governance Works */}
       <Card className="border-gray-100 shadow-sm bg-enb-green/5">
         <CardContent className="p-4">
           <h3 className="font-bold text-enb-text-primary text-sm mb-3">How Governance Works</h3>
           <div className="space-y-2">
             {[
-              { tier: 'Helper+', desc: 'Vote on earn rate changes and new action types', color: 'text-enb-teal' },
-              { tier: 'Guardian+', desc: 'Vote on partner onboarding and CGR adjustments', color: 'text-blue-600' },
-              { tier: 'Pillar+', desc: 'Vote on all proposals including Emergency Reserve usage', color: 'text-enb-green' },
+              { tier: '🌱 Newcomer', desc: 'Earn ENB and spend locally. No voting rights yet.', color: 'text-gray-500' },
+              { tier: '🌿 Helper', desc: 'Verified directory listing. Can submit action reports. No voting rights yet.', color: 'text-enb-teal' },
+              { tier: '🌳 Guardian', desc: 'Can vouch for new members. ENB Credit Circle eligible. No voting rights yet.', color: 'text-blue-600' },
+              { tier: '⭐ Pillar', desc: 'Full governance voting rights on all proposals. Maturation Bridge eligible.', color: 'text-enb-green' },
+              { tier: '🏆 Founder Tier', desc: 'Co-governance rights. Founding DAO seat. Carbon credit revenue share.', color: 'text-enb-gold' },
             ].map((row, i) => (
               <div key={i} className="flex items-start gap-2 text-xs">
-                <span className={`font-bold min-w-[70px] ${row.color}`}>{row.tier}</span>
+                <span className={`font-bold min-w-[80px] ${row.color}`}>{row.tier}</span>
                 <span className="text-enb-text-secondary">{row.desc}</span>
               </div>
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">
-            Proposals are submitted by the Founding Team. Voting power is one member, one vote.
-            Each proposal specifies a quorum — minimum votes needed to be binding.
+            Proposals are submitted by the Founding Team and elected Community Moderators (Pillar Tier).
+            Voting power is one member, one vote. Each proposal specifies a quorum — minimum votes needed to be binding.
           </p>
         </CardContent>
       </Card>
@@ -337,6 +387,110 @@ export default function Governance() {
           )}
         </div>
       )}
+
+      {/* Create Proposal Modal */}
+      <Dialog open={showCreateModal} onOpenChange={(open) => { setShowCreateModal(open); setCreateError(''); }}>
+        <DialogContent className="max-w-md">
+          <div className="space-y-4 p-2">
+            <div>
+              <h3 className="font-bold text-enb-text-primary text-lg">Create New Proposal</h3>
+              <p className="text-xs text-gray-500 mt-1">Proposals are visible to all members. Voting rights depend on tier.</p>
+            </div>
+
+            {createError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{createError}</div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Title *</label>
+                <Input
+                  value={newProposal.title}
+                  onChange={(e) => setNewProposal(p => ({ ...p, title: e.target.value }))}
+                  placeholder="Short, clear proposal title"
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description *</label>
+                <textarea
+                  value={newProposal.description}
+                  onChange={(e) => setNewProposal(p => ({ ...p, description: e.target.value }))}
+                  placeholder="Full description of what is being proposed and why..."
+                  rows={4}
+                  className="mt-1 w-full text-sm border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-enb-green/30 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</label>
+                  <select
+                    value={newProposal.proposal_type}
+                    onChange={(e) => setNewProposal(p => ({ ...p, proposal_type: e.target.value }))}
+                    className="mt-1 w-full text-sm border border-gray-200 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-enb-green/30"
+                  >
+                    <option value="general">General</option>
+                    <option value="earn_rate_change">Earn Rate Change</option>
+                    <option value="new_action_type">New Action Type</option>
+                    <option value="partner_onboarding">New Partner</option>
+                    <option value="cgr_milestone_adjustment">CGR Milestone</option>
+                    <option value="emergency_reserve_usage">Emergency Reserve</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Min Tier to Vote</label>
+                  <select
+                    value={newProposal.min_tier_to_vote}
+                    onChange={(e) => setNewProposal(p => ({ ...p, min_tier_to_vote: e.target.value }))}
+                    className="mt-1 w-full text-sm border border-gray-200 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-enb-green/30"
+                  >
+                    <option value="Pillar">Pillar (50,000+ Rep)</option>
+                    <option value="Founder Tier">Founder Tier (100,000+ Rep)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Quorum (votes needed)</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={newProposal.quorum_required}
+                    onChange={(e) => setNewProposal(p => ({ ...p, quorum_required: parseInt(e.target.value) || 1 }))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Voting Period (days)</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={newProposal.voting_days}
+                    onChange={(e) => setNewProposal(p => ({ ...p, voting_days: parseInt(e.target.value) || 7 }))}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1">Cancel</Button>
+              <Button
+                onClick={handleCreateProposal}
+                disabled={creating || !newProposal.title.trim() || !newProposal.description.trim()}
+                className="flex-1 bg-enb-green hover:bg-enb-green/90 text-white"
+              >
+                {creating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</> : 'Create Proposal'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
