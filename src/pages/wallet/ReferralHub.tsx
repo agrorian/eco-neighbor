@@ -6,6 +6,7 @@ import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import QRCode from 'qrcode';
 
 interface ReferredUser {
   id: string; full_name: string; email: string; tier: string;
@@ -24,6 +25,7 @@ export default function ReferralHub() {
   const [escrow, setEscrow] = useState<EscrowItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [referralCode, setReferralCode] = useState('');
+  const [referralQrUrl, setReferralQrUrl] = useState('');
 
   if (!user) return null;
 
@@ -31,10 +33,8 @@ export default function ReferralHub() {
   useEffect(() => {
     const ensureReferralCode = async () => {
       if (user.referral_code) {
-        // Already stored — use it
         setReferralCode(user.referral_code);
       } else {
-        // Generate one and save it to DB so lookups work
         const generated = `ENB-${(user.full_name || user.email || 'ENB')
           .toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 4)}-${user.id.slice(0, 4).toUpperCase()}`;
 
@@ -45,12 +45,11 @@ export default function ReferralHub() {
 
         if (!error) {
           setReferralCode(generated);
-          // Update local store so it persists for this session
           setUser({ ...user, referral_code: generated });
           console.log('✅ Referral code generated and saved to DB:', generated);
         } else {
           console.error('❌ Failed to save referral code:', error.message);
-          setReferralCode(generated); // Still show it even if save failed
+          setReferralCode(generated);
         }
       }
 
@@ -59,6 +58,18 @@ export default function ReferralHub() {
 
     ensureReferralCode();
   }, [user.id]);
+
+  // ── Generate QR image once referralCode is known ──────
+  useEffect(() => {
+    if (!referralCode) return;
+    const signupUrl = `${window.location.origin}/signup/step1?ref=${referralCode}`;
+    QRCode.toDataURL(signupUrl, {
+      width: 180,
+      margin: 2,
+      color: { dark: '#1A6B3C', light: '#FFFFFF' },
+      errorCorrectionLevel: 'M',
+    }).then(setReferralQrUrl).catch(console.error);
+  }, [referralCode]);
 
   const fetchReferralData = async () => {
     setLoading(true);
@@ -138,7 +149,7 @@ export default function ReferralHub() {
         </CardContent>
       </Card>
 
-      {/* Referral Code */}
+      {/* Referral Code + QR */}
       <div className="space-y-3">
         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Your Referral Code</label>
         {referralCode ? (
@@ -149,6 +160,27 @@ export default function ReferralHub() {
                 {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </Button>
             </div>
+
+            {/* QR Code — friends scan to sign up with referral pre-filled */}
+            {referralQrUrl ? (
+              <div className="flex flex-col items-center gap-2 py-2">
+                <div className="p-3 bg-white rounded-xl border border-gray-200 shadow-sm inline-block">
+                  <img
+                    src={referralQrUrl}
+                    alt="Referral QR Code"
+                    className="w-[160px] h-[160px] block"
+                  />
+                </div>
+                <p className="text-xs text-gray-400">Friends scan this to sign up with your referral</p>
+              </div>
+            ) : (
+              <div className="flex justify-center py-4">
+                <div className="w-[160px] h-[160px] bg-gray-100 rounded-xl flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+                </div>
+              </div>
+            )}
+
             <Button onClick={handleShare} className="w-full h-11 bg-enb-green hover:bg-enb-green/90 text-white shadow-lg shadow-enb-green/20">
               <Share2 className="w-4 h-4 mr-2" /> {l('wallet', 'refShareLink')}
             </Button>

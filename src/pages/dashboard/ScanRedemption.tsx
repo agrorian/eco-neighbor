@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Camera, CheckCircle, AlertCircle, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
@@ -17,6 +17,7 @@ interface RedemptionResult {
 
 export default function ScanRedemption() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useUserStore();
   const [manualCode, setManualCode] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -26,14 +27,23 @@ export default function ScanRedemption() {
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState('');
 
+  // Auto-populate and immediately process when arriving via QR scan URL
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (code) {
+      setManualCode(code.toUpperCase());
+      processCode(code.toUpperCase());
+    }
+  }, []);
+
   const processCode = async (code: string) => {
     if (!user || !code.trim()) return;
     setProcessing(true);
     setResult(null);
     try {
+      // Supabase ground truth: confirm_redemption(p_qr_code text) — one param only
       const { data, error } = await supabase.rpc('confirm_redemption', {
-        p_qr_token: code.trim().toUpperCase(),
-        p_business_id: user.id,
+        p_qr_code: code.trim().toUpperCase(),
       });
       if (error) throw error;
       setResult(data);
@@ -120,7 +130,15 @@ export default function ScanRedemption() {
       </header>
 
       <div className="flex-1 relative flex items-center justify-center overflow-hidden pt-16">
-        {cameraActive ? (
+        {/* Auto-processing spinner when arriving via QR URL */}
+        {processing && !cameraActive && (
+          <div className="flex flex-col items-center gap-4 p-8">
+            <Loader2 className="w-16 h-16 text-enb-green animate-spin" />
+            <p className="text-white/80 text-center">Processing redemption...</p>
+          </div>
+        )}
+
+        {!processing && cameraActive && (
           <>
             <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -133,7 +151,9 @@ export default function ScanRedemption() {
             </div>
             <Button onClick={stopCamera} className="absolute top-20 right-4 bg-white/20 text-white hover:bg-white/30 text-sm">Cancel</Button>
           </>
-        ) : (
+        )}
+
+        {!processing && !cameraActive && (
           <div className="flex flex-col items-center gap-4 p-8">
             <Camera className="w-24 h-24 text-white/30" />
             <p className="text-white/60 text-center text-sm">Scan member's QR code or enter code below</p>
@@ -157,6 +177,9 @@ export default function ScanRedemption() {
               <div>
                 <p className="font-bold text-red-700 text-sm">Redemption Failed</p>
                 <p className="text-red-600 text-xs mt-1">{result.error}</p>
+                <Button onClick={resetScan} variant="ghost" size="sm" className="text-red-600 mt-2 p-0 h-auto">
+                  Try again
+                </Button>
               </div>
             </CardContent>
           </Card>

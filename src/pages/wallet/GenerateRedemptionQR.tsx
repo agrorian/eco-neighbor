@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Clock, Share2, X, AlertCircle, ChevronDown, Tag, Coins } from 'lucide-react';
+import { ArrowLeft, Clock, Share2, X, AlertCircle, ChevronDown, Tag, Coins, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import QRCode from 'qrcode';
 
 interface Business {
   id: string;
@@ -34,7 +35,8 @@ export default function GenerateRedemptionQR() {
   const [offers, setOffers] = useState<BusinessOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<BusinessOffer | null>(null);
   const [enbAmount, setEnbAmount] = useState('');
-  const [qrData, setQrData] = useState<{ code: string; expiresAt: Date; token: string } | null>(null);
+  const [qrData, setQrData] = useState<{ code: string; expiresAt: Date } | null>(null);
+  const [qrImageUrl, setQrImageUrl] = useState<string>('');
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [loading, setLoading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -46,7 +48,6 @@ export default function GenerateRedemptionQR() {
       .eq('is_active', true)
       .then(({ data }) => { if (data) setBusinesses(data); });
 
-    // Release any expired QR codes on page load
     supabase.rpc('release_expired_redemptions').then(() => {});
   }, []);
 
@@ -62,7 +63,7 @@ export default function GenerateRedemptionQR() {
     setEnbAmount('');
   }, [selectedBiz]);
 
-  // Auto-set ENB amount from selected offer
+  // Auto-set ENB amount from selected swap offer
   useEffect(() => {
     if (selectedOffer?.category === 'swap' && selectedOffer.enb_cost) {
       setEnbAmount(selectedOffer.enb_cost.toString());
@@ -77,13 +78,25 @@ export default function GenerateRedemptionQR() {
       setSecondsLeft(secs);
       if (secs === 0) {
         setQrData(null);
-        // Refresh balance after expiry — ENB auto-released by cron
+        setQrImageUrl('');
         supabase.from('users').select('enb_local_bal').eq('id', user!.id).single()
           .then(({ data }) => { if (data) setUser({ ...user!, enb_local_bal: data.enb_local_bal }); });
       }
     }, 1000);
     return () => clearInterval(interval);
   }, [qrData]);
+
+  // Generate QR image whenever qrData.code changes
+  useEffect(() => {
+    if (!qrData?.code) { setQrImageUrl(''); return; }
+    const url = `https://eco-neighbor.vercel.app/scan?code=${qrData.code}`;
+    QRCode.toDataURL(url, {
+      width: 240,
+      margin: 2,
+      color: { dark: '#1A6B3C', light: '#FFFFFF' },
+      errorCorrectionLevel: 'M',
+    }).then(setQrImageUrl).catch(console.error);
+  }, [qrData?.code]);
 
   const handleGenerate = async () => {
     if (!user || !selectedBiz || !enbAmount) return;
@@ -102,7 +115,7 @@ export default function GenerateRedemptionQR() {
       if (!data?.success) throw new Error(data?.error || 'Failed to generate QR');
 
       setUser({ ...user, enb_local_bal: (user.enb_local_bal || 0) - amount });
-      setQrData({ code: data.qr_code, token: data.qr_code, expiresAt: new Date(data.expires_at) });
+      setQrData({ code: data.qr_code, expiresAt: new Date(data.expires_at) });
       setSecondsLeft(600);
     } catch (err: any) {
       setError(err.message || 'Failed to generate QR code');
@@ -115,16 +128,19 @@ export default function GenerateRedemptionQR() {
     if (!qrData || !user) return;
     setCancelling(true);
     try {
+      // Supabase ground truth: cancel_redemption_qr(p_qr_token text, p_user_id uuid)
       const { data } = await supabase.rpc('cancel_redemption_qr', {
-        p_qr_token: qrData.token,
+        p_qr_token: qrData.code,
         p_user_id: user.id,
       });
       if (data?.success) {
-        // Restore ENB to local state
         setUser({ ...user, enb_local_bal: (user.enb_local_bal || 0) + parseInt(enbAmount) });
         setQrData(null);
+        setQrImageUrl('');
         setEnbAmount('');
         setSelectedOffer(null);
+      } else {
+        alert('Cancel failed: ' + (data?.error || 'Please try again'));
       }
     } catch (err: any) {
       console.error('Cancel QR error:', err?.message || err);
@@ -136,9 +152,18 @@ export default function GenerateRedemptionQR() {
   const handleShare = () => {
     if (!qrData) return;
     const biz = businesses.find(b => b.id === selectedBiz);
-    const text = `ENB Redemption Code: ${qrData.code.slice(0, 8).toUpperCase()}\nAmount: ${enbAmount} ENB\nBusiness: ${biz?.business_name}\nExpires: ${qrData.expiresAt.toLocaleTimeString()}`;
-    if (navigator.share) navigator.share({ title: 'ENB Redemption', text });
-    else { navigator.clipboard.writeText(text); alert('Code copied!'); }
+    const url = `https://eco-neighbor.vercel.app/scan?code=${qrData.code}`;
+    const text = `ENB Redemption\nAmount: ${enbAmount} ENB\nBusiness: ${biz?.business_name}\nScan to redeem: ${url}`;
+    if (navigator.share) navigator.share({ title: 'ENB Redemption', text, url });
+    else { navigator.clipboard.writeText(url); alert('Redemption link copied!'); }
+  };
+
+  const handleDownloadQR = () => {
+    if (!qrImageUrl || !qrData) return;
+    const link = document.createElement('a');
+    link.href = qrImageUrl;
+    link.download = `ENB-QR-${qrData.code}.png`;
+    link.click();
   };
 
   const mins = Math.floor(secondsLeft / 60);
@@ -270,18 +295,32 @@ export default function GenerateRedemptionQR() {
       ) : (
         <div className="space-y-4 flex flex-col items-center">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}>
-            <Card className="bg-white border-gray-100 shadow-lg w-64 h-64 flex items-center justify-center">
-              <CardContent className="flex flex-col items-center justify-center p-4">
-                <div className="bg-gray-100 rounded-xl p-4 text-center w-full">
-                  <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Redemption Code</p>
-                  <p className="font-mono font-bold text-lg text-enb-text-primary break-all">{qrData.code.slice(0, 8).toUpperCase()}</p>
-                </div>
-                <p className="text-sm text-enb-text-secondary mt-3 font-medium">
-                  {enbAmount} ENB → {businesses.find(b => b.id === selectedBiz)?.business_name}
-                </p>
-                {selectedOffer && (
-                  <p className="text-xs text-enb-green mt-1">{selectedOffer.item_name}</p>
+            <Card className="bg-white border-gray-100 shadow-lg">
+              <CardContent className="flex flex-col items-center p-5 gap-3">
+                {/* Real scannable QR code */}
+                {qrImageUrl ? (
+                  <div className="p-2 bg-white rounded-xl border-2 border-enb-green/20">
+                    <img
+                      src={qrImageUrl}
+                      alt="Redemption QR Code"
+                      className="w-[200px] h-[200px] block"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-[200px] h-[200px] bg-gray-100 rounded-xl flex items-center justify-center">
+                    <div className="w-8 h-8 border-4 border-enb-green border-t-transparent rounded-full animate-spin" />
+                  </div>
                 )}
+
+                <div className="text-center">
+                  <p className="text-lg font-bold text-enb-green">{enbAmount} ENB</p>
+                  <p className="text-sm text-enb-text-secondary">→ {businesses.find(b => b.id === selectedBiz)?.business_name}</p>
+                  {selectedOffer && (
+                    <p className="text-xs text-enb-green mt-0.5">{selectedOffer.item_name}</p>
+                  )}
+                </div>
+
+                <p className="text-xs text-gray-400 font-mono">{qrData.code}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -291,17 +330,24 @@ export default function GenerateRedemptionQR() {
             {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')} remaining
           </div>
 
-          <p className="text-xs text-center text-gray-400">Show this code to the business owner. One-time use only.</p>
+          <p className="text-xs text-center text-gray-400">
+            Business owner scans this QR with their phone camera. One-time use only.
+          </p>
 
           <div className="flex gap-3 w-full">
             <Button variant="outline" onClick={handleShare} className="flex-1">
               <Share2 className="w-4 h-4 mr-2" />Share
             </Button>
-            <Button variant="outline" onClick={handleCancel} disabled={cancelling}
-              className="flex-1 text-red-500 border-red-200 hover:bg-red-50">
-              <X className="w-4 h-4 mr-2" />{cancelling ? 'Cancelling...' : 'Cancel & Refund'}
+            <Button variant="outline" onClick={handleDownloadQR} disabled={!qrImageUrl} className="flex-1">
+              <Download className="w-4 h-4 mr-2" />Save
             </Button>
           </div>
+
+          <Button variant="outline" onClick={handleCancel} disabled={cancelling}
+            className="w-full text-red-500 border-red-200 hover:bg-red-50">
+            <X className="w-4 h-4 mr-2" />{cancelling ? 'Cancelling...' : 'Cancel & Refund'}
+          </Button>
+
           <p className="text-xs text-center text-amber-600">
             Cancel returns {enbAmount} ENB to your wallet immediately.
           </p>
