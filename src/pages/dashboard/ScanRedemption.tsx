@@ -31,8 +31,8 @@ export default function ScanRedemption() {
   useEffect(() => {
     const code = searchParams.get('code');
     if (code) {
-      setManualCode(code.toUpperCase());
-      processCode(code.toUpperCase());
+      setManualCode(code);
+      processCode(code);
     }
   }, []);
 
@@ -43,7 +43,7 @@ export default function ScanRedemption() {
     try {
       // Supabase ground truth: confirm_redemption(p_qr_code text) — one param only
       const { data, error } = await supabase.rpc('confirm_redemption', {
-        p_qr_code: code.trim().toUpperCase(),
+        p_qr_code: code.trim(),
       });
       if (error) throw error;
       setResult(data);
@@ -189,9 +189,9 @@ export default function ScanRedemption() {
         <form onSubmit={handleManualSubmit} className="flex gap-2">
           <Input
             value={manualCode}
-            onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+            onChange={(e) => setManualCode(e.target.value)}
             placeholder="Enter redemption code"
-            className="text-center font-mono tracking-widest text-lg uppercase"
+            className="text-center font-mono tracking-widest text-sm"
             maxLength={36}
           />
           <Button type="submit" disabled={manualCode.length < 4 || processing}
