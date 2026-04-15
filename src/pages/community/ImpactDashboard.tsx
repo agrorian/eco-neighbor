@@ -127,12 +127,12 @@ export default function ImpactDashboard() {
   };
 
   const statCards = [
-    { icon: Users,        value: stats.totalUsers.toLocaleString(),                           label: 'Community Members',    color: 'bg-enb-green/10 text-enb-green' },
+    { icon: Users,        value: stats.totalUsers.toLocaleString(),                           label: l('impact', 'activeMembers'),    color: 'bg-enb-green/10 text-enb-green' },
     { icon: CheckCircle,  value: stats.totalActions.toLocaleString(),                         label: l('impact', 'verifiedActions'),     color: 'bg-enb-teal/10 text-enb-teal' },
     { icon: Coins,        value: stats.totalEnbDistributed > 0 ? `${(stats.totalEnbDistributed / 1000).toFixed(1)}k` : '0', label: l('impact', 'enbDistributed'), color: 'bg-enb-gold/10 text-enb-gold' },
-    { icon: Store,        value: stats.totalPartners.toLocaleString(),                        label: 'Partner Businesses',   color: 'bg-purple-100 text-purple-600' },
-    { icon: Apple,        value: stats.totalFoodDonations.toLocaleString(),                   label: 'Food Donations',       color: 'bg-orange-100 text-orange-600' },
-    { icon: Leaf,         value: stats.totalKgDiverted > 0 ? `${stats.totalKgDiverted.toFixed(1)} kg` : '0 kg', label: 'Food from Landfill', color: 'bg-enb-green/10 text-enb-green' },
+    { icon: Store,        value: stats.totalPartners.toLocaleString(),                        label: l('impact', 'partners'),   color: 'bg-purple-100 text-purple-600' },
+    { icon: Apple,        value: stats.totalFoodDonations.toLocaleString(),                   label: l('impact', 'foodDonations'),       color: 'bg-orange-100 text-orange-600' },
+    { icon: Leaf,         value: stats.totalKgDiverted > 0 ? `${stats.totalKgDiverted.toFixed(1)} kg` : '0 kg', label: l('impact', 'foodFromLandfill'), color: 'bg-enb-green/10 text-enb-green' },
   ];
 
   return (

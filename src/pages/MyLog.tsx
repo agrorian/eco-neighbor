@@ -13,7 +13,7 @@ const ALLOWED_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
 const MAX_CHARS = 2000;
 
 const CATEGORY_LABELS: Record<string, string> = {
-  COMMUNITY: '🤝 Community Building',
+  COMMUNITY: '🤝',  // label handled by l()
   TECHNICAL: '⚙️ Technical / Administrative',
   PARTNERSHIP: '🤲 Partnership Development',
   GOVERNANCE: '🏛️ Governance & Compliance',
@@ -530,6 +530,16 @@ function ReportTab({ userId }: { userId: string }) {
 // ─── Main Component ──────────────────────────────────────────
 export default function MyLog() {
   const { l } = useT();
+  const getCategoryLabel = (key: string) => {
+    const labels: Record<string, string> = {
+      COMMUNITY: l('log', 'catCommunity'),
+      TECHNICAL: l('log', 'catTechnical'),
+      PARTNERSHIP: l('log', 'catPartnership'),
+      GOVERNANCE: l('log', 'catGovernance'),
+      MARKETING: l('log', 'catMarketing'),
+    };
+    return labels[key] || key;
+  };
   const { user } = useUserStore();
   const [activeTab, setActiveTab] = useState<'log' | 'reports'>('log');
   const [category, setCategory] = useState('');
@@ -678,30 +688,30 @@ export default function MyLog() {
                       Summary <span className="text-red-500">*</span>
                       <span className="text-gray-400 font-normal ml-1">(What did you do for ENB today?)</span>
                     </label>
-                    <Textarea placeholder="Brief overview of today's work..." className="h-24 resize-none bg-white"
+                    <Textarea placeholder={l('log', 'summaryPlaceholder')} className="h-24 resize-none bg-white"
                       value={summary} onChange={e => setSummary(e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-enb-text-primary">Tasks Completed</label>
-                    <Textarea placeholder="List specific tasks, meetings, or actions completed..." className="h-24 resize-none bg-white"
+                    <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'tasksCompleted')}</label>
+                    <Textarea placeholder={l('log', 'tasksPlaceholder')} className="h-24 resize-none bg-white"
                       value={completed} onChange={e => setCompleted(e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-enb-text-primary">Blockers / Challenges</label>
-                    <Textarea placeholder="Any obstacles, delays, or issues encountered..." className="h-20 resize-none bg-white"
+                    <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'blockers')}</label>
+                    <Textarea placeholder={l('log', 'blockersPlaceholder')} className="h-20 resize-none bg-white"
                       value={blockers} onChange={e => setBlockers(e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-enb-text-primary">Next Steps</label>
-                    <Textarea placeholder="What will you focus on tomorrow or next session?" className="h-20 resize-none bg-white"
+                    <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'nextSteps')}</label>
+                    <Textarea placeholder={l('log', 'nextStepsPlaceholder')} className="h-20 resize-none bg-white"
                       value={nextSteps} onChange={e => setNextSteps(e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-enb-text-primary">Attach Report (optional)</label>
+                    <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'attachReport')}</label>
                     <div onClick={() => fileRef.current?.click()}
                       className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:border-enb-green/40 hover:bg-enb-green/5 transition-colors">
                       <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">

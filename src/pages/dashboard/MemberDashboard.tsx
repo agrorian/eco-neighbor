@@ -222,7 +222,7 @@ const ImpactCounter = () => {
               )}
             </div>
             <div className="p-3 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
-              <span className="text-xs text-gray-400">Most recent {rows.length} shown</span>
+              <span className="text-xs text-gray-400">{l('dashboard', 'mostRecent').replace('{n}', rows.length.toString())}</span>
               <span className="text-xs text-gray-300">· First names only · No private info</span>
             </div>
           </div>
@@ -258,7 +258,7 @@ const RecentActivity = () => {
   return (
     <div className="space-y-3">
       <h3 className="font-bold text-enb-text-primary text-lg">{l('dashboard', 'recentActivity')}</h3>
-      {loading && <div className="text-sm text-enb-text-secondary text-center py-4">Loading...</div>}
+      {loading && <div className="text-sm text-enb-text-secondary text-center py-4">{l('common', 'loading')}...</div>}
       {!loading && transactions.length === 0 && (
         <div className="text-sm text-enb-text-secondary text-center py-8 bg-gray-50 rounded-xl">
           {l('dashboard', 'noActivity')}
@@ -286,7 +286,7 @@ const RecentActivity = () => {
       {transactions.length > 0 && (
         <Link to="/wallet">
           <Button variant="ghost" className="w-full text-sm text-enb-text-secondary hover:text-enb-green">
-            View full history →
+            {l('dashboard', 'viewHistory')} →
           </Button>
         </Link>
       )}

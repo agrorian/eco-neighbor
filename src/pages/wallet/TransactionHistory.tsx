@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Shield, ArrowDownLeft, RefreshCw, Leaf, Gift, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
@@ -15,6 +16,7 @@ interface Transaction {
 
 export default function TransactionHistory() {
   const { user } = useUserStore();
+  const { l } = useT();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -94,7 +96,7 @@ export default function TransactionHistory() {
     return (
       <Card className="border-gray-100 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-bold text-enb-text-primary">Transaction History</CardTitle>
+          <CardTitle className="text-lg font-bold text-enb-text-primary">{l('wallet', 'txHistory')}</CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center py-8">
           <div className="w-6 h-6 border-4 border-enb-green border-t-transparent rounded-full animate-spin" />
@@ -106,7 +108,7 @@ export default function TransactionHistory() {
   return (
     <Card className="border-gray-100 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-lg font-bold text-enb-text-primary">Transaction History</CardTitle>
+        <CardTitle className="text-lg font-bold text-enb-text-primary">{l('wallet', 'txHistory')}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {transactions.length === 0 ? (
@@ -123,7 +125,7 @@ export default function TransactionHistory() {
                       <Icon className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="font-medium text-enb-text-primary">{tx.description}</div>
+                      <div className="font-medium text-enb-text-primary">{tx.description?.includes('Moderation reward') ? l('wallet', 'moderationReward') + ': ' + (tx.description.includes('approved') ? l('wallet', 'approvedSubmission') : l('wallet', 'rejectedSubmission')) : tx.description}</div>
                       <div className="text-xs text-enb-text-secondary">{formatDate(tx.created_at)}</div>
                     </div>
                   </div>
@@ -148,7 +150,7 @@ export default function TransactionHistory() {
               onClick={() => setShowAll(!showAll)}
               className="text-sm text-enb-green font-medium hover:underline"
             >
-              {showAll ? 'Show Less' : `View All ${transactions.length} Transactions`}
+              {showAll ? l('wallet', 'showLess') : `${l('wallet', 'viewAll').replace('{n}', transactions.length.toString())}`}
             </button>
           </div>
         )}

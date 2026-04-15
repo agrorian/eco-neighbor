@@ -157,7 +157,7 @@ export default function Governance() {
     <div className="space-y-6 pb-24">
       <header>
         <h1 className="text-2xl font-bold text-enb-text-primary">{l('governance', 'title')}</h1>
-        <p className="text-sm text-enb-text-secondary mt-1">Shape the future of Eco-Neighbor</p>
+        <p className="text-sm text-enb-text-secondary mt-1">{l('governance', 'subtitle')}</p>
       </header>
 
       {/* Voting Power Card */}
@@ -213,7 +213,7 @@ export default function Governance() {
       {/* How Governance Works */}
       <Card className="border-gray-100 shadow-sm bg-enb-green/5">
         <CardContent className="p-4">
-          <h3 className="font-bold text-enb-text-primary text-sm mb-3">How Governance Works</h3>
+          <h3 className="font-bold text-enb-text-primary text-sm mb-3">{l('governance', 'howItWorks')}</h3>
           <div className="space-y-2">
             {[
               { tier: '🌱 Newcomer', desc: 'Earn ENB and spend locally. No voting rights yet.', color: 'text-gray-500' },
@@ -243,7 +243,7 @@ export default function Governance() {
             onClick={() => setActiveTab(tab)}
             className={`flex-1 pb-3 text-sm font-medium transition-colors relative ${activeTab === tab ? 'text-enb-green' : 'text-gray-400 hover:text-gray-600'}`}
           >
-            {tab === 'active' ? `Active Proposals${activeCount > 0 ? ` (${activeCount})` : ''}` : 'Past Votes'}
+            {tab === 'active' ? `${l('governance', 'activeProposals')}${activeCount > 0 ? ` (${activeCount})` : ''}` : l('governance', 'pastVotes')}
             {activeTab === tab && (
               <motion.div layoutId="govtab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-enb-green" />
             )}

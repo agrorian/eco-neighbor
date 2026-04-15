@@ -3,6 +3,7 @@ import { Shield, CheckCircle, XCircle, Loader2, RefreshCw, MapPin, AlertTriangle
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
@@ -21,6 +22,7 @@ interface Assignment {
 
 export default function ModQueue() {
   const { user } = useUserStore();
+  const { l } = useT();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [decisions, setDecisions] = useState<Record<string, { decision: string; reason: string }>>({});
@@ -145,7 +147,7 @@ export default function ModQueue() {
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary flex items-center gap-2">
-            <Shield className="w-6 h-6 text-blue-600" /> Moderator Queue
+            <Shield className="w-6 h-6 text-blue-600" /> {l('modqueue', 'title')}
           </h1>
           <p className="text-sm text-enb-text-secondary">Blind review — {assignments.length} assigned to you</p>
         </div>
@@ -156,8 +158,8 @@ export default function ModQueue() {
 
       {/* Protocol banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700 space-y-1">
-        <p className="font-bold">Blind Review Protocol</p>
-        <p>You see: photo, action type, GPS, description only. You cannot see the other moderator's decision.</p>
+        <p className="font-bold">{l('modqueue', 'blindReview')}</p>
+        <p>{l('modqueue', 'blindReviewDesc')}</p>
         <p className="flex items-center gap-2 mt-2">
           <Coins className="w-4 h-4 text-enb-gold flex-shrink-0" />
           <span><strong>500 ENB</strong> for approved · <strong>200 ENB</strong> for legitimate reject · <strong>0</strong> if escalated</span>
@@ -169,7 +171,7 @@ export default function ModQueue() {
       ) : assignments.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-2xl text-gray-400">
           <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-400 opacity-30" />
-          <p className="font-medium">No assignments pending review.</p>
+          <p className="font-medium">{l('modqueue', 'noAssignments')}</p>
           <p className="text-xs mt-1">New submissions will appear here automatically.</p>
         </div>
       ) : (
