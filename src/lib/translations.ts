@@ -933,7 +933,7 @@ export const translations = {
       submitBtn: 'مسئلہ رپورٹ کروائیں',
       thanks: 'شکریہ! ہم اس کا جائزہ لیں گے۔',
     },
-  },,
+  },
 
   modqueue: {
     en: {
