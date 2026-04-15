@@ -270,3 +270,74 @@
 - QR Code: Decision made to use Option B (full URL) — business scans → app opens directly
 - translations.ts rule: ALWAYS insert new sections BEFORE the closing `};` using `rfind('\n};')` — never append after
 - translations.ts syntax check: bracket count `{` must equal `}` count before every push
+
+---
+
+### 15 Apr 2026 — Session 20 — ~6:00 PM to ~11:30 PM PKT
+**Focus:** QR code implementation, /scan route fixes, registration drive materials, Supabase ground truth audit, end-of-session documentation
+
+#### ✅ Completed
+| # | Action | Logic / Why |
+|---|--------|-------------|
+| 1 | Real scannable QR code in GenerateRedemptionQR.tsx | Used qrcode npm library; Option B full URL encoding: eco-neighbor.vercel.app/scan?code=UUID; green on white; 200px image |
+| 2 | Real scannable QR code in ReferralHub.tsx | Same library; referral URL encoded; 160px image with caption |
+| 3 | /scan route auto-populate from ?code= URL param | useSearchParams() reads code on mount; calls processCode() immediately; business scans QR → app opens → auto-processes |
+| 4 | fix: cancel_redemption_qr uses p_qr_token (verified from Supabase pg_proc) | Previous fix was wrong direction — ground truth confirmed p_qr_token is correct param |
+| 5 | fix: confirm_redemption signature is (p_qr_code text) only — no p_business_id | Ground truth revealed single-param signature; both old and new code had wrong param count |
+| 6 | fix: remove toUpperCase() from ScanRedemption | DB stores lowercase UUIDs; uppercase caused every lookup to fail silently |
+| 7 | fix: maxLength increased from 12 to 36 in ScanRedemption manual entry | QR codes are UUIDs (36 chars), not short codes |
+| 8 | SQL: DROP POLICY "Admins can read/update all submissions" | Stale policies using circular SELECT FROM users pattern; replaced by JWT versions already live |
+| 9 | SQL: Fix business_scan_redemption RLS — 'business' → 'business_partner' | Role mismatch meant business partners couldn't read redemption records |
+| 10 | SQL: ALTER TABLE users DROP COLUMN IF EXISTS cnic | Legacy column; cnic_number is the active one |
+| 11 | Supabase full ground truth audit | Ran 4 queries: all tables/columns, all RPC signatures, all triggers, all RLS policies — now in CLAUDE.md Section 13 |
+| 12 | npm install qrcode @types/qrcode | Installed successfully (25 packages, 907 total) |
+| 13 | Registration drive materials — 4 English PDFs | Flyer A5, Registration Guide, Action Reference Card, Business Partner MOU Summary — dark green/gold branding, logo, QR |
+| 14 | Registration drive materials — 4 English Word docs | Same 4 documents as .docx for translation workflow |
+| 15 | Registration drive materials — 4 Urdu PDFs | Noto Nastaliq Urdu font (Regular + Bold); proper RTL; dark green/gold branding; logo; QR |
+| 16 | Noto Nastaliq Urdu font integrated | Muhammad uploaded font zip; both weights extracted and registered with reportlab |
+| 17 | Cross-chat ecosystem knowledge synthesis | Read all 9 specified chat windows; synthesised dual-layer token design, accountability architecture, compound failure risk, funding strategy |
+| 18 | End-of-session documentation | CLAUDE.md v5, DEVLOG Session 20, BACKLOG updates, VersionHistory.tsx v1.3.0 |
+
+#### 🐛 Bugs Fixed
+| Bug | Root Cause | Fix Applied |
+|-----|-----------|-------------|
+| QR code was text display | No QR library implemented | qrcode npm + toDataURL() → img tag |
+| confirm_redemption always failed | Called with p_qr_token + p_business_id; actual signature is (p_qr_code text) only | Removed p_business_id; use p_qr_code |
+| cancel_redemption_qr failed | Previous session "fix" changed to p_qr_code but actual DB param is p_qr_token | Reverted to p_qr_token |
+| ScanRedemption rejected valid codes | toUpperCase() applied to lowercase UUID before RPC call | Removed all toUpperCase() from code path |
+| ScanRedemption rejected long codes | maxLength={12} on input field | Changed to maxLength={36} |
+| business_scan_redemption RLS never matched | Policy checked role='business' but actual role value is 'business_partner' | Dropped and recreated with 'business_partner' |
+| Referral Hub 400 error | users_referral_children policy missing | Policy already existed from prior session — confirmed live |
+
+#### 🗄️ SQL Run
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `DROP POLICY "Admins can read all submissions" ON submissions` | Remove stale circular-ref policy | ✅ |
+| `DROP POLICY "Admins can update submissions" ON submissions` | Remove stale circular-ref policy | ✅ |
+| `DROP POLICY business_scan_redemption ON redemptions` + recreate with 'business_partner' | Fix role mismatch | ✅ |
+| `ALTER TABLE users DROP COLUMN IF EXISTS cnic` | Remove legacy column | ✅ |
+
+#### 📁 Files Changed
+| File | Repo Path | Change Type |
+|------|-----------|-------------|
+| GenerateRedemptionQR.tsx | src/pages/wallet/ | Modified — real QR image, fixed cancel p_qr_token, Save button |
+| ScanRedemption.tsx | src/pages/dashboard/ | Modified — useSearchParams auto-populate, correct confirm_redemption params, remove toUpperCase, maxLength=36 |
+| ReferralHub.tsx | src/pages/wallet/ | Modified — real QR image below referral code |
+
+#### ⏭️ Next Plan of Action (Window 6)
+1. Urdu registration materials — await translation from Muhammad, then produce Urdu PDFs
+2. Phase 2 RLS — 6 remaining tables
+3. CFSP v4.9 waterfall propagation to web app
+4. Fix duplicate PartnerSignup import in App.tsx
+5. Fix ScanRedemption success screen (enb_spent vs enb_amount cosmetic issue)
+6. FI Dashboard tasks — Week 1 checklist review
+7. Whitepaper vs App gap analysis
+
+#### 📝 Notes / Decisions Made
+- App version incremented to v1.2.0 in VersionHistory (was v1.1.0 from Session 18)
+- Supabase ground truth now in CLAUDE.md Section 13 — always verify RPC signatures against this before writing frontend code
+- Project Sync Documents discontinued — CLAUDE.md + DEVLOG + BACKLOG replace them
+- Marketing site Emergency Reserve "5%+5%" fix: Muhammad confirmed he fixed this directly in enb-site repo — mark as done
+- Urdu PDFs require Noto Nastaliq Urdu font (uploaded to session, not in repo) — save font file for future sessions
+- qrcode library generates lowercase UUID QR codes — never apply toUpperCase() before RPC calls
+- Registration drive workflow: English .docx → Muhammad translates → returns to Claude → Urdu PDFs produced

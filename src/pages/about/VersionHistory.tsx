@@ -131,9 +131,14 @@ const APP_VERSIONS = [
     summary: "Governance wired to live DB: real proposals, tier-based voting, quorum tracker, proposal type badges. Dedicated Community Food Sharing Programme page with 3 roles, 3 collection modes, v4.9 Priority Waterfall, and Food Runner registration. Community Impact rebuilt with v4.9 tokenomics and food stats. Desktop sidebar now shows Food Sharing, Community Impact and Governance for all members. Bug reporting fixed: screen source auto-detected, screen_path and source columns added to DB, silent insert failures resolved. telegram_id column dropped from DB."
   },
   {
-    version: "v1.2.0", date: "15 Apr 2026", type: "CURRENT",
+    version: "v1.2.0", date: "15 Apr 2026", type: "FEATURE",
     title: "CNIC Identity, RLS Security, Full Urdu Translation, Governance Proposals",
     summary: "CNIC identity verification system: optional at signup, ENB locked until admin verified, signed Cloudinary preset for ID photos, Pakistan CNIC auto-format, duplicate detection. Row Level Security enabled on users, submissions, moderator_assignments, redemptions with JWT app_metadata role policies. Custom access token hook deployed. Welcome email via Resend Edge Function. Account Recovery screen. CAPTCHA expanded to 30 questions across 3 categories with 4 options each. Governance Create Proposal UI for admin. All 6 Urdu translation docs applied — full Urdu support across all screens including Settings, Daily Log, Wallet, Bridge, Leaderboard, Directory, Community Impact, Governance, ModQueue. Cancel Redemption QR bug fixed. Admin pending count fixed. ENB/Rep reward state reset bug fixed."
+  },
+  {
+    version: "v1.3.0", date: "15 Apr 2026", type: "CURRENT",
+    title: "Real QR Codes, /scan Route, Supabase Security Audit, Registration Drive Materials",
+    summary: "Real scannable QR codes in GenerateRedemptionQR and ReferralHub — green on white using qrcode npm library, full URL encoding (eco-neighbor.vercel.app/scan?code=UUID). /scan route auto-populates from URL param — business scans QR with phone camera, app opens directly to confirmation screen. Supabase ground truth audit completed: all RPC signatures, table schemas, triggers, and RLS policies verified against live DB. Three security fixes applied: stale submissions policies dropped (circular reference), business_scan_redemption RLS corrected (business→business_partner), legacy cnic column dropped. Registration drive materials created: 4 English PDFs and 4 Urdu PDFs (Noto Nastaliq Urdu font) — Flyer A5, Registration Guide, Action Reference Card, Business Partner MOU Summary."
   }
 ];
 
