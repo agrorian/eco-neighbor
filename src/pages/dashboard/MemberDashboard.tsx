@@ -271,7 +271,13 @@ const RecentActivity = () => {
               <ENBLeaf size={20} />
             </div>
             <div>
-              <div className="font-medium text-enb-text-primary text-sm">{item.description}</div>
+              <div className="font-medium text-enb-text-primary text-sm">
+                {item.description?.includes('Moderation reward') && item.description?.includes('approved')
+                  ? l('wallet', 'moderationReward') + ': ' + l('wallet', 'approvedSubmission')
+                  : item.description?.includes('Moderation reward') && item.description?.includes('reject')
+                  ? l('wallet', 'moderationReward') + ': ' + l('wallet', 'rejectedSubmission')
+                  : item.description}
+              </div>
               <div className="text-xs text-enb-text-secondary">
                 {new Date(item.created_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}
               </div>

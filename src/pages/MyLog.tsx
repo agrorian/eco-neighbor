@@ -674,10 +674,10 @@ export default function MyLog() {
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-enb-text-primary">Category <span className="text-red-500">*</span></label>
                     <Select value={category} onValueChange={setCategory}>
-                      <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={l('log', 'selectCategory')} /></SelectTrigger>
                       <SelectContent>
-                        {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
-                          <SelectItem key={val} value={val}>{label}</SelectItem>
+                        {Object.keys(CATEGORY_LABELS).map((val) => (
+                          <SelectItem key={val} value={val}>{getCategoryLabel(val)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -685,8 +685,8 @@ export default function MyLog() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-enb-text-primary">
-                      Summary <span className="text-red-500">*</span>
-                      <span className="text-gray-400 font-normal ml-1">(What did you do for ENB today?)</span>
+                      {l('log', 'summary')} <span className="text-red-500">*</span>
+                      <span className="text-gray-400 font-normal ml-1">({l('log', 'summaryHint')})</span>
                     </label>
                     <Textarea placeholder={l('log', 'summaryPlaceholder')} className="h-24 resize-none bg-white"
                       value={summary} onChange={e => setSummary(e.target.value)} />

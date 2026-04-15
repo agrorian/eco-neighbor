@@ -216,11 +216,11 @@ export default function Governance() {
           <h3 className="font-bold text-enb-text-primary text-sm mb-3">{l('governance', 'howItWorks')}</h3>
           <div className="space-y-2">
             {[
-              { tier: '🌱 Newcomer', desc: 'Earn ENB and spend locally. No voting rights yet.', color: 'text-gray-500' },
-              { tier: '🌿 Helper', desc: 'Verified directory listing. Can submit action reports. No voting rights yet.', color: 'text-enb-teal' },
-              { tier: '🌳 Guardian', desc: 'Can vouch for new members. ENB Credit Circle eligible. No voting rights yet.', color: 'text-blue-600' },
-              { tier: '⭐ Pillar', desc: 'Full governance voting rights on all proposals. Maturation Bridge eligible.', color: 'text-enb-green' },
-              { tier: '🏆 Founder Tier', desc: 'Co-governance rights. Founding DAO seat. Carbon credit revenue share.', color: 'text-enb-gold' },
+              { tier: '🌱 ' + l('tiers', 'Newcomer'), desc: l('governance', 'tierNewcomer'), color: 'text-gray-500' },
+              { tier: '🌿 ' + l('tiers', 'Helper'), desc: l('governance', 'tierHelper'), color: 'text-enb-teal' },
+              { tier: '🌳 ' + l('tiers', 'Guardian'), desc: l('governance', 'tierGuardian'), color: 'text-blue-600' },
+              { tier: '⭐ ' + l('tiers', 'Pillar'), desc: l('governance', 'tierPillar'), color: 'text-enb-green' },
+              { tier: '🏆 ' + l('tiers', 'Founder') + ' Tier', desc: l('governance', 'tierFounder'), color: 'text-enb-gold' },
             ].map((row, i) => (
               <div key={i} className="flex items-start gap-2 text-xs">
                 <span className={`font-bold min-w-[80px] ${row.color}`}>{row.tier}</span>
@@ -229,8 +229,7 @@ export default function Governance() {
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">
-            Proposals are submitted by the Founding Team and elected Community Moderators (Pillar Tier).
-            Voting power is one member, one vote. Each proposal specifies a quorum — minimum votes needed to be binding.
+            {l('governance', 'info')}
           </p>
         </CardContent>
       </Card>
