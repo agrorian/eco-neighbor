@@ -192,7 +192,7 @@ export default function ScanRedemption() {
             onChange={(e) => setManualCode(e.target.value.toUpperCase())}
             placeholder="Enter redemption code"
             className="text-center font-mono tracking-widest text-lg uppercase"
-            maxLength={12}
+            maxLength={36}
           />
           <Button type="submit" disabled={manualCode.length < 4 || processing}
             className="bg-enb-teal hover:bg-enb-teal/90 text-white px-4">
