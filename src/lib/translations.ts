@@ -609,6 +609,7 @@ export const translations = {
   settings: {
     en: {
       title: 'Settings',
+      subtitle: 'Manage your account and preferences',
       language: 'Language',
       english: 'English',
       urdu: 'اردو',
@@ -616,9 +617,34 @@ export const translations = {
       notifications: 'Notifications',
       support: 'Support',
       version: 'Version',
+      profileInfo: 'Profile Information',
+      profilePhoto: 'Profile Photo',
+      tapCamera: 'Tap the camera icon to update',
+      fullName: 'Full Name',
+      fullNamePlaceholder: 'Your full name',
+      whatsapp: 'WhatsApp Number',
+      dob: 'Date of Birth',
+      cnic: 'CNIC',
+      neighbourhood: 'Neighbourhood',
+      selectNeighbourhood: 'Select neighbourhood',
+      profession: 'Profession',
+      selectProfession: 'Select profession',
+      saveChanges: 'Save Changes',
+      saving: 'Saving...',
+      saved: 'Changes saved',
+      saveError: 'Failed to save. Please try again.',
+      account: 'Account',
+      emailAddress: 'Email Address',
+      changePassword: 'Change Password',
+      sending: 'Sending...',
+      resetSent: 'Reset link sent to your email',
+      whatsappSupport: 'WhatsApp Support',
+      reportProblem: 'Report a Problem',
+      logOut: 'Log Out',
     },
     ur: {
       title: 'ترتیبات',
+      subtitle: 'اپنے اکاؤنٹ اور ترجیحات کا انتظام کریں',
       language: 'زبان',
       english: 'English',
       urdu: 'اردو',
@@ -626,12 +652,33 @@ export const translations = {
       notifications: 'اطلاعات',
       support: 'مدد',
       version: 'ورژن',
+      profileInfo: 'پروفائل کی معلومات',
+      profilePhoto: 'پروفائل تصویر',
+      tapCamera: 'اپ ڈیٹ کرنے کے لیے کیمرہ آئیکن دبائیں',
+      fullName: 'پورا نام',
+      fullNamePlaceholder: 'اپنا پورا نام لکھیں',
+      whatsapp: 'واٹس ایپ نمبر',
+      dob: 'تاریخِ پیدائش',
+      cnic: 'شناختی کارڈ نمبر (CNIC)',
+      neighbourhood: 'محلہ / علاقہ',
+      selectNeighbourhood: 'محلہ منتخب کریں',
+      profession: 'پیشہ',
+      selectProfession: 'پیشہ منتخب کریں',
+      saveChanges: 'تبدیلیاں محفوظ کریں',
+      saving: 'محفوظ ہو رہا ہے...',
+      saved: 'تبدیلیاں محفوظ ہو گئیں',
+      saveError: 'محفوظ کرنے میں ناکامی۔ دوبارہ کوشش کریں۔',
+      account: 'اکاؤنٹ',
+      emailAddress: 'ای میل ایڈریس',
+      changePassword: 'پاس ورڈ تبدیل کریں',
+      sending: 'بھیجا جا رہا ہے...',
+      resetSent: 'ری سیٹ لنک آپ کی ای میل پر بھیج دیا گیا',
+      whatsappSupport: 'واٹس ایپ سپورٹ',
+      reportProblem: 'مسئلہ رپورٹ کریں',
+      logOut: 'سائن آؤٹ کریں',
     },
   },
-};
 
-// Helper type
-export type TranslationKeys = typeof translations;
   // ── DIRECTORY ─────────────────────────────────────────────────────────
   directory: {
     en: {
@@ -843,3 +890,7 @@ export type TranslationKeys = typeof translations;
       thanks: 'شکریہ! ہم اس کا جائزہ لیں گے۔',
     },
   },
+};
+
+// Helper type
+export type TranslationKeys = typeof translations;
