@@ -8,8 +8,8 @@ import { useT } from '@/contexts/LanguageContext';
 
 const NEIGHBOURHOODS = ['All', 'Bahria Town', 'Chaklala Scheme 3', 'DHA Phase 1', 'Soan Garden', 'PWD Housing Society', 'Gulrez Housing Society', 'Koral Town'];
 const METRICS = [
-  { id: 'enb_local_bal', label: 'ENB Earned' },
-  { id: 'rep_score', label: 'Rep Score' },
+  { id: 'enb_local_bal', labelKey: 'enbEarned' },
+  { id: 'rep_score', labelKey: 'repScore' },
 ];
 
 function Crown(props: any) {
@@ -101,7 +101,7 @@ export default function Leaderboard() {
               metric === m.id ? 'bg-white text-enb-green shadow-sm' : 'text-enb-text-secondary'
             }`}
           >
-            {m.label}
+            {l('leaderboard', m.labelKey as any)}
           </button>
         ))}
       </div>

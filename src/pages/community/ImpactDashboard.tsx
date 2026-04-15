@@ -139,8 +139,8 @@ export default function ImpactDashboard() {
     <div className="space-y-6 pb-24">
       <header className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-enb-text-primary">Community Impact</h1>
-          <p className="text-sm text-enb-text-secondary mt-1">Real change, verified on-chain · Rawalpindi Pilot</p>
+          <h1 className="text-2xl font-bold text-enb-text-primary">{l('impact', 'title')}</h1>
+          <p className="text-sm text-enb-text-secondary mt-1">{l('impact', 'subtitle')} · Rawalpindi Pilot</p>
         </div>
         <Button variant="outline" size="sm" onClick={handleShare}>
           <Share2 className="w-4 h-4 mr-1" /> Share
@@ -178,7 +178,7 @@ export default function ImpactDashboard() {
       <Card className="border-gray-100 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
-            <BarChart2 className="w-4 h-4 text-enb-green" /> Monthly Activity
+            <BarChart2 className="w-4 h-4 text-enb-green" /> {l('impact', 'monthlyActivity')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -191,7 +191,7 @@ export default function ImpactDashboard() {
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="actions" fill="#1A6B3C" name="Verified Actions" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="actions" fill="#1A6B3C" name={l('impact', 'verifiedActions')} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -233,7 +233,7 @@ export default function ImpactDashboard() {
       <Card className="border-gray-100 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-enb-green" /> Token Distribution
+            <TrendingUp className="w-4 h-4 text-enb-green" /> {l('impact', 'tokenDist')}
           </CardTitle>
           <p className="text-xs text-enb-text-secondary">10,000,000,000 ENB fixed supply · v4.9</p>
         </CardHeader>

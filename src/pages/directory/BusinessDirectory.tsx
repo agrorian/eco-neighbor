@@ -177,7 +177,7 @@ export default function BusinessDirectory() {
     <div className="space-y-6 pb-24">
       <header className="space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-enb-text-primary">Directory</h1>
+          <h1 className="text-2xl font-bold text-enb-text-primary">{l('directory', 'title')}</h1>
           <div className="flex bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('list')}

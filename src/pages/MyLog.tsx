@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useT } from '@/contexts/LanguageContext';
 import { ClipboardList, CheckCircle, Loader2, Calendar, AlertCircle, Upload, X, FileText, BarChart2, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -517,7 +518,7 @@ function ReportTab({ userId }: { userId: string }) {
           <Button onClick={handleDownload} disabled={downloading} variant="outline" className="w-full border-enb-green/30 text-enb-green hover:bg-enb-green/5">
             {downloading
               ? <><span className="w-4 h-4 mr-2 border-2 border-enb-green border-t-transparent rounded-full animate-spin inline-block" />Generating PDF...</>
-              : <><Download className="w-4 h-4 mr-2" />Download PDF Report</>
+              : <><Download className="w-4 h-4 mr-2" />{l('log', 'downloadPDF')}</>
             }
           </Button>
         </>
@@ -528,6 +529,7 @@ function ReportTab({ userId }: { userId: string }) {
 
 // ─── Main Component ──────────────────────────────────────────
 export default function MyLog() {
+  const { l } = useT();
   const { user } = useUserStore();
   const [activeTab, setActiveTab] = useState<'log' | 'reports'>('log');
   const [category, setCategory] = useState('');
@@ -605,7 +607,7 @@ export default function MyLog() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary flex items-center gap-2">
-            <ClipboardList className="w-6 h-6 text-enb-green" /> Daily Log
+            <ClipboardList className="w-6 h-6 text-enb-green" /> {l('log', 'title')}
           </h1>
           <p className="text-sm text-enb-text-secondary">{today}</p>
         </div>
@@ -615,11 +617,11 @@ export default function MyLog() {
       <div className="flex bg-gray-100 p-1 rounded-xl">
         <button onClick={() => setActiveTab('log')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'log' ? 'bg-white shadow-sm text-enb-green' : 'text-gray-500'}`}>
-          <ClipboardList className="w-4 h-4" /> Today's Log
+          <ClipboardList className="w-4 h-4" /> {l('log', 'todayEntry')}
         </button>
         <button onClick={() => setActiveTab('reports')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'reports' ? 'bg-white shadow-sm text-enb-green' : 'text-gray-500'}`}>
-          <BarChart2 className="w-4 h-4" /> Reports
+          <BarChart2 className="w-4 h-4" /> {l('log', 'reports')}
         </button>
       </div>
 
@@ -639,7 +641,7 @@ export default function MyLog() {
 
           <Card className="border-gray-100 shadow-sm">
             <CardContent className="p-5 space-y-5">
-              <h3 className="font-bold text-enb-text-primary">Today's Contribution Report</h3>
+              <h3 className="font-bold text-enb-text-primary">{l('log', 'todayContrib')}</h3>
 
               {submitted && todayLog ? (
                 <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-4 space-y-3">
@@ -728,7 +730,7 @@ export default function MyLog() {
 
                   <Button onClick={handleSubmit} disabled={!category || !summary.trim() || submitting || totalChars > MAX_CHARS}
                     className="w-full bg-enb-green hover:bg-enb-green/90 text-white">
-                    {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : "Submit Today's Log"}
+                    {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{l('common', 'loading')}...</> : l('log', 'submitLog')}
                   </Button>
                 </>
               )}

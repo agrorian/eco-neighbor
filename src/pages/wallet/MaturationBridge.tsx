@@ -104,28 +104,28 @@ export default function MaturationBridge() {
 
   const CONDITIONS = [
     {
-      label: '365-Day Hold',
+      label: l('wallet', 'bridgeCond1'),
       description: 'No wallet movement for 365 days',
       met: (eligibility?.days_held || 0) >= 365,
       progress: Math.min(((eligibility?.days_held || 0) / 365) * 100, 100),
       detail: `${eligibility?.days_held || 0} / 365 days`,
     },
     {
-      label: 'Rep Score ≥ 50,000',
+      label: l('wallet', 'bridgeCond2'),
       description: 'Pillar Tier required',
       met: (eligibility?.rep_score || 0) >= 50000,
       progress: Math.min(((eligibility?.rep_score || 0) / 50000) * 100, 100),
       detail: `${(eligibility?.rep_score || 0).toLocaleString()} / 50,000 Rep`,
     },
     {
-      label: '20% Annual Cap',
+      label: l('wallet', 'bridgeCond3'),
       description: 'Maximum convertible per year',
       met: true,
       progress: 100,
       detail: `Up to ${(eligibility?.convertible_this_year || 0).toLocaleString()} ENB this year`,
     },
     {
-      label: 'Governance Vote',
+      label: l('wallet', 'bridgeCond4'),
       description: 'Required for batches > 500,000 ENB',
       met: !eligibility?.requires_governance_vote,
       progress: eligibility?.requires_governance_vote ? 0 : 100,
@@ -156,7 +156,7 @@ export default function MaturationBridge() {
           {/* Conditions */}
           <Card className="border-gray-100 shadow-sm">
             <CardContent className="p-5 space-y-4">
-              <h3 className="font-bold text-enb-text-primary">Eligibility Conditions</h3>
+              <h3 className="font-bold text-enb-text-primary">{l('wallet', 'bridgeEligibility')}</h3>
               {CONDITIONS.map((c, i) => (
                 <div key={i} className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -215,7 +215,7 @@ export default function MaturationBridge() {
           ) : (
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm text-orange-700">
               <p className="font-bold mb-1">{l('wallet', 'bridgeNotEligible')}</p>
-              <p>Complete all 4 conditions above to unlock the Maturation Bridge.</p>
+              <p>{l('wallet', 'bridgeComplete')}</p>
             </div>
           )}
         </>

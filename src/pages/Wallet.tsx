@@ -56,7 +56,7 @@ export default function Wallet() {
     <div className="space-y-6 pb-24">
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-enb-text-primary">{l('wallet', 'title')}</h1>
-        <p className="text-enb-text-secondary">Manage your ENB tokens and transactions</p>
+        <p className="text-enb-text-secondary">{l('wallet', 'subtitle')}</p>
       </header>
 
       {/* Rep Score & Tier */}
@@ -115,11 +115,11 @@ export default function Wallet() {
                     {(user.enb_local_bal || 0).toLocaleString()}
                   </div>
                 </div>
-                <p className="text-xs text-amber-600 font-medium mb-2">Locked — pending identity verification</p>
-                <p className="text-xs text-enb-text-secondary mb-4">Your ENB is safe and accumulating. Submit your CNIC from the dashboard to unlock spending and redemption.</p>
+                <p className="text-xs text-amber-600 font-medium mb-2">{l('wallet', 'lockedPending')}</p>
+                <p className="text-xs text-enb-text-secondary mb-4">{l('wallet', 'lockedHint')}</p>
                 <Link to="/">
                   <Button size="sm" className="w-full bg-amber-500 hover:bg-amber-600 text-white">
-                    <Lock className="w-3 h-3 mr-2" /> Verify Identity to Unlock
+                    <Lock className="w-3 h-3 mr-2" /> {l('wallet', 'verifyToUnlock')}
                   </Button>
                 </Link>
               </>
