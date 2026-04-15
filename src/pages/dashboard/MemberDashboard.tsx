@@ -83,7 +83,7 @@ const formatAction = (raw: string) =>
   ACTION_LABELS[raw] || raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
 const ImpactCounter = () => {
-  const { l } = useT();
+  const { l, isUrdu } = useT();
   const [stats, setStats] = React.useState({ actions: 0, enb: 0 });
 
   React.useEffect(() => {
@@ -234,7 +234,7 @@ const ImpactCounter = () => {
 
 const RecentActivity = () => {
   const { user } = useUserStore();
-  const { l } = useT();
+  const { l, isUrdu } = useT();
   const [transactions, setTransactions] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -272,9 +272,9 @@ const RecentActivity = () => {
             </div>
             <div>
               <div className="font-medium text-enb-text-primary text-sm">
-                {item.description?.includes('Moderation reward') && item.description?.includes('approved')
+                {isUrdu && item.description?.includes('Moderation reward') && item.description?.includes('approved')
                   ? l('wallet', 'moderationReward') + ': ' + l('wallet', 'approvedSubmission')
-                  : item.description?.includes('Moderation reward') && item.description?.includes('reject')
+                  : isUrdu && item.description?.includes('Moderation reward') && item.description?.includes('reject')
                   ? l('wallet', 'moderationReward') + ': ' + l('wallet', 'rejectedSubmission')
                   : item.description}
               </div>
@@ -314,7 +314,7 @@ const getTierIcon = (repScore: number) => {
 
 export default function MemberDashboard() {
   const { user, setUser } = useUserStore();
-  const { l } = useT();
+  const { l, isUrdu } = useT();
 
   React.useEffect(() => {
     if (!user?.id) return;
