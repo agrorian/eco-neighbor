@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { Navigate } from 'react-router-dom';
 
 const ALLOWED_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
-const MAX_CHARS = 2000;
+const MAX_CHARS = 3000;
 
 const CATEGORY_LABELS: Record<string, string> = {
   COMMUNITY: '🤝',  // label handled by l()
@@ -688,26 +688,26 @@ export default function MyLog() {
                       {l('log', 'summary')} <span className="text-red-500">*</span>
                       <span className="text-gray-400 font-normal ml-1">({l('log', 'summaryHint')})</span>
                     </label>
-                    <Textarea placeholder={l('log', 'summaryPlaceholder')} className="h-24 resize-none bg-white"
-                      value={summary} onChange={e => setSummary(e.target.value)} />
+                    <RichTextarea placeholder={l('log', 'summaryPlaceholder')} height="h-24"
+                      value={summary} onChange={setSummary} />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'tasksCompleted')}</label>
-                    <Textarea placeholder={l('log', 'tasksPlaceholder')} className="h-24 resize-none bg-white"
-                      value={completed} onChange={e => setCompleted(e.target.value)} />
+                    <RichTextarea placeholder={l('log', 'tasksPlaceholder')} height="h-24"
+                      value={completed} onChange={setCompleted} />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'blockers')}</label>
-                    <Textarea placeholder={l('log', 'blockersPlaceholder')} className="h-20 resize-none bg-white"
-                      value={blockers} onChange={e => setBlockers(e.target.value)} />
+                    <RichTextarea placeholder={l('log', 'blockersPlaceholder')} height="h-20"
+                      value={blockers} onChange={setBlockers} />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'nextSteps')}</label>
-                    <Textarea placeholder={l('log', 'nextStepsPlaceholder')} className="h-20 resize-none bg-white"
-                      value={nextSteps} onChange={e => setNextSteps(e.target.value)} />
+                    <RichTextarea placeholder={l('log', 'nextStepsPlaceholder')} height="h-20"
+                      value={nextSteps} onChange={setNextSteps} />
                   </div>
 
                   <div className="space-y-2">
