@@ -121,14 +121,19 @@ const APP_VERSIONS = [
     summary: "Escalation queue with side-by-side mod decisions, 45-second timer, 750 ENB reward. My Log rebuilt with Reports tab: weekly/monthly navigation, attendance cards, multi-page PDF download. Profile and business partner photo upload."
   },
   {
-    version: "v1.0.0", date: "24 Mar 2026", type: "FEATURE",
+    version: "v1.0.0", date: "24 Mar 2026", type: "MAJOR",
     title: "Brand Design System + Tailored Action Forms",
     summary: "Full ENB brand design system: typography scale, color variables, warm surface, shadow scale. Tailored submission forms for all 10 civic action types with custom fields. Dashboard routing fixed. Business partner white screen resolved. Urdu Phase 1 complete."
   },
   {
-    version: "v1.1.0", date: "14 Apr 2026", type: "CURRENT",
-    title: "CNIC Identity Verification + Welcome Email + Account Recovery",
-    summary: "CNIC identity system: verification is optional at signup — earned ENB is locked until verified by admin. Pakistan users submit 13-digit auto-formatted CNIC with choice of live camera or gallery upload (gallery permitted for ID documents only; action submissions remain live-camera enforced). International users get optional free-text ID field. Duplicate CNIC blocks registration. Unverified accounts show amber avatar ring, lock badge overlay on profile picture, Unverified pill next to Rep score, and amber locked ENB balance on dashboard and wallet. Existing users see locked ENB prompt banner. Admin panel Identity column shows Verified/Pending/None badges; Verify modal displays ID number, submission date, and ID photo with one-click verification. Welcome email via Resend Edge Function covers tier system, earning guide, action types, referral code, and next steps. Account Recovery: CNIC + full name match reveals masked email and sends secure access link. Dev History page at /dev-history. Urdu Phase 1 complete across all major screens."
+    version: "v1.1.0", date: "7 Apr 2026", type: "FEATURE",
+    title: "Governance Live, CFSP Page, Community Impact v4.9, Bug Reporting Fixes",
+    summary: "Governance wired to live DB: real proposals, tier-based voting, quorum tracker, proposal type badges. Dedicated Community Food Sharing Programme page with 3 roles, 3 collection modes, v4.9 Priority Waterfall, and Food Runner registration. Community Impact rebuilt with v4.9 tokenomics and food stats. Desktop sidebar now shows Food Sharing, Community Impact and Governance for all members. Bug reporting fixed: screen source auto-detected, screen_path and source columns added to DB, silent insert failures resolved. telegram_id column dropped from DB."
+  },
+  {
+    version: "v1.2.0", date: "15 Apr 2026", type: "CURRENT",
+    title: "CNIC Identity, RLS Security, Full Urdu Translation, Governance Proposals",
+    summary: "CNIC identity verification system: optional at signup, ENB locked until admin verified, signed Cloudinary preset for ID photos, Pakistan CNIC auto-format, duplicate detection. Row Level Security enabled on users, submissions, moderator_assignments, redemptions with JWT app_metadata role policies. Custom access token hook deployed. Welcome email via Resend Edge Function. Account Recovery screen. CAPTCHA expanded to 30 questions across 3 categories with 4 options each. Governance Create Proposal UI for admin. All 6 Urdu translation docs applied — full Urdu support across all screens including Settings, Daily Log, Wallet, Bridge, Leaderboard, Directory, Community Impact, Governance, ModQueue. Cancel Redemption QR bug fixed. Admin pending count fixed. ENB/Rep reward state reset bug fixed."
   }
 ];
 
