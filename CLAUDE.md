@@ -1,6 +1,6 @@
 # ECO-NEIGHBOR ($ENB) — MASTER CLAUDE SYNC DOCUMENT
-**Last updated: 18 April 2026**
-**Version: 7.0**
+**Last updated: 19 April 2026**
+**Version: 9.0**
 **Maintained by: Muhammad Faisal Khan (Founder) + Claude (AI Collaborator)**
 
 ---
@@ -15,7 +15,7 @@ At the start of EVERY ENB session — before doing anything else — Claude MUST
 **Current canonical versions:**
 - **Whitepaper:** v5.0 — April 2026
 - **Web App:** v1.3.0 (live at eco-neighbor.vercel.app)
-- **Marketing site:** index.html updated 18 Apr 2026
+- **Marketing site:** Fully upgraded 18 Apr 2026 — 5 new sections, 2 modals, all v5.0
 
 Failure to read these first causes version errors, stale references, and contradictions.
 
@@ -52,18 +52,17 @@ Failure to read these first causes version errors, stale references, and contrad
 | **GitHub (site)** | https://github.com/agrorian/enb-site |
 | **Giveth project** | https://giveth.io/project/eco-neighbor-enb |
 | **Giveth edit** | https://giveth.io/project/16688/edit |
-| **DeVouch** | https://devouch.xyz/project/giveth/16688 |
-| **Facebook page** | https://www.facebook.com/EcoNeighborENB |
+| **Facebook page** | https://www.facebook.com/ENBEcoNeighbor |
 | **Twitter/X project** | https://x.com/econeighbor_enb |
 | **Twitter/X founder** | https://x.com/mansehra2020 |
 | **Discord server** | Eco-Neighbor ($ENB)'s server |
-| **Gitcoin Passport** | https://passport.gitcoin.co |
 | **Founder email** | econeighborisenb@gmail.com |
 | **Admin email** | qahwakhana@gmail.com |
 | **Supabase** | wlbgqygkvlwavmylgteb.supabase.co |
 | **Supabase anon key** | sb_publishable_ETouqEo7W06oqLjIKNzkCA_ByuTlxD9 |
 | **Cloudinary** | Cloud: dl86obm3b / enb_photos (unsigned), enb_profiles (unsigned), enb_cnic_private (signed) |
-| **Resend** | re_eHSzkb69_3Q42Ncs4k... (get full key from resend.com — truncated) |
+| **Resend** | re_eHSzkb69_3Q42Ncs4k... (truncated — get full key from resend.com) |
+| **Buffer** | buffer.com — Twitter + Facebook scheduling |
 
 ---
 
@@ -82,10 +81,16 @@ Failure to read these first causes version errors, stale references, and contrad
 
 **CRP rule:** Exclusively for verified civic actions. Never for CGR, bonuses, or any other purpose.
 
-**v5.0 — 2% burn REPLACED by 10% Community Treasury Contribution:**
-- 1/3 (3.333%) → accepting business as ENB.GLOBAL via Business Liquidity Gate
-- 2/3 (6.667%) → Community Treasury Fund pools
+**v5.0 — 10% Community Treasury Contribution on every redemption:**
 - 90% → returns to CRP
+- 3.3% → business (ENB.GLOBAL via Business Liquidity Gate)
+- 2.0% → Business Stability Fund (30% of 6.667%)
+- 1.3% → Market Making & Liquidity (20% of 6.667%)
+- 1.3% → Insurance & Incident Pool (20% of 6.667%)
+- 2.0% → Reserve Buffer (30% of 6.667%)
+- **Total: 90 + 3.3 + 2.0 + 1.3 + 1.3 + 2.0 = 99.9% (≈100% rounding)**
+
+**CRITICAL: Market Making and Insurance are TWO SEPARATE POOLS — never combine them.**
 
 ---
 
@@ -103,20 +108,16 @@ Failure to read these first causes version errors, stale references, and contrad
 | 8 | Community Growth Reserve (CGR) | 35,000,000 | 7% |
 | 9 | Legal & Compliance Lead | 30,000,000 | 6% |
 | 10 | Carbon & Impact Data Lead | 25,000,000 | 5% |
-| — | 10 Neighborhood Anchors | 0 | 0% (Honorary — recognition only) |
-| — | Founding Business Partners | 0 | 0% (earn via Business Liquidity Gate) |
+| — | 10 Neighborhood Anchors | 0 | 0% (Honorary only) |
+| — | Founding Business Partners | 0 | 0% (earn via Gate) |
 | **TOTAL** | | **500,000,000** | **100%** |
-
-**CGR milestone bonuses:** Helper 2,500 | Guardian 5,000 | Pillar 7,500 | Founder Tier 10,000 ENB. Programme ends when depleted. No replenishment. Ever.
-
-**Strategic Partnership Reserve:** Max 5M ENB per partner. 36-month deliverable-tied vesting. Governance vote required. Clawback on non-delivery.
 
 ---
 
-## 5. VESTING SCHEDULE (ALL founders — NO EXCEPTIONS)
+## 5. VESTING — ALL founders, NO exceptions
 
 - Cliff: 12 months. Zero tokens before Day 365.
-- Month 12: 25% released as lump sum
+- Month 12: 25% lump sum
 - Months 13–36: 75% in 24 equal monthly tranches (3.125%/month)
 - Total: 36 months
 
@@ -124,25 +125,28 @@ Failure to read these first causes version errors, stale references, and contrad
 
 ## 6. MATURATION BRIDGE — LOCKED
 
-365-day hold | 25% lifetime cap | Max 2 conversions | 3-year minimum gap | 12.5% per event | 50,000 Rep Score (Pillar Tier) | Governance vote for batches >500,000 ENB
+365-day hold | 25% lifetime cap | Max 2 conversions | 3-year gap | 12.5%/event | 50,000 Rep Score (Pillar Tier) | Governance vote for batches >500,000 ENB
 
 ---
 
 ## 7. BUSINESS LIQUIDITY GATE — v5.0
 
-Businesses earn ENB.GLOBAL via atomic burn-and-mint on swap acceptance. PDA holds mint authority. Total supply unchanged. ENB.LOCAL metamorphoses to ENB.GLOBAL at the point of the swap transaction.
+Atomic burn-and-mint on Solana. PDA holds mint authority. ENB.LOCAL **Metamorphosis** → ENB.GLOBAL (singular noun — not "metamorphoses").
 
-**Conditions:** 365-day hold | Pillar Tier | Active acceptance at release | Max 50,000 ENB/release | Max 2 releases/year | 6-month minimum gap | **No lifetime cap**
+**Conditions:** 365-day hold | Pillar Tier | Max 50,000 ENB/release | Max 2/year | 6-month gap | **No lifetime cap**
 
 ---
 
-## 8. COMMUNITY TREASURY FUND — v5.0
+## 8. CFSP PRIORITY WATERFALL v4.9 — CANONICAL
 
-Funded by 2/3 of the 10% treasury contribution per redemption:
-- Business Stability Fund — 30%
-- Market Making & Liquidity — 20%
-- Insurance & Incident Pool — 20%
-- Reserve Buffer — 30%
+- T1a: Workers, elderly, disabled, food-insecure, homeless
+- T1b: Schools & Orphanages — Pediatric Safety Standard
+- T2: Community Kitchen
+- T3: Processed & Value-Added
+- T4: Animal Feed
+- T5: Composting / Biogas — nothing to landfill
+
+Carbon: 4.2 kg CO₂e per kg diverted (FAO FLW Protocol). Verra VCS in development.
 
 ---
 
@@ -158,315 +162,267 @@ Funded by 2/3 of the 10% treasury contribution per redemption:
 
 ---
 
-## 10. CFSP PRIORITY WATERFALL v4.9 — CANONICAL
-
-- **T1a:** Workers, elderly, disabled, food-insecure, homeless
-- **T1b:** Schools & Orphanages — Pediatric Safety Standard (cooked within 2hrs, allergen log, complete meal)
-- **T2:** Community Kitchen
-- **T3:** Processed & Value-Added (pickling, preservation, cooking classes)
-- **T4:** Animal Feed
-- **T5:** Composting / Biogas — nothing to landfill
-
----
-
-## 11. TECH STACK
+## 10. TECH STACK
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 19, Vite 6, Tailwind CSS 4, shadcn/ui |
-| State | Zustand, React Router 7 |
+| Frontend | React 19, Vite 6, Tailwind CSS 4, shadcn/ui, Zustand, React Router 7 |
 | Backend | Supabase JS 2.98 (Postgres + Auth) |
 | Media | Cloudinary (camera lock for submissions; gallery for CNIC only) |
 | Hosting | Vercel (auto-deploy from GitHub main) |
 | Blockchain | Solana SPL Token-2022 |
-| DEX | Raydium (ENB.GLOBAL/USDC) |
-| Multi-sig | Squads.so (5-of-7, pending) |
 | Email | Resend (Edge Function: send-welcome-email deployed) |
+| Scheduling | Buffer (buffer.com) — Twitter + Facebook Page |
 
 **Critical DB rules:**
 - RLS ENABLED: users, submissions, moderator_assignments, redemptions
 - JWT path: `auth.jwt() -> 'app_metadata' ->> 'user_role'`
-- JWT hook: `public.custom_access_token_hook`
-- Role sync trigger: `sync_user_role_to_auth` — after role change, user must re-login
-- No joins in Supabase — two-step queries only
-- React hooks must appear before any conditional returns
-- Never use regex for Urdu — rewrite complete files from scratch
-- `neighbourhood_cleanup` — do NOT change spelling (legacy column)
-- `confirm_redemption(p_qr_code text)` — ONE param only, no p_business_id
-- `cancel_redemption_qr(p_qr_token text, p_user_id uuid)` — p_qr_token not p_qr_code
-- qr_code = lowercase UUID — never toUpperCase() before RPC
-- ENB/Rep rewards: use `formData.actionType` not `selectedAction`
+- After role change → user must re-login
+- No joins — two-step queries only
+- Never regex for Urdu — rewrite complete files
+- `neighbourhood_cleanup` — British spelling, do NOT change
+- `confirm_redemption(p_qr_code text)` — ONE param only
+- qr_code = lowercase UUID — never toUpperCase()
 
 ---
 
-## 12. CURRENT PLATFORM STATUS (18 April 2026)
+## 11. SUPABASE TABLES (18 Apr 2026)
+
+**New tables added 18 Apr:**
+- `partnership_enquiries` (name, organisation, role, partnership_type, email, message, source, status) — RLS enabled, anon INSERT
+- `whitepaper_requests` (name, email, role, organisation, source, status) — RLS enabled, anon INSERT
+
+**All tables with RLS:** users, submissions, moderator_assignments, redemptions, partnership_enquiries, whitepaper_requests
+
+---
+
+## 12. CURRENT PLATFORM STATUS (19 April 2026)
 
 | Platform | Status | Notes |
 |----------|--------|-------|
 | Live app | ✅ v1.3.0 | eco-neighbor.vercel.app |
-| Whitepaper | ✅ v5.0 | April 2026 — all fixes applied |
-| Marketing site | ✅ Updated | index.html fixed 18 Apr (counter, mobile nav, v5.0 refs, GreenPill) |
+| Whitepaper | ✅ v5.0 | April 2026 — final |
+| Marketing site | ✅ Fully upgraded | 5 new sections, 2 modals, v5.0 throughout |
 | Giveth listing | ✅ 100/100 | **DO NOT EDIT before 28 Jun 2026** |
 | Giveth GIVbacks | ✅ Submitted | Awaiting review |
-| Twitter @econeighbor_enb | ✅ Active | 27+ posts |
-| Twitter @mansehra2020 | ✅ Active | |
-| ENB Discord | ✅ Created | |
-| Facebook page | ✅ Live | facebook.com/EcoNeighborENB |
 | Fi.co accelerator | ✅ Accepted | Jul 28 – Oct 22, 2026 |
-| RLS Phase 1 | ✅ Live | users, submissions, mod_assignments, redemptions |
-| Welcome email | ✅ Live | Resend Edge Function |
-| CNIC verification | ✅ Live | Optional signup, ENB locked until verified |
-| Account Recovery | ✅ Live | /account-recovery |
-| Dev History page | ✅ Live | /dev-history |
-| QR code redemption | ✅ Live | Real scannable QR, full URL |
-| /scan route | ✅ Live | Business scans → auto-populates |
-| Full Urdu interface | ✅ Live | All 6 docs applied |
-| Impact Investor Pitch Deck | ✅ v5.0 | Built 17 Apr — HTML, 15 slides |
-| Grant Application | ✅ v5.0 | Built 17 Apr — GreenPill/Celo/UNICEF |
-| ENB Master Technical Document | ✅ v5.0 | Built 17 Apr |
-| Gitcoin QF | ❌ Ruled out | Ethereum only → GreenPill + Celo |
+| Twitter @econeighbor_enb | ✅ 13 tweets scheduled | Apr 19–May 1 via Buffer |
+| Facebook page | ✅ 20 posts scheduled | Apr 19–May 1, one per day |
+| Facebook Stories | 🔄 In progress | S1 posted — S2–S5 + daily teasers pending |
+| Partnership Enquiry modal | ✅ Live | → partnership_enquiries table |
+| Whitepaper Request modal | ✅ Live | → whitepaper_requests (manual fulfilment) |
+| Buffer | ✅ Adopted | Post scheduling tool |
+| Domain | ⏳ Pending | Triggers Resend automation when live |
+| Gitcoin QF | ❌ Ruled out | Ethereum only |
 | Invesdor | ❌ Ruled out | EEA only |
 
 ---
 
-## 13. SUPABASE GROUND TRUTH (confirmed 15 April 2026)
+## 13. MARKETING SITE SECTION MAP (index.html — 18 Apr 2026)
 
-**Key RPC signatures:**
-- `confirm_redemption(p_qr_code text)` — single param
-- `cancel_redemption_qr(p_qr_token text, p_user_id uuid)`
-- `create_redemption_qr(p_user_id uuid, p_business_id uuid, p_enb_amount bigint)`
-- `approve_submission(p_submission_id uuid, p_moderator_id uuid, p_enb_amount numeric, p_rep_amount numeric, p_note text)`
-- `approve_volunteer(p_application_id uuid, p_user_id uuid, p_admin_id uuid)`
+1. Hero · 2. The Problem · 3. How It Works · 4. CFSP (5-tier waterfall) · 5. Who Earns ENB (47 professions) · 6. Dual Layer · 7. Impact Numbers · 8. Traction · 9. For Impact Investors · 10. Partner Businesses · 11. Why ENB Survives · 12. Business Liquidity Gate · 13. Community Treasury · 14. Tokenomics · 15. Testimonials · 16. Footer
 
-**Role values:** member | moderator | admin | business_partner | onboarding_team
-
-**Key columns:**
-- `redemptions.qr_code` (not qr_token) | `redemptions.enb_spent` (not enb_amount)
-- `users.cnic_number` (active) | `users.neighbourhood` (British — keep)
-- `submissions.neighbourhood_cleanup` (British — keep)
-
-**Dropped:** telegram_id ✅ | cnic (old) ✅
+**Active modals:** Partnership Enquiry | Whitepaper Request | Bug Report
 
 ---
 
-## 14. FUNDING PIPELINE
+## 14. SOCIAL MEDIA CONTENT STATUS (19 Apr 2026)
+
+### Facebook — 20 Posts Scheduled (Apr 19–May 1)
+| Day | Date | Theme |
+|---|---|---|
+| 8 | Apr 19 | Fi.co acceptance |
+| 9 | Apr 20 | App v1.3.0 live |
+| 10 | Apr 21 | CFSP food story |
+| 11 | Apr 22 | 47 professions |
+| 12 | Apr 23 | Business Liquidity Gate |
+| 13 | Apr 24 | Community Treasury |
+| 15 | Apr 25 | The Moderator |
+| 16 | Apr 26 | Bibi Zainab |
+| 17 | Apr 27 | Circular economy / well |
+| 18 | Apr 28 | Neighborhood Anchor |
+| 19 | Apr 29 | Anti-fraud 7 layers |
+| 20 | Apr 30 | Labour Day eve promise |
+| 14 | May 1 | Labour Day closing |
+
+### Twitter — 13 Tweets Scheduled (Apr 19–May 1)
+Same dates as Facebook, matching themes, same Gemini images.
+
+### Facebook Stories
+- S1 Ustad Hamid ✅ Posted
+- S2 CFSP/Food waste — pending
+- S3 Recruitment CTA — pending
+- S4 Business owners — pending (post Apr 19 morning before feed)
+- S5 Giveth donation — pending (post Apr 21 with link)
+- Daily teasers Apr 19–May 1 — post each morning 30 min before feed post
+
+### Gemini Image Library — All 20 Approved ✅
+All images consistent branding: dark green pill badge, leaf icon, "Eco-Neighbor" white + "($ENB)" gold, top-left.
+
+---
+
+## 15. URDU WRITING RULES — LOCKED (All Content)
+
+| Element | Rule |
+|---|---|
+| $ENB mid-sentence | ❌ Never — use ٹوکن |
+| ENB.LOCAL | ❌ Never — use لوکل ٹوکن |
+| ENB.GLOBAL | ❌ Never — use گلوبل ٹوکن |
+| Numbers in Urdu sentences | ❌ Never as numerals — write in Urdu words |
+| بچولیا | ❌ Never — use واسطہ |
+| English brand terms mid-sentence | ❌ Never — transliterate or restructure |
+| $ENB placement | ✅ Standalone line only, second to last |
+| Tagline | ✅ Always last: آپ کی محنت کی قدر ہے 🌿 |
+
+---
+
+## 16. FUNDING PIPELINE
 
 | Source | Status | Amount | Notes |
 |--------|--------|--------|-------|
 | Giveth GIVbacks | Submitted | GIV tokens | Awaiting review |
-| GreenPill Network | Not started | $5K–$25K | Priority — replaces Gitcoin QF |
+| GreenPill Network | Not started | $5K–$25K | Priority |
 | Celo Public Goods | Not started | $10K–$100K | Rolling |
 | UNICEF CryptoFund | Not started | $50K–$100K | Rolling |
-| Karandaaz GreenFin | Not started | PKR | Book April 2026 slot |
-| NICAT Rawalpindi | Not started | Tech support | Book appointment |
+| Karandaaz GreenFin | Not started | PKR | Book slot |
 | FI Demo Day | Oct 2026 | $25K–$100K SAFE | Cap $1–2M, 20% discount |
 
 ---
 
-## 15. CANONICAL DECISIONS LOG
+## 17. CANONICAL DECISIONS LOG
 
 | Decision | Value | Date |
 |----------|-------|------|
 | Spelling | American — Neighbor/Neighborhood | Mar 2026 |
-| Food programme | Community Food Sharing Programme (British proper noun) | Mar 2026 |
-| Positioning | Starting in Rawalpindi, built to replicate globally | 28 Mar 2026 |
-| Urdu tagline | آپ کی محنت کی قدر ہے | 28 Mar 2026 |
-| CFSP Waterfall | v4.9 canonical 5-tier incl. schools/orphanages at T1b | 3 Apr 2026 |
+| CFSP Waterfall | v4.9 canonical 5-tier | 3 Apr 2026 |
 | App version | v1.3.0 | 15 Apr 2026 |
-| Gitcoin QF | Ruled out — Ethereum only → GreenPill + Celo | 15 Apr 2026 |
-| QR code format | Option B — eco-neighbor.vercel.app/scan?code=UUID | 15 Apr 2026 |
+| Gitcoin QF | Ruled out → GreenPill + Celo | 15 Apr 2026 |
 | FI equity | 2.5% Warrant at Week 8 | 15 Apr 2026 |
 | Whitepaper | v5.0 — April 2026 | 17 Apr 2026 |
-| 2% burn | REPLACED by 10% Community Treasury Contribution | 17 Apr 2026 |
-| Business Liquidity Gate | Atomic burn-and-mint, no lifetime cap, 50K ENB/release | 17 Apr 2026 |
-| Community Treasury Fund | Stability 30%, Market Making 20%, Insurance 20%, Reserve 30% | 17 Apr 2026 |
+| 2% burn | REPLACED by 10% Community Treasury | 17 Apr 2026 |
+| Business Liquidity Gate | Atomic burn-and-mint, no lifetime cap | 17 Apr 2026 |
 | Strategic Partnership Reserve | Position #2, 75M ENB, 15%, max 5M per partner | 17 Apr 2026 |
-| Founding Business Partners | Removed from Founding Pool — earn via Business Liquidity Gate | 17 Apr 2026 |
-| Neighborhood Anchors | Honorary — 0 tokens, recognition only | 17 Apr 2026 |
-| Project file naming | Permanent filenames: CLAUDE.md / ENB_DEVLOG.md / ENB_BACKLOG.md | 18 Apr 2026 |
-| Marketing site | counter bug fixed, Emergency Reserve bar corrected, mobile nav fixed, Gitcoin → GreenPill | 18 Apr 2026 |
+| Neighborhood Anchors | Honorary — 0 tokens | 17 Apr 2026 |
+| File naming | Permanent: CLAUDE.md / ENB_DEVLOG.md / ENB_BACKLOG.md | 18 Apr 2026 |
+| Treasury pool math | Market Making (20%) + Insurance (20%) = TWO separate pools | 18 Apr 2026 |
+| ENB.LOCAL Metamorphosis | Singular noun — not "metamorphoses" | 18 Apr 2026 |
+| Whitepaper modal | Manual fulfilment only — no automation until domain ready | 18 Apr 2026 |
+| Email in footer | Removed — modals handle all contact | 18 Apr 2026 |
+| Facebook URL | Corrected to facebook.com/ENBEcoNeighbor | 19 Apr 2026 |
+| Urdu BiDi rule | $ENB standalone only — ٹوکن mid-sentence | 19 Apr 2026 |
+| واسطہ | Replaces بچولیا permanently in all Urdu content | 19 Apr 2026 |
+| Buffer | Adopted for Twitter + Facebook scheduling | 19 Apr 2026 |
+| Claude windows | Social Media Content window named and scoped | 19 Apr 2026 |
 
 ---
 
-## 16. TWITTER FILTER SYSTEM
+## 18. OPEN TASKS
 
-| Signal | Action |
-|--------|--------|
-| moon / pump / collab / DM me | Ignore + Mute |
-| "when airdrop" | Firm reply — ENB has no airdrops |
-| Mentions Giveth/GreenPill/Gitcoin | Check profile, engage if genuine |
-| Specific ENB mission question | Reply in full |
-| Mentions Rawalpindi / Pakistan | Top priority engagement |
+### 🔴 IMMEDIATE
+- [ ] **SECP Private Limited Company registration** — URGENT before FI cohort Jul 28
+- [ ] **Fi.co onboarding sprint** — complete portal deliverables
+- [ ] **Facebook Stories S2–S5** — post with correct direct post links
+- [ ] **Daily Story teasers** — each morning 30 min before feed post (Apr 20–May 1)
+- [ ] **Buffer** — confirm all 13 tweets loaded and scheduled correctly
+- [ ] **Urdu registration materials** — PDFs once Muhammad returns translations
 
----
-
-## 17. OPEN TASKS BY WINDOW
-
-### APP DEVELOPMENT (next session)
-- [ ] Urdu registration materials — PDFs once Muhammad returns translations
-- [ ] CFSP v4.9 Priority Waterfall propagation to web app
-- [ ] Phase 2 RLS — 6 tables: bug_reports, referral_escrow, campaigns, business_partners, partner_applications, bridge_requests
-- [ ] Fix duplicate PartnerSignup import App.tsx lines 15+60
-- [ ] Fix ScanRedemption success screen (enb_spent vs enb_amount — cosmetic)
-- [ ] FI Dashboard Week 1 checklist review
-- [ ] Whitepaper vs App Feature Gap Analysis
-
-### WHITEPAPER / DOCUMENTS
-- [x] ~~v5.0~~ ✅ 17 April 2026
-- [x] ~~Impact Investor Pitch Deck HTML~~ ✅ 17 April 2026
-- [x] ~~Grant Application (GreenPill/Celo/UNICEF)~~ ✅ 17 April 2026
-- [x] ~~ENB Master Technical Document~~ ✅ 17 April 2026
-- [ ] Founding Members Handbook v2.0 — update to v5.0 founding pool
-- [ ] Giveth Jun 28 checklist: update reference to v5.0
-
-### MARKETING SITE
-- [x] ~~Counter bug (3.4B showing 0)~~ ✅ 18 April 2026
-- [x] ~~Emergency Reserve bar (10% → 5%)~~ ✅ 18 April 2026
-- [x] ~~Mobile nav broken~~ ✅ 18 April 2026
-- [x] ~~Gitcoin QF references → GreenPill~~ ✅ 18 April 2026
-- [x] ~~v4.9 references → v5.0~~ ✅ 18 April 2026
-
-### FUNDING
-- [ ] Post Tweet 2 from campaign sequence
-- [ ] Founder origin post @mansehra2020
-- [ ] Set up Gitcoin Passport (target 20+)
-- [ ] SECP lawyer — Private Limited registration (IMMEDIATE)
+### 🟡 SHORT TERM (before Fi.co Jul 28)
+- [ ] **CFSP v4.9 waterfall propagation** to web app
+- [ ] **Giveth June 28 update** ⚠️ DO NOT EDIT BEFORE — bundle ONE edit:
+  - Fix title: "Eco Neighbor ENB" → "Eco-Neighbor ($ENB)"
+  - Update whitepaper v4.9 → v5.0
+  - Add Fi.co cohort progress
+  - Add Facebook page link + updated numbers
+  - Update CFSP waterfall description
+- [ ] GreenPill Network grant application
+- [ ] Celo Public Goods grant application
 - [ ] Post in GreenPill Discord
-- [ ] Facebook Days 2–7 posts
-- [ ] GreenPill + Celo grant applications
+- [ ] Gitcoin Passport setup (target 20+)
+- [ ] Squads.so 5-of-7 multi-sig setup
+- [ ] ENB token deployment on Solana devnet
+- [ ] Whitepaper vs App Feature Gap Analysis
+- [ ] Founding Members Handbook v2.0 — v5.0 pool update
+- [ ] Fix duplicate PartnerSignup import App.tsx lines 15+60
+- [ ] Fix ScanRedemption success screen (enb_spent vs enb_amount)
+- [ ] Karandaaz GreenFin PKR grant — book slot
+- [ ] NICAT Rawalpindi — book appointment
+- [ ] Business Directory professions translation layer
+- [ ] Next batch Facebook + Twitter posts — May 2026 onwards
 
-### LEGAL
-- [ ] SECP Private Limited Company (immediate — before FI cohort)
-- [ ] Section 42 Not-for-Profit — longer term
-- [ ] Squads.so multi-sig
+### ⏳ POST-DOMAIN
+- [ ] Wire Resend for partnership_enquiries instant notification
+- [ ] Wire Resend for whitepaper_requests instant notification
+- [ ] Auto-send whitepaper PDF via Resend
+- [ ] Replace all vercel URLs with domain throughout site
+- [ ] Set up domain email
 
-### FOUNDER REPORTS
-- [x] ~~Template 1 — Monthly Update~~ ✅ Done
-- [ ] Templates 2–6
-
----
-
-## 18. GIVETH UPDATE SCHEDULE & CHECKLIST
-
-**⚠️ DO NOT edit Giveth before 28 June 2026.**
-
-**June 28 bundle — all in ONE edit:**
-- [ ] Fix title: "Eco Neighbor ENB" → "Eco-Neighbor ($ENB)"
-- [ ] Update whitepaper reference: v4.9 → v5.0
-- [ ] Add Fi.co cohort progress (started Jul 28, 2026)
-- [ ] Add Facebook page link; update follower numbers
-- [ ] Add pilot milestones and partner businesses
-- [ ] Update CFSP waterfall description to v4.9 5-tier structure
-
----
-
-## 19. URDU TRANSLATION STATUS
-
-| Doc | Screens | Status |
-|-----|---------|--------|
-| Doc 01 | Dashboard, Nav, Tiers | ✅ Applied |
-| Doc 02 | Login, Signup, Welcome | ✅ Applied |
-| Doc 03 | Submit Action, Form, Review, Success | ✅ Applied |
-| Doc 04 | Wallet, Referral Hub, Bridge, Redemption QR | ✅ Applied |
-| Doc 05 | Directory, Leaderboard, Profile, Settings | ✅ Applied |
-| Doc 06 | Community: Food Sharing, Impact, Governance, Log, Bug, ModQueue | ✅ Applied |
-
-Cannot be translated (DB data): user names, neighbourhood names, proposal content, profession names in constants.ts
+### 🔵 PHASE 2 (post FI cohort)
+- [ ] RLS Phase 2 — 6 remaining tables
+- [ ] Business Liquidity Gate smart contract (Solana)
+- [ ] Community Treasury Fund smart contract
+- [ ] ENB token mainnet deployment
+- [ ] Raydium DEX listing
 
 ---
 
-## 20. REGISTRATION DRIVE MATERIALS
+## 19. GIVETH UPDATE SCHEDULE
 
-| Material | English | Urdu |
-|----------|---------|------|
-| A5 Flyer | ✅ PDF ready | ⏳ Awaiting Muhammad's translation |
-| Registration Guide | ✅ PDF ready | ⏳ Awaiting translation |
-| Action Reference Card | ✅ PDF ready | ⏳ Awaiting translation |
-| Business Partner MOU Summary | ✅ PDF ready | ⏳ Awaiting translation |
+**⚠️ DO NOT edit before 28 June 2026.**
 
-Font: Noto Nastaliq Urdu (Regular + Bold) — uploaded 15 Apr 2026
+June 28 bundle (ONE edit): Fix title → "Eco-Neighbor ($ENB)" | v4.9→v5.0 | Add Fi.co progress | Add Facebook link | Update numbers | Update CFSP description
 
 ---
 
-## 21. DOCUMENT SYNC STATUS (Whitepaper v5.0)
+## 20. URDU TRANSLATION STATUS
 
-| # | Document | Status | Priority |
-|---|----------|--------|----------|
-| 1 | Founding Members Handbook v2.0 | 🟡 Needs v5.0 pool update | High |
-| 2 | Impact Investor Pitch Deck HTML | ✅ v5.0 — 17 Apr | Done |
-| 3 | Grant Application (GreenPill/Celo) | ✅ v5.0 — 17 Apr | Done |
-| 4 | ENB Master Technical Document | ✅ v5.0 — 17 Apr | Done |
-| 5 | Ecosystem Sustainability Analysis | 🟡 PARTIAL (v4.4) | Medium |
-| 6 | Failure Scenario Analysis | 🟡 PARTIAL (v4.4) | Medium |
-| 7 | Carbon Credit Methodology | 🟡 PARTIAL (v4.7) | Medium |
-| 8 | Founders Agreement | 🟡 PARTIAL (v4.6) | Medium |
-| 9 | Landing Page HTML (marketing site) | ✅ Fixed — 18 Apr | Done |
-| 10 | Carbon Revenue Model | 🟡 PARTIAL (v4.7) | Medium |
-| 11 | ENB Master Snapshot | 🟡 PARTIAL (v4.8) | Medium |
-| 12 | NDA / IP / Tech Agreement | 🟢 LOW RISK | Low |
-| 13 | FI Strategy Reference | ✅ CURRENT (15 Apr) | Done |
-| 14 | Security Audit Report | ✅ CURRENT (15 Apr) | Done |
-| 15 | Registration Drive Materials (EN) | ✅ CURRENT (15 Apr) | Done |
-| 16 | Registration Drive Materials (Urdu) | ⏳ PENDING TRANSLATION | High |
-| 17 | Founder Monthly Report Template | ✅ CURRENT (15 Apr) | Done |
-| 18 | Whitepaper v5.0 | ✅ CURRENT (17 Apr) | Done |
+All 6 docs applied (Docs 01–06) — all screens bilingual ✅
 
-### INVARIANTS — every document must always show:
-- Total supply: 10,000,000,000 ENB (never 1B)
-- Spelling: Neighbor/Neighborhood (no U)
-- Bridge: 25% lifetime, max 2 conversions, 3-year gap, 12.5%/event
-- Vesting: 12-month cliff, 25% Month 12, 1/24th monthly M13–M36
-- ENB.LOCAL: whole numbers only
-- Redemption model: 10% Community Treasury (not 2% burn)
-- Funding sources: GreenPill + Celo (NOT Gitcoin QF)
-- App version: v1.3.0
+Cannot translate: user names, neighbourhood names, proposal content, profession names in constants.ts
 
 ---
 
-## 22. FILE NAMING CONVENTION (PERMANENT — from 18 Apr 2026)
+## 21. PARALLEL CLAUDE WINDOWS
 
-**Stop using date-stamped filenames. Use these three permanent names forever:**
-- `CLAUDE.md` — this file (update version number inside, never rename)
-- `ENB_DEVLOG.md` — append new sessions, never delete old entries
-- `ENB_BACKLOG.md` — update in place (tick completed, add new items)
-
-**Workflow for each session end:**
-1. Ask Claude: *"Produce updated CLAUDE.md, ENB_DEVLOG.md, ENB_BACKLOG.md for this session"*
-2. Download the 3 files
-3. In Project Files: delete the 3 old files, upload the 3 new ones
-4. In GitHub root: `git add CLAUDE.md ENB_DEVLOG.md ENB_BACKLOG.md && git commit -m "docs: end of session [date]" && git push`
+| Window | Focus |
+|---|---|
+| **Social Media Content** | Facebook posts, Twitter posts, Stories, Gemini prompts, Buffer scheduling |
+| **App Development** | Web app — React, Supabase, components, bug fixes |
+| **Whitepaper / Documents** | Whitepaper v5.0, grant applications, technical documents |
+| **Funding** | Giveth, GreenPill, Celo, Fi.co deliverables |
 
 ---
 
-## 23. MORNING BRIEFING ROUTINE (Claude Routine — paste this prompt)
+## 22. FILE NAMING CONVENTION (PERMANENT)
+
+- `CLAUDE.md` — current truth only, version number increments
+- `ENB_DEVLOG.md` — append only, never delete
+- `ENB_BACKLOG.md` — update in place
+
+**End of session:** Download 3 files → replace in Project Files → push to GitHub root
+
+---
+
+## 23. MORNING BRIEFING ROUTINE
 
 ```
 Read CLAUDE.md, ENB_DEVLOG.md, and ENB_BACKLOG.md from the Project files.
-Produce a Morning Briefing in this exact format:
+Produce a Morning Briefing:
 
----
 # ENB Morning Briefing — [Today's Date]
 
 ## What Was Done Last Session
-[Summarise the most recent DEVLOG entry in 4–6 bullet points]
+[4–6 bullet points from most recent DEVLOG entry]
 
 ## Current Canonical Versions
-- App: [from CLAUDE.md]
-- Whitepaper: [from CLAUDE.md]
-- Marketing site: [from CLAUDE.md]
+- App: [from CLAUDE.md]  |  Whitepaper: [from CLAUDE.md]  |  Site: [from CLAUDE.md]
 
 ## Top 3 Priorities Today
-[Top 3 items from 🔴 IMMEDIATE section of BACKLOG]
-
-## Pending Document Syncs (HIGH)
-[List 🔴 OUT OF SYNC documents from BACKLOG]
+[From 🔴 IMMEDIATE in BACKLOG]
 
 ## One Decision Needed From You
-[Single most important unresolved item requiring Muhammad's input]
----
-Keep it concise. This is a startup briefing, not a full report.
+[Single most important unresolved item]
 ```
 
 ---
 
-**Version:** 7.0 — 18 April 2026
+**Version:** 9.0 — 19 April 2026
