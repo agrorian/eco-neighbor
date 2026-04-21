@@ -1,6 +1,6 @@
 # ECO-NEIGHBOR ($ENB) — MASTER CLAUDE SYNC DOCUMENT
-**Last updated: 21 April 2026**
-**Version: 11.0**
+**Last updated: 21 April 2026 (evening corrections)**
+**Version: 11.1**
 **Maintained by: Muhammad Faisal Khan (Founder) + Claude (AI Collaborator)**
 
 ---
@@ -13,7 +13,7 @@ At the start of EVERY ENB session — before doing anything else — Claude MUST
 3. `ENB_BACKLOG.md` — all pending tasks by priority
 
 **Current canonical versions:**
-- **Whitepaper:** v5.0 — April 2026 (v5.1 pending — tranche system section to be added)
+- **Whitepaper:** v5.0 — April 2026 (v6.0 pending — major version bump: removes fixed supply, introduces Auto-Tranche System, SWAP terminology, geographic freedom)
 - **Web App:** v1.3.0 (live) — v1.4.0 in design, ready to build
 - **Marketing site:** Fully upgraded 18 Apr 2026 — tranche system + SWAP update pending
 
@@ -26,7 +26,7 @@ Failure to read these first causes version errors, stale references, and contrad
 | Field | Value |
 |-------|-------|
 | **Canonical name** | Eco-Neighbor ($ENB) — hyphen always |
-| **Ticker** | $ENB — with tranche: $ENB^T1, $ENB^T2, $ENB^T3... |
+| **Ticker** | $ENB — with tranche: $ENB^T1, $ENB^T2, $ENB^T3... (T-number is TRUE SUPERSCRIPT in rendered documents — Word `<w:vertAlign w:val="superscript"/>`, HTML `<sup>T1</sup>`) |
 | **Tagline (EN)** | Your Neighborhood Work Has Value! |
 | **Tagline (UR)** | آپ کی محنت کی قدر ہے |
 | **Positioning** | Starting in Rawalpindi, built to replicate globally |
@@ -95,7 +95,8 @@ Fixed 10B supply depletes in 74–216 days under growth scenarios. Auto-tranche 
 | Trigger | CRP balance reaches 10% of current tranche size |
 | New tranche size | 10,000,000,000 ENB |
 | Tranche cap | None — infinite, perpetual |
-| Mechanism | Autonomous Solana smart contract — no human action required |
+| Mechanism | Autonomous Solana smart contract PDA — no human action required, ever |
+| Mint authority | Held by PDA smart contract ONLY. NOT renounced. No human can mint. |
 | Distribution | Locked in contract — no governance override, ever |
 
 ### T2+ Distribution — LOCKED FOREVER
@@ -121,23 +122,36 @@ Each tranche number = on-chain proof of adoption, not an inflation signal.
 | T1 | May 1, 2026 | 0 | 100 | 10B |
 | T2 | Nov 22, 2026 | 205 | 51,100 | 20B |
 | T3 | Jan 9, 2027 | 253 | 204,700 | 30B |
+| T4 | Feb 1, 2027 | 276 | 409,500 | 40B |
+| T5 | Feb 16, 2027 | 291 | 409,500 | 50B |
 | T10 | Mar 28, 2027 | 331 | 1,638,300 | 100B |
 
 **CRP never hits zero with auto-tranche active.**
 
+### Variable Action Rate Model (Scenario C — canonical)
+| User Band | Action Rate |
+|-----------|-------------|
+| 0 – 10,000 users | 2 actions/day × 7 days = 2.000/day |
+| 10,001 – 50,000 | 2 actions/day × 6 days = 1.714/day |
+| 50,001 – 70,000 | 2 actions/day × 4 days = 1.143/day |
+| 70,001 – 100,000 | 2 actions/day × 3 days = 0.857/day |
+| 100,001+ | 2 actions/day × 4 days = 1.143/day |
+
 ---
 
-## 5. CRP TIERED PROTECTION PROTOCOL
+## 5. CRP TIERED PROTECTION PROTOCOL — FULLY AUTONOMOUS
+
+**CRITICAL: Every zone is fully automatic. There is no human vote, no DAO session, and no governance intervention at any level. The system is entirely self-governing via the Solana smart contract.**
 
 | Zone | CRP Level | Reward/Action | Auto-Trigger |
 |------|-----------|---------------|--------------|
-| 🟢 Green | 100%–50% | 1,000 ENB | None |
-| 🟡 Yellow | 50%–25% | 750 ENB | Community burn rate alert |
-| 🟠 Amber | 25%–10% | 500 ENB | Governance vote auto-triggered |
-| 🔴 Red | 10%–5% | 250 ENB | Cap to 1 action/day |
-| ⚫ Critical | Below 5% | 100 ENB | DAO 48hr emergency vote |
+| 🟢 Green | 100%–50% | 1,000 ENB | None — full rewards |
+| 🟡 Yellow | 50%–25% | 750 ENB | Automatic community burn rate alert notification |
+| 🟠 Amber | 25%–10% | 500 ENB | Automatic governance vote triggered + Auto-Tranche fires autonomously at 10% |
+| 🔴 Red | 10%–5% | 250 ENB | Automatic emergency cap: 1 action/day |
+| ⚫ Critical | Below 5% | 100 ENB | Automatic cap maintained at 1 action/day until new tranche confirmed on-chain |
 
-Note: Auto-tranche fires at 10% CRP (Amber zone). Both mechanisms activate simultaneously.
+Note: In normal operation, CRP should never reach Critical. Auto-tranche fires at 10% (Amber). Critical is a safety net for edge cases only — e.g. extreme rapid surge between trigger and on-chain confirmation.
 
 ---
 
@@ -324,6 +338,10 @@ Current: v1.3.0 | Next: v1.4.0 | Future MAJOR: v2.0.0 = Solana deployment
 | FCP in tranches | 0% forever | 21 Apr 2026 |
 | Ticker format | $ENB^T1, $ENB^T2... | 21 Apr 2026 |
 | Geographic limits | Removed — multi city permitted | 21 Apr 2026 |
+| CRP Tiered Protection | Fully autonomous — NO DAO vote at any level (Critical corrected from previous version) | 21 Apr 2026 (eve) |
+| Mint authority | Held by PDA smart contract only. NOT renounced. No human access ever. | 21 Apr 2026 (eve) |
+| Ticker superscript | T1/T2/T3 must render as true superscript in all documents | 21 Apr 2026 (eve) |
+| Whitepaper version | v6.0 — major bump justified by fixed-supply removal | 21 Apr 2026 (eve) |
 
 ---
 
@@ -349,7 +367,7 @@ Current: v1.3.0 | Next: v1.4.0 | Future MAJOR: v2.0.0 = Solana deployment
 - [ ] Fix duplicate PartnerSignup import
 
 ### 🟡 Whitepaper/Documents Window
-- [ ] Whitepaper v5.1 — Auto-Tranche System section + tables + charts
+- [ ] Whitepaper v6.0 — Auto-Tranche System section + tables + charts (surgical edit to v5.0 base)
 - [ ] Glossary — full 64 term definitions
 - [ ] Founding Members Handbook v2.0 update
 
@@ -394,7 +412,7 @@ June 28 bundle: Fix title + v5.0 + Fi.co progress + Facebook + CFSP + tranche sy
 |---|---|
 | **Social Media Content** | Facebook, Twitter, Stories, Fi.co, marketing site |
 | **App Development (Chat 6)** | React app, Supabase, v1.4.0 build, dev history |
-| **Whitepaper / Documents** | Whitepaper v5.1, glossary, grant applications |
+| **Whitepaper / Documents** | Whitepaper v6.0, glossary, grant applications |
 | **Funding** | Giveth, GreenPill, Celo, Fi.co strategy |
 
 ---
@@ -406,4 +424,53 @@ New window rule: open when (a) 100 attachments reached OR (b) new build phase be
 
 ---
 
-**Version:** 11.0 — 21 April 2026
+## 25. EVENING CORRECTIONS — 21 APRIL 2026
+
+This section documents four critical corrections identified in the evening of 21 April 2026 after review of the afternoon's output. All corrections are now reflected throughout this document.
+
+### Correction 1 — CRP Critical Zone (Section 5)
+**Previous (incorrect):** "Critical Below 5% → DAO 48hr emergency vote"
+**Corrected:** "Critical Below 5% → Automatic cap maintained at 1 action/day until new tranche confirmed on-chain"
+**Rationale:** The Auto-Tranche System is entirely autonomous. There is NO human vote at any level. The Amber zone (10%) already triggers the auto-tranche mint. The Critical zone is a safety net for edge cases only — not a human decision point. Having a "DAO vote" in the Critical zone contradicts the core architectural principle that the system is fully self-governing via the Solana smart contract.
+
+### Correction 2 — Ticker Superscript Format
+**Previous (incorrect):** Ticker shown as "$ENB^T1" with caret notation throughout
+**Corrected:** T1/T2/T3 etc. must appear as TRUE SUPERSCRIPT in all rendered documents
+- Word documents: `<w:vertAlign w:val="superscript"/>` on the T-number text run
+- HTML: `<sup>T1</sup>` tags
+- Plain text contexts (where superscript is impossible): `$ENB^T1` is acceptable as notation only
+**Rationale:** The visual rendering matters — the superscript format is how the ticker appears in the canonical reference image Muhammad provided.
+
+### Correction 3 — Mint Authority
+**Previous (incorrect, inherited from v5.0 text):** "Mint Authority: Renounced after genesis mint — no inflation possible"
+**Corrected:** "Mint Authority: Held by Auto-Tranche PDA smart contract ONLY. NOT renounced. No human can mint."
+**Rationale:** For auto-tranche to work, the mint authority must be retained by the PDA (Program Derived Address) smart contract. The PDA is immutable and autonomous — it can mint according to the locked rules but no human can access or trigger it. This is a fundamental change from the v5.0 "renounced after genesis" model.
+
+### Correction 4 — Whitepaper Version Number
+**Previous (incorrect):** v5.1 pending (minor bump)
+**Corrected:** v6.0 pending (major bump)
+**Rationale:** Removing fixed supply and introducing infinite auto-tranche is as fundamental a change as the 2% burn → 10% Community Treasury change that justified v4.x → v5.0. It deserves a major version increment, not a minor.
+
+### Files Affected by These Corrections
+- CLAUDE.md (this file) — v11.0 → v11.1
+- ENB_DEVLOG.md — evening correction entry added
+- ENB_BACKLOG.md — updated references to v6.0 whitepaper
+- Whitepaper v6.0 (to be built in next session) — all 4 corrections must be reflected
+- Marketing site index.html (to be updated in next session) — corrections 2, 3, 4 apply
+
+### Scenario Comparison Detail (Preserved for reference)
+
+| Metric | Scenario A | Scenario B | Scenario C |
+|---|---|---|---|
+| Referrals per user | 5 | 2 | 2 |
+| Wave cycles (from Wave 5) | 7 days | 15 days | 30 days |
+| Action rate model | 1/day flat | 1/day flat | Variable (see Section 4) |
+| Users by Aug 1, 2026 | 9,765,600 | 6,300 | 6,300 |
+| Users by Dec 31, 2026 | ~100M+ | 6,553,500 | 204,700 |
+| CRP depletion (no tranche) | Day 74 | Day 151 | Day 216 |
+| CRP depletion (with tranche) | Never | Never | Never |
+| Realistic likelihood | Viral | Plausible | Conservative (canonical for Fi.co) |
+
+---
+
+**Version:** 11.1 — 21 April 2026 (evening corrections applied)

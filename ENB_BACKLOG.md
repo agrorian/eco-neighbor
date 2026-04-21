@@ -1,5 +1,5 @@
 # ENB — Master Backlog
-*Last updated: 21 Apr 2026 — App v1.3.0 — Whitepaper v5.0 — v1.4.0 in design*
+*Last updated: 21 Apr 2026 (evening corrections) — App v1.3.0 — Whitepaper v5.0 (v6.0 pending) — v1.4.0 in design*
 *At session start: read CLAUDE.md + ENB_DEVLOG.md + ENB_BACKLOG.md first.*
 
 ---
@@ -32,11 +32,19 @@
 
 ## 🟡 SHORT TERM — Whitepaper/Documents Window
 
-- [ ] **Whitepaper v5.1** — new section: Auto-Tranche System
-  - Include all simulation tables (1A/1B/1C/2A/2B/2C/3/4/5/6/7)
-  - Include charts (CRP health, user growth, total supply)
-  - Include T2+ distribution table
-  - Include CRP Tiered Protection Protocol
+- [ ] **Whitepaper v6.0** (major version bump — removes fixed supply) — surgical edits to v5.0 .docx base:
+  - Base: ENB_Whitepaper_v5_0.docx (90 pages, 1,147 lines) — MUST use this as base, never generate from scratch
+  - Add new Section 3A: Auto-Tranche System with all tables, simulation data, CRP tiered protocol
+  - Update cover: "Fixed Supply" → "Auto-Tranche Architecture • Infinite Supply"
+  - Update Section 2.3 Technical Spec table: Mint Authority → PDA only (not renounced)
+  - Update Section 22.4 Token Flow Step 3: "2% IS BURNED" → 10% Community Treasury
+  - Update Section 24 Technical Specs: Total Supply + Mint Authority rows
+  - Rewrite Section 30: Supply Rationale (auto-tranche replaces fixed supply argument)
+  - Throughout: "redemption" → "SWAP" (user-facing only, not RPC function names)
+  - Throughout: Ticker T1/T2/T3 as TRUE SUPERSCRIPT (not caret notation)
+  - Throughout: Remove geographic radius restriction language
+  - Version History: Add v6.0 row
+  - Output must be approximately 90 pages. If significantly shorter, REJECT and retry.
 - [ ] **Glossary** — full 64 term definitions for whitepaper appendix
 - [ ] Founding Members Handbook v2.0 — v5.0 pool update
 
@@ -44,14 +52,18 @@
 
 ## 🟡 SHORT TERM — Social Media / Marketing Window
 
-- [ ] **Marketing site** — add Auto-Tranche System section
-- [ ] **Marketing site** — remove geographic radius restriction language
-- [ ] **Marketing site** — replace all "redemption" with SWAP
-- [ ] **Marketing site** — update ticker references to show tranche format
+- [ ] **Marketing site updates** — surgical edits to existing index.html (2,305 lines) — MUST use as base, never regenerate from scratch:
+  - Add Auto-Tranche System section (between tokenomics and testimonials)
+  - Remove all geographic radius restriction language
+  - Replace all "redemption" with "SWAP"
+  - Update ticker references: $ENB with T1/T2/T3 as `<sup>` tags (true superscript)
+  - Update version references v5.0 → v6.0 in footer
+  - Existing 14 sections must remain intact
+  - Output must be approximately 2,300+ lines. If significantly shorter, REJECT and retry.
 - [ ] Next social media batch — May 2026 onwards (Facebook + Twitter)
 - [ ] **Giveth June 28 update** ⚠️ DO NOT EDIT BEFORE — bundle ONE edit:
   - Fix title → "Eco-Neighbor ($ENB)"
-  - Whitepaper v4.9 → v5.0
+  - Whitepaper v4.9 → v6.0
   - Add Fi.co cohort progress
   - Add Facebook link
   - Update CFSP description
@@ -122,7 +134,7 @@
 
 | # | Document | Status | Priority |
 |---|----------|--------|----------|
-| 1 | Whitepaper v5.1 | 🔴 Auto-tranche section needed | Critical |
+| 1 | Whitepaper v6.0 | 🔴 Auto-tranche section needed + all 4 evening corrections | Critical |
 | 2 | Founding Members Handbook v2.0 | 🟡 Needs v5.0 pool update | High |
 | 3 | Glossary (64 terms) | 🔴 Not yet written | High |
 | 4 | Impact Investor Pitch Deck HTML | ✅ v5.0 — 17 Apr | Done |
@@ -137,6 +149,17 @@
 | 13 | Founders Agreement | 🟡 PARTIAL (v4.6) | Medium |
 
 ---
+
+## ✅ COMPLETED — 21 Apr 2026 (Evening Corrections)
+
+- [x] CRP Critical Zone corrected — fully autonomous, no DAO vote anywhere
+- [x] Mint authority clarified — held by PDA, not renounced
+- [x] Ticker superscript format locked — T1/T2/T3 as true superscript
+- [x] Whitepaper version bump corrected — v5.1 → v6.0 (major bump)
+- [x] CLAUDE.md v11.1 — 4 corrections applied + new Section 25 capturing corrections
+- [x] ENB_DEVLOG.md — evening correction entry added
+- [x] ENB_BACKLOG.md — v6.0 references throughout, surgical edit instructions added
+- [x] Process rule reinforced — never generate from scratch when base file exists
 
 ## ✅ COMPLETED — 21 Apr 2026
 

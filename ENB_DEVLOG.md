@@ -4,6 +4,40 @@
 
 ---
 
+### 21 Apr 2026 (Evening) — Corrections to Afternoon Session Output
+**Window:** Social Media Content (continued)
+**Focus:** Review and correction of 4 issues identified in afternoon's CLAUDE.md and handover material
+
+#### ✅ Corrections Applied
+| # | Correction | Reason |
+|---|------------|--------|
+| 1 | CRP Critical Zone — removed "DAO 48hr vote" | Auto-Tranche is fully autonomous. No human vote at any zone. Critical is a safety net only, not a decision point. |
+| 2 | Ticker superscript format clarified | T1/T2/T3 must render as TRUE superscript in Word (`<w:vertAlign w:val="superscript"/>`) and HTML (`<sup>T1</sup>`). Caret notation only acceptable in plain text. |
+| 3 | Mint authority — PDA only, not renounced | For auto-tranche to work, mint authority must be retained by PDA smart contract. PDA is immutable and autonomous. No human access. |
+| 4 | Whitepaper version bump corrected | v5.1 → v6.0 (major bump). Removing fixed supply is as fundamental as the 2% burn → 10% Community Treasury change that justified v4.x → v5.0. |
+
+#### 🔑 Process Issues Identified
+- Afternoon session generated CLAUDE.md v11.0 from scratch instead of extending the previous 409-line version — this compressed the file and risked losing content
+- Afternoon session generated Whitepaper v6.0 from scratch instead of using v5.0 as base — resulted in 16-page skeleton vs 90-page full document
+- Afternoon session generated marketing site index.html from memory instead of using uploaded file as base — resulted in wrong structure
+
+#### 🛡️ Process Rule Reinforced
+**"Always read Project Files first. Never generate from scratch when a base file exists. CLAUDE.md, DEVLOG, and BACKLOG only ever grow — never shrink."**
+
+This rule is not negotiable. It exists specifically to prevent today's errors. The rule will be monitored strictly from here onwards.
+
+#### 🏗️ Pending (moved to next window in Opus 4.7)
+- Produce Whitepaper v6.0 using v5.0 .docx as base (surgical XML edits only)
+- Produce updated marketing site using index.html as base (targeted edits only)
+- Validate output page count / line count matches expected magnitude
+
+#### 📝 Notes
+- All 3 saved versions (3rd last, 2nd last, last) of CLAUDE.md, DEVLOG, and BACKLOG were compared side-by-side and confirmed identical at 409/160/208 lines respectively
+- No information was lost between last night's versions — only between last night's and today's compressed version
+- Evening correction applied to last night's 409-line CLAUDE.md (not the compressed version), producing v11.1 with 4 corrections and new Section 25
+
+---
+
 ### 21 Apr 2026 — CRP Simulation + Auto-Tranche System Design
 **Window:** Social Media Content
 **Focus:** CRP depletion modelling, auto-tranche architecture, ecosystem sustainability design
