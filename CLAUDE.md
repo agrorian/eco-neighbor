@@ -1,6 +1,6 @@
 # ECO-NEIGHBOR ($ENB) — MASTER CLAUDE SYNC DOCUMENT
-**Last updated: 20 April 2026**
-**Version: 10.0**
+**Last updated: 21 April 2026**
+**Version: 11.0**
 **Maintained by: Muhammad Faisal Khan (Founder) + Claude (AI Collaborator)**
 
 ---
@@ -13,9 +13,9 @@ At the start of EVERY ENB session — before doing anything else — Claude MUST
 3. `ENB_BACKLOG.md` — all pending tasks by priority
 
 **Current canonical versions:**
-- **Whitepaper:** v5.0 — April 2026
-- **Web App:** v1.3.0 (live at eco-neighbor.vercel.app) — v1.4.0 in design
-- **Marketing site:** Fully upgraded 18 Apr 2026
+- **Whitepaper:** v5.0 — April 2026 (v5.1 pending — tranche system section to be added)
+- **Web App:** v1.3.0 (live) — v1.4.0 in design, ready to build
+- **Marketing site:** Fully upgraded 18 Apr 2026 — tranche system + SWAP update pending
 
 Failure to read these first causes version errors, stale references, and contradictions.
 
@@ -26,13 +26,13 @@ Failure to read these first causes version errors, stale references, and contrad
 | Field | Value |
 |-------|-------|
 | **Canonical name** | Eco-Neighbor ($ENB) — hyphen always |
-| **Ticker** | $ENB |
+| **Ticker** | $ENB — with tranche: $ENB^T1, $ENB^T2, $ENB^T3... |
 | **Tagline (EN)** | Your Neighborhood Work Has Value! |
 | **Tagline (UR)** | آپ کی محنت کی قدر ہے |
 | **Positioning** | Starting in Rawalpindi, built to replicate globally |
 | **Pilot location** | Chaklala Scheme 3, Rawalpindi |
-| **Site 2 (planning only)** | Karachi — not yet active |
-| **Blockchain** | Solana (SPL Token-2022, 9 decimals, 10B fixed supply) |
+| **Geographic limits** | NONE — multiple neighborhoods, cities, simultaneous launch permitted |
+| **Blockchain** | Solana (SPL Token-2022, 9 decimals) |
 | **Spelling** | American English — Neighbor/Neighborhood, NO exceptions |
 | **Exception** | "Community Food Sharing Programme" = proper noun, British spelling locked |
 | **Category** | #ReFi (Regenerative Finance) — NEVER #DeFi |
@@ -66,7 +66,7 @@ Failure to read these first causes version errors, stale references, and contrad
 
 ---
 
-## 3. TOKENOMICS — LOCKED (must sum to exactly 100%)
+## 3. TOKENOMICS — T1 ORIGINAL ALLOCATION (LOCKED, ONE TIME ONLY)
 
 | Pool | Amount | % |
 |------|--------|---|
@@ -77,25 +77,71 @@ Failure to read these first causes version errors, stale references, and contrad
 | Founding Contributor Pool | 500,000,000 | 5% |
 | Development Fund | 500,000,000 | 5% |
 | Emergency Reserve | 500,000,000 | 5% |
-| **TOTAL** | **10,000,000,000** | **100%** |
+| **T1 TOTAL** | **10,000,000,000** | **100%** |
 
 **CRP rule:** Exclusively for verified civic actions. Never for CGR, bonuses, or any other purpose.
 
-**v5.0 — 10% Community Treasury Contribution on every SWAP:**
-- 90% → returns to CRP
-- 3.3% → business (ENB.GLOBAL via Business Liquidity Gate)
-- 2.0% → Business Stability Fund
-- 1.3% → Market Making & Liquidity
-- 1.3% → Insurance & Incident Pool
-- 2.0% → Reserve Buffer
-- **Total: 99.9% (≈100% rounding)**
+---
 
-**CRITICAL: Market Making and Insurance are TWO SEPARATE POOLS — never combine them.**
-**CRITICAL: Business receives 3.3%. Ecosystem retains 6.7%. Never confuse these.**
+## 4. AUTO-TRANCHE SYSTEM — LOCKED IN SMART CONTRACT (21 Apr 2026)
+
+### Why It Exists
+Fixed 10B supply depletes in 74–216 days under growth scenarios. Auto-tranche makes the ecosystem permanently self-sustaining with zero human intervention.
+
+### Rules — IMMUTABLE
+
+| Rule | Value |
+|------|-------|
+| Trigger | CRP balance reaches 10% of current tranche size |
+| New tranche size | 10,000,000,000 ENB |
+| Tranche cap | None — infinite, perpetual |
+| Mechanism | Autonomous Solana smart contract — no human action required |
+| Distribution | Locked in contract — no governance override, ever |
+
+### T2+ Distribution — LOCKED FOREVER
+
+| Pool | % | Per Tranche |
+|------|---|-------------|
+| Community Rewards Pool | 70% | 7,000,000,000 |
+| Business Partner Reserve | 12% | 1,200,000,000 |
+| ENB.GLOBAL Liquidity Pool | 8% | 800,000,000 |
+| Development Fund | 5% | 500,000,000 |
+| Emergency Reserve | 5% | 500,000,000 |
+| Founding Contributor Pool | **0%** | 0 — NEVER |
+| Impact Grants & Marketing | **0%** | 0 — organic growth replaces |
+| **TOTAL** | **100%** | **10,000,000,000** |
+
+### Ticker Format
+$ENB^T1 (10B) → $ENB^T2 (20B) → $ENB^T3 (30B) → infinite
+Each tranche number = on-chain proof of adoption, not an inflation signal.
+
+### Scenario C Simulation — Key Tranche Dates
+| Tranche | Date | Day # | Users at Trigger | Total Minted |
+|---------|------|-------|-----------------|--------------|
+| T1 | May 1, 2026 | 0 | 100 | 10B |
+| T2 | Nov 22, 2026 | 205 | 51,100 | 20B |
+| T3 | Jan 9, 2027 | 253 | 204,700 | 30B |
+| T10 | Mar 28, 2027 | 331 | 1,638,300 | 100B |
+
+**CRP never hits zero with auto-tranche active.**
 
 ---
 
-## 4. FOUNDING CONTRIBUTOR POOL — v5.0 CANONICAL (500M ENB = 100%)
+## 5. CRP TIERED PROTECTION PROTOCOL
+
+| Zone | CRP Level | Reward/Action | Auto-Trigger |
+|------|-----------|---------------|--------------|
+| 🟢 Green | 100%–50% | 1,000 ENB | None |
+| 🟡 Yellow | 50%–25% | 750 ENB | Community burn rate alert |
+| 🟠 Amber | 25%–10% | 500 ENB | Governance vote auto-triggered |
+| 🔴 Red | 10%–5% | 250 ENB | Cap to 1 action/day |
+| ⚫ Critical | Below 5% | 100 ENB | DAO 48hr emergency vote |
+
+Note: Auto-tranche fires at 10% CRP (Amber zone). Both mechanisms activate simultaneously.
+
+---
+
+## 6. FOUNDING CONTRIBUTOR POOL — v5.0 (500M ENB = 100%)
 
 | # | Role | ENB | % |
 |---|------|-----|---|
@@ -109,280 +155,212 @@ Failure to read these first causes version errors, stale references, and contrad
 | 8 | Community Growth Reserve (CGR) | 35,000,000 | 7% |
 | 9 | Legal & Compliance Lead | 30,000,000 | 6% |
 | 10 | Carbon & Impact Data Lead | 25,000,000 | 5% |
-| — | 10 Neighborhood Anchors | 0 | 0% (Honorary only) |
+| — | 10 Neighborhood Anchors | 0 | 0% (Honorary) |
 | — | Founding Business Partners | 0 | 0% (earn via Gate) |
 | **TOTAL** | | **500,000,000** | **100%** |
 
-**Founding Core Team** = positions 3–10 (excluding Visionary Founder and Strategic Partnership Reserve)
-**Not all positions need to be filled before public launch.**
+**Founding Core Team** = positions 3–10. Not all need filling before launch.
+**FCP receives 0% of any tranche beyond T1 — permanently and immutably.**
 
 ---
 
-## 5. VESTING — ALL founders, NO exceptions
+## 7. VESTING — ALL founders, NO exceptions
 
 - Cliff: 12 months. Zero tokens before Day 365.
 - Month 12: 25% lump sum
 - Months 13–36: 75% in 24 equal monthly tranches (3.125%/month)
-- Total: 36 months
 
 ---
 
-## 6. MATURATION BRIDGE — LOCKED
+## 8. COMMUNITY TREASURY — 10% ON EVERY SWAP
 
-365-day hold | 25% lifetime cap | Max 2 conversions | 3-year gap | 12.5%/event | 50,000 Rep Score (Pillar Tier) | Governance vote for batches >500,000 ENB
-
----
-
-## 7. BUSINESS LIQUIDITY GATE — v5.0
-
-Atomic burn-and-mint on Solana. PDA holds mint authority. ENB.LOCAL **Metamorphosis** → ENB.GLOBAL (singular noun — not "metamorphoses").
-
-**Conditions:** 365-day hold | Pillar Tier | Max 50,000 ENB/release | Max 2/year | 6-month gap | **No lifetime cap**
+- 90% → CRP | 3.3% → business | 2% → Stability | 1.3% → Market Making | 1.3% → Insurance | 2% → Reserve
+- **Business receives 3.3%. Ecosystem retains 6.7%. Never confuse.**
+- **Market Making and Insurance are TWO SEPARATE POOLS.**
 
 ---
 
-## 8. CFSP PRIORITY WATERFALL v4.9 — CANONICAL
-
-- T1a: Workers, elderly, disabled, food-insecure, homeless
-- T1b: Schools & Orphanages — Pediatric Safety Standard
-- T2: Community Kitchen
-- T3: Processed & Value-Added
-- T4: Animal Feed
-- T5: Composting / Biogas — nothing to landfill
-
-Carbon: 4.2 kg CO₂e per kg diverted (FAO FLW Protocol). Verra VCS in development.
+## 9. MATURATION BRIDGE
+365-day hold | 25% lifetime cap | Max 2 conversions | 3-year gap | 12.5%/event | Pillar Tier
 
 ---
 
-## 9. REPUTATION TIERS
+## 10. BUSINESS LIQUIDITY GATE
+Atomic burn-and-mint. ENB.LOCAL **Metamorphosis** → ENB.GLOBAL.
+365-day hold | Pillar Tier | Max 50,000 ENB/release | Max 2/year | No lifetime cap
+
+---
+
+## 11. CFSP PRIORITY WATERFALL v4.9
+T1a: Workers/elderly/disabled → T1b: Schools/Orphanages (Pediatric Safety) → T2: Community Kitchen → T3: Processed/Value-Added → T4: Animal Feed → T5: Composting/Biogas
+
+Carbon: 4.2 kg CO₂e per kg diverted (FAO FLW Protocol).
+
+---
+
+## 12. REPUTATION TIERS
 
 | Score | Tier | Key Privilege |
 |-------|------|---------------|
 | 0–4,999 | Newcomer 🌱 | Basic earn/spend |
 | 5,000–19,999 | Helper 🌿 | Directory listing |
 | 20,000–49,999 | Guardian 🌳 | Can vouch |
-| 50,000–99,999 | Pillar ⭐ | Governance + Bridge + Business Gate |
+| 50,000–99,999 | Pillar ⭐ | Governance + Bridge + Gate |
 | 100,000+ | Founder Tier 🏆 | Co-governance + DAO seat |
 
 ---
 
-## 10. TECH STACK
+## 13. TECH STACK
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, Vite 6, Tailwind CSS 4, shadcn/ui, Zustand, React Router 7 |
 | Backend | Supabase JS 2.98 (Postgres + Auth) |
-| Media | Cloudinary (camera lock for submissions; gallery for CNIC only) |
+| Media | Cloudinary (camera lock for submissions) |
 | Hosting | Vercel (auto-deploy from GitHub main) |
 | Blockchain | Solana SPL Token-2022 |
-| Email | Resend (Edge Function: send-welcome-email deployed) |
-| Scheduling | Buffer (buffer.com) — Twitter + Facebook Page |
+| Email | Resend (send-welcome-email deployed) |
+| Scheduling | Buffer (buffer.com) |
 
 **Critical DB rules:**
-- RLS ENABLED: users, submissions, moderator_assignments, redemptions
-- JWT path: `auth.jwt() -> 'app_metadata' ->> 'user_role'`
-- After role change → user must re-login
-- No joins — two-step queries only
-- Never regex for Urdu — rewrite complete files
 - `neighbourhood_cleanup` — British spelling, do NOT change
 - `confirm_redemption(p_qr_code text)` — ONE param only
 - qr_code = lowercase UUID — never toUpperCase()
-- SWAP replaces "redemption" in frontend/UI only — backend RPCs unchanged
+- SWAP replaces "redemption" in frontend only — backend RPCs unchanged
+- Never regex for Urdu — rewrite complete files
 
 ---
 
-## 11. SUPABASE TABLES (18 Apr 2026)
-
-**New tables added 18 Apr:**
-- `partnership_enquiries` — RLS enabled, anon INSERT
-- `whitepaper_requests` — RLS enabled, anon INSERT
-
-**All tables with RLS:** users, submissions, moderator_assignments, redemptions, partnership_enquiries, whitepaper_requests
-
----
-
-## 12. CURRENT PLATFORM STATUS (20 April 2026)
-
-| Platform | Status | Notes |
-|----------|--------|-------|
-| Live app | ✅ v1.3.0 | eco-neighbor.vercel.app |
-| Whitepaper | ✅ v5.0 | April 2026 — final |
-| Marketing site | ✅ Fully upgraded | 18 Apr 2026 |
-| Giveth listing | ✅ 100/100 | **DO NOT EDIT before 28 Jun 2026** |
-| Giveth GIVbacks | ✅ Submitted | Awaiting review |
-| Fi.co accelerator | ✅ Accepted | Jul 28 – Oct 22, 2026 |
-| Fi.co current track | ⚠️ Launch Track | Request Traction Track — email Megan tomorrow |
-| Fi.co Steps 1+2 | ✅ Completed | 20 Apr 2026 |
-| Fi.co Steps 3+4 | ⏳ Tomorrow | Calendar + profile + track email |
-| Twitter | ✅ 13 tweets scheduled | Apr 19–May 1 via Buffer |
-| Facebook | ✅ 20 posts scheduled | Apr 19–May 1 |
-| Facebook Stories | 🔄 In progress | S1 posted — S2–S5 pending |
-| Real community users | 🔴 Critical gap | Target 100 in 7 days |
-| Domain | ⏳ Pending | Triggers Resend automation |
-
----
-
-## 13. SWAP — CANONICAL TERMINOLOGY (Locked 20 Apr 2026)
-
+## 14. SWAP TERMINOLOGY (Locked 20 Apr 2026)
 **SWAP = Sustainable Work Achieves Prosperity**
-
-- Replaces "redemption" in ALL frontend UI, social media, whitepaper, marketing site, communications
-- Backend RPC functions (`confirm_redemption`, `cancel_redemption_qr`) remain unchanged — frontend label only
-- **First use in any document:** SWAP — Sustainable Work Achieves Prosperity — (the act of exchanging earned ENB.LOCAL tokens for goods, services, or discounts at a partner business)
-- **Subsequent uses:** SWAP only
-- **Urdu full phrase:** پائیدار محنت خوشحالی لاتی ہے
-- **In Urdu content:** SWAP on standalone line, Urdu translation on separate line beneath
+Replaces "redemption" in all frontend, comms, whitepaper, marketing site.
+Backend unchanged. Urdu: **پائیدار محنت خوشحالی لاتی ہے**
 
 ---
 
-## 14. BEFORE/AFTER SUBMISSION SYSTEM — v1.4.0 SPEC
-
-**Applies to:** Transformation actions (cleanup, tree planting, painting, drain unclogging, infrastructure repair, community garden)
-**Does not apply to:** Reporting actions (pothole, illegal dumping, broken light, water leakage, food drop-off)
-
-**Stage A — Before:**
-- Camera lock, multiple photos, GPS + timestamp at capture
-- Confirmed → immediately locked, no edits possible
-- 4-hour countdown timer starts at confirmation
-
-**Stage B — After:**
-- Visible but locked until 4-hour timer completes
-- Camera lock, multiple photos, GPS within 20 metres of Stage A
-- Optional note field
-- Separate DB entry linked to Stage A via `parent_submission_id`
-
-**Notifications:** Resend email at 4-hour mark (Phase 1). WhatsApp Meta Cloud API (Phase 2).
-**Moderator view:** Stage A + Stage B paired in unified UI, separate DB records.
+## 15. BEFORE/AFTER SUBMISSION — v1.4.0 SPEC
+**Transformation actions only.** Stage A (Before): camera lock, GPS, timestamp, 4hr timer starts on confirm. Stage B (After): unlocks after 4hrs, camera lock, GPS within 20m of Stage A, linked DB record. Email notification via Resend at 4hr mark.
 
 ---
 
-## 15. REPORTING + RESOLUTION SYSTEM — v1.4.0 SPEC
-
-- Reporting actions: single photo, GPS, timestamp. No After.
-- Resolution: community member submits proof issue fixed → earns ENB
-- Community Issues Board: aggregate public, individual behind login (Option B)
-- Escalation pathway to municipality: Phase 2
+## 16. REPORTING + RESOLUTION — v1.4.0 SPEC
+Single photo, GPS, timestamp. No After. Resolution submission earns ENB. Community Issues Board: aggregate public, individual behind login (Option B).
 
 ---
 
-## 16. VERSIONING — SEMANTIC (Locked 20 Apr 2026)
-
-| Change | Jump | Rule |
-|---|---|---|
-| Bug fix / cosmetic | PATCH 1.3.0→1.3.1 | Nothing new, nothing broken |
-| New feature | MINOR 1.3.0→1.4.0 | PATCH resets to 0 |
-| Breaking / fundamental | MAJOR 1.3.0→2.0.0 | MINOR + PATCH reset to 0 |
-
-**Current:** v1.3.0 | **Next:** v1.4.0 | **Future MAJOR:** v2.0.0 = Solana token deployment
+## 17. VERSIONING
+MAJOR.MINOR.PATCH — Patch=bug fix / Minor=new feature / Major=breaking change
+Current: v1.3.0 | Next: v1.4.0 | Future MAJOR: v2.0.0 = Solana deployment
 
 ---
 
-## 17. GLOSSARY — 20 CRITICAL TERMS
+## 18. GLOSSARY — 20 CRITICAL TERMS
 
 | Term | Definition |
 |---|---|
-| **$ENB** | Eco-Neighbor token ticker. Two forms: ENB.LOCAL (non-tradeable) and ENB.GLOBAL (tradeable) |
-| **ENB.LOCAL** | Non-tradeable. Earned via verified civic actions. Whole numbers only. Spent via SWAP |
-| **ENB.GLOBAL** | Tradeable. Via Maturation Bridge or Business Liquidity Gate. Listed on Raydium DEX |
-| **SWAP** | Sustainable Work Achieves Prosperity. Exchange of ENB.LOCAL for goods/services/discounts at partner business. Replaces "redemption" in all frontend and communications |
-| **Metamorphosis** | Singular noun. ENB.LOCAL converting to ENB.GLOBAL. Never "metamorphoses" |
-| **Maturation Bridge** | Founding Core Team conversion. 365-day hold, 25% lifetime cap, max 2 conversions, 3-year gap |
-| **Business Liquidity Gate** | Business conversion. Atomic burn-and-mint. 365-day hold, Pillar Tier, max 50K ENB/release |
-| **Community Treasury** | 10% on every SWAP — 90% CRP + 3.3% business + 2% Stability + 1.3% Market Making + 1.3% Insurance + 2% Reserve |
-| **Founding Core Team** | FCP positions 3–10. 12-month cliff, 36-month vest. Not all need filling before launch |
-| **Strategic Partnership Reserve** | 75M ENB pool in FCP. Not a person. Max 5M per partner |
-| **Community Growth Reserve (CGR)** | 35M ENB in FCP. Milestone bonuses. Never replenished from CRP or any pool |
-| **Genesis Block** | Official public launch date. All records start here. Pre-launch = development history |
-| **Transformation Action** | Requires Before/After photos. 4-hour timer. Camera lock. 20-metre GPS radius |
-| **Reporting Action** | Single photo, point-in-time. No After. Pothole, dumping, broken light etc. |
-| **Dual Blind Moderation** | Two independent moderators, unaware of each other, must both approve before ENB releases |
-| **Early Joiner Multiplier** | Pre-Genesis Block members receive ENB.LOCAL multiplier at launch. Range 10%–100% — TBD |
-| **Community Issues Board** | Aggregate public view of unresolved reports. Individual reports behind login (Option B) |
-| **CFSP Priority Waterfall** | T1a→T1b (Pediatric Safety Standard)→T2→T3→T4→T5 |
-| **Semantic Versioning** | MAJOR.MINOR.PATCH — Patch=bug fix / Minor=new feature / Major=breaking change |
-| **واسطہ** | Urdu for intermediary/middleman. Permanent replacement for بچولیا in all Urdu content |
+| **$ENB** | Eco-Neighbor token. Ticker includes tranche superscript: $ENB^T1, $ENB^T2 etc. |
+| **ENB.LOCAL** | Non-tradeable. Earned via verified civic actions. Whole numbers only |
+| **ENB.GLOBAL** | Tradeable. Via Maturation Bridge or Business Liquidity Gate |
+| **SWAP** | Sustainable Work Achieves Prosperity. ENB.LOCAL exchanged for goods/services/discounts |
+| **Auto-Tranche** | Autonomous 10B mint when CRP hits 10%. Infinite. Immutable smart contract |
+| **T2+ Distribution** | CRP 70% / BPR 12% / Liquidity 8% / Dev 5% / Emergency 5% — locked forever |
+| **Metamorphosis** | Singular noun. ENB.LOCAL → ENB.GLOBAL conversion event |
+| **Maturation Bridge** | Founding Core Team ENB conversion mechanism |
+| **Business Liquidity Gate** | Business ENB.LOCAL → ENB.GLOBAL atomic burn-and-mint |
+| **Community Treasury** | 10% on every SWAP — 90% CRP + 3.3% business + 6.7% ecosystem |
+| **Founding Core Team** | FCP positions 3–10. Not all need filling before launch |
+| **Genesis Block** | Official public launch date — all records reference this as Day 1 |
+| **Transformation Action** | Before/After required. 4hr timer. Camera lock. 20m GPS radius |
+| **Reporting Action** | Single photo point-in-time. No After. Pothole, dumping etc. |
+| **Dual Blind Moderation** | Two independent moderators must both approve before ENB releases |
+| **Daily Action Cap** | 3 verified actions per user per day — locked permanently |
+| **Early Joiner Multiplier** | Pre-Genesis Block members: ENB.LOCAL multiplier at launch. Range TBD |
+| **Community Issues Board** | Aggregate public view of reports. Individual reports behind login |
+| **CFSP Priority Waterfall** | T1a→T1b (Pediatric)→T2→T3→T4→T5 |
+| **واسطہ** | Urdu for intermediary. Permanent replacement for بچولیا |
 
 ---
 
-## 18. URDU WRITING RULES — LOCKED
+## 19. URDU WRITING RULES — LOCKED
 
 | Element | Rule |
 |---|---|
-| $ENB mid-sentence | ❌ Never — use ٹوکن |
-| ENB.LOCAL | ❌ Never — use لوکل ٹوکن |
-| ENB.GLOBAL | ❌ Never — use گلوبل ٹوکن |
-| Numbers in sentences | ❌ Never as numerals — write in Urdu words |
-| بچولیا | ❌ Never — use واسطہ |
-| English terms mid-sentence | ❌ Never — transliterate or restructure |
-| $ENB placement | ✅ Standalone line only, second to last |
-| SWAP in Urdu | ✅ SWAP standalone + پائیدار محنت خوشحالی لاتی ہے on next line |
+| $ENB mid-sentence | ❌ use ٹوکن |
+| ENB.LOCAL/GLOBAL | ❌ use لوکل/گلوبل ٹوکن |
+| Numbers in sentences | ❌ write in Urdu words |
+| بچولیا | ❌ use واسطہ |
+| $ENB placement | ✅ Standalone line, second to last |
+| SWAP in Urdu | ✅ SWAP standalone + پائیدار محنت خوشحالی لاتی ہے |
 | Tagline | ✅ Always last: آپ کی محنت کی قدر ہے 🌿 |
 
 ---
 
-## 19. CANONICAL DECISIONS LOG
+## 20. CANONICAL DECISIONS LOG
 
 | Decision | Value | Date |
 |----------|-------|------|
-| Spelling | American — Neighbor/Neighborhood | Mar 2026 |
-| CFSP Waterfall | v4.9 canonical 5-tier | 3 Apr 2026 |
+| Spelling | American English | Mar 2026 |
+| CFSP Waterfall | v4.9 canonical | 3 Apr 2026 |
 | App version | v1.3.0 | 15 Apr 2026 |
-| Gitcoin QF | Ruled out → GreenPill + Celo | 15 Apr 2026 |
-| FI equity | 2.5% Warrant at Week 8 | 15 Apr 2026 |
-| Whitepaper | v5.0 — April 2026 | 17 Apr 2026 |
-| Business Liquidity Gate | Atomic burn-and-mint, no lifetime cap | 17 Apr 2026 |
-| Strategic Partnership Reserve | Position #2, 75M ENB, 15%, max 5M per partner | 17 Apr 2026 |
-| Neighborhood Anchors | Honorary — 0 tokens | 17 Apr 2026 |
-| Treasury pool math | Market Making + Insurance = TWO separate pools | 18 Apr 2026 |
-| ENB.LOCAL Metamorphosis | Singular noun | 18 Apr 2026 |
-| Facebook URL | facebook.com/ENBEcoNeighbor | 19 Apr 2026 |
-| Urdu BiDi rule | $ENB standalone — ٹوکن mid-sentence | 19 Apr 2026 |
-| واسطہ | Replaces بچولیا permanently | 19 Apr 2026 |
-| Buffer | Adopted for scheduling | 19 Apr 2026 |
-| SWAP | Sustainable Work Achieves Prosperity — replaces redemption in frontend | 20 Apr 2026 |
-| Founding Core Team | Positions 3–10 — not all need filling before launch | 20 Apr 2026 |
-| Early joiner multiplier | 10%–100% on ENB.LOCAL — amount TBD | 20 Apr 2026 |
-| Before/After system | Transformation actions — 4hr timer, 20m GPS, camera lock | 20 Apr 2026 |
-| Reporting/Resolution | Single photo, Community Issues Board Option B | 20 Apr 2026 |
+| Gitcoin QF | Ruled out | 15 Apr 2026 |
+| FI equity | 2.5% Warrant Week 8 | 15 Apr 2026 |
+| Whitepaper | v5.0 April 2026 | 17 Apr 2026 |
+| Business Liquidity Gate | Atomic, no lifetime cap | 17 Apr 2026 |
+| Neighborhood Anchors | Honorary, 0 tokens | 17 Apr 2026 |
+| Treasury pools | Market Making + Insurance = separate | 18 Apr 2026 |
+| Facebook URL | ENBEcoNeighbor | 19 Apr 2026 |
+| Urdu BiDi | $ENB standalone only | 19 Apr 2026 |
+| واسطہ | Replaces بچولیا | 19 Apr 2026 |
+| Buffer | Adopted | 19 Apr 2026 |
+| SWAP | Sustainable Work Achieves Prosperity | 20 Apr 2026 |
+| Founding Core Team | Positions 3–10 | 20 Apr 2026 |
+| Before/After | 4hr timer, 20m GPS, camera lock | 20 Apr 2026 |
 | Semantic versioning | MAJOR.MINOR.PATCH | 20 Apr 2026 |
-| Glossary | 64 terms total, 20 critical in CLAUDE.md | 20 Apr 2026 |
-| Fi.co track | Launch Track assigned — request Traction Track | 20 Apr 2026 |
-| Real user target | 100 users in 7 days | 20 Apr 2026 |
+| Daily action cap | 3/user/day — permanent | 21 Apr 2026 |
+| Auto-tranche trigger | CRP at 10% | 21 Apr 2026 |
+| Auto-tranche size | 10B ENB | 21 Apr 2026 |
+| Auto-tranche cap | Infinite | 21 Apr 2026 |
+| T2+ distribution | 70/12/8/5/5 locked in contract | 21 Apr 2026 |
+| FCP in tranches | 0% forever | 21 Apr 2026 |
+| Ticker format | $ENB^T1, $ENB^T2... | 21 Apr 2026 |
+| Geographic limits | Removed — multi city permitted | 21 Apr 2026 |
 
 ---
 
-## 20. OPEN TASKS
+## 21. OPEN TASKS
 
 ### 🔴 IMMEDIATE
-- [ ] **100 real community users in 7 days** — friends, relatives, WhatsApp group, field campaign
-- [ ] **WhatsApp community group** — create and invite all contacts immediately
-- [ ] **Fi.co Step 3** — profile photo, calendar, bonus event registration
-- [ ] **Fi.co Step 4** — email megant@founderinstitute.com to request Traction Track
-- [ ] **Facebook Stories S2–S5** — post with direct post links
-- [ ] **Daily Story teasers** — 30 min before each feed post Apr 21–May 1
-- [ ] **SECP Private Limited Company registration** — before Jul 28
+- [ ] 100 real users in 7 days — friends, relatives, WhatsApp, field
+- [ ] WhatsApp community group — create immediately
+- [ ] Fi.co Step 3 — profile, calendar, bonus event
+- [ ] Fi.co Step 4 — email Megan, request Traction Track
+- [ ] Facebook Stories S2–S5 — post with direct links
+- [ ] Daily Story teasers Apr 22–May 1
+- [ ] SECP registration — before Jul 28
 
-### 🟡 SHORT TERM — App Development Window
-- [ ] **v1.4.0 — Before/After submission system** — full spec ready
-- [ ] **v1.4.0 — Reporting + Resolution tracking** — spec ready
-- [ ] **v1.4.0 — SWAP language update** — frontend only
-- [ ] **Dev History — v5.0 whitepaper entry** — content ready
-- [ ] **Dev History — v1.4.0 entry** — after deployment only
-- [ ] CFSP v4.9 waterfall propagation to web app
-- [ ] Giveth June 28 update ⚠️ ONE bundled edit only
-- [ ] GreenPill + Celo grant applications
-- [ ] Gitcoin Passport setup (target 20+)
-- [ ] Whitepaper vs App Feature Gap Analysis
-- [ ] Founding Members Handbook v2.0 update
-- [ ] Fix ScanRedemption screen (enb_spent vs enb_amount)
+### 🟡 App Development Window (Chat 6)
+- [ ] v1.4.0 — Before/After submission system
+- [ ] v1.4.0 — Reporting + Resolution tracking
+- [ ] v1.4.0 — SWAP language update (frontend only)
+- [ ] Dev History — v5.0 whitepaper entry
+- [ ] Dev History — v1.4.0 entry (after deployment)
+- [ ] CFSP waterfall propagation to web app
+- [ ] Fix ScanRedemption screen (cosmetic)
 - [ ] Fix duplicate PartnerSignup import
 
-### 🟡 SHORT TERM — This Window
-- [ ] **Glossary — full 64 term definitions** for whitepaper appendix
-- [ ] **Glossary — app screen** bilingual EN + Urdu
-- [ ] **SWAP propagation** — whitepaper, marketing site, social templates
-- [ ] **Next social media batch** — May 2026 onwards
-- [ ] Fi.co Step 3 bonus event name for submission
+### 🟡 Whitepaper/Documents Window
+- [ ] Whitepaper v5.1 — Auto-Tranche System section + tables + charts
+- [ ] Glossary — full 64 term definitions
+- [ ] Founding Members Handbook v2.0 update
+
+### 🟡 This Window (Social Media / Fi.co)
+- [ ] Marketing site — Auto-Tranche System section
+- [ ] Marketing site — remove geographic radius language
+- [ ] Marketing site — SWAP update (replace "redemption")
+- [ ] Next social media batch — May 2026 onwards
+- [ ] GreenPill + Celo grant applications
+- [ ] Gitcoin Passport setup (target 20+)
+- [ ] Giveth June 28 update ⚠️ ONE bundled edit only
 
 ### ⏳ POST-DOMAIN
 - [ ] Wire Resend for both modals
@@ -391,65 +369,41 @@ Carbon: 4.2 kg CO₂e per kg diverted (FAO FLW Protocol). Verra VCS in developme
 - [ ] Domain email setup
 
 ### 🔵 PHASE 2
-- [ ] RLS Phase 2 — 6 remaining tables
+- [ ] Auto-tranche smart contract (Solana)
 - [ ] Business Liquidity Gate smart contract
 - [ ] Community Treasury Fund smart contract
-- [ ] ENB token mainnet deployment
+- [ ] ENB token mainnet deployment (v2.0.0)
 - [ ] Raydium DEX listing
+- [ ] RLS Phase 2 — 6 remaining tables
 - [ ] WhatsApp Meta Cloud API notifications
-- [ ] Community Issues Board escalation pathway
-- [ ] Video submission option (30–60 seconds)
+- [ ] Community Issues Board escalation
+- [ ] Video submission (30–60s)
+- [ ] Native app / PWA
 
 ---
 
-## 21. GIVETH UPDATE SCHEDULE
-
+## 22. GIVETH UPDATE SCHEDULE
 **⚠️ DO NOT edit before 28 June 2026.**
-June 28 bundle (ONE edit): Fix title + v5.0 + Fi.co progress + Facebook link + CFSP description
+June 28 bundle: Fix title + v5.0 + Fi.co progress + Facebook + CFSP + tranche system
 
 ---
 
-## 22. PARALLEL CLAUDE WINDOWS
+## 23. PARALLEL CLAUDE WINDOWS
 
 | Window | Focus |
 |---|---|
-| **Social Media Content** | Facebook, Twitter, Stories, Gemini prompts, Buffer, Fi.co submissions |
-| **App Development** | React app, Supabase, components, bug fixes |
-| **Whitepaper / Documents** | Whitepaper, grant applications, technical documents |
+| **Social Media Content** | Facebook, Twitter, Stories, Fi.co, marketing site |
+| **App Development (Chat 6)** | React app, Supabase, v1.4.0 build, dev history |
+| **Whitepaper / Documents** | Whitepaper v5.1, glossary, grant applications |
 | **Funding** | Giveth, GreenPill, Celo, Fi.co strategy |
 
 ---
 
-## 23. FILE NAMING & SESSION END PROTOCOL
+## 24. SESSION END PROTOCOL
+Download 3 files → replace in Project Files → push to GitHub root
 
-- `CLAUDE.md` — current truth only, version increments
-- `ENB_DEVLOG.md` — append only, never delete
-- `ENB_BACKLOG.md` — update in place
-
-**End of session:** Download 3 files → replace in Project Files → push to GitHub root
+New window rule: open when (a) 100 attachments reached OR (b) new build phase begins.
 
 ---
 
-## 24. MORNING BRIEFING ROUTINE
-
-```
-Read CLAUDE.md, ENB_DEVLOG.md, and ENB_BACKLOG.md from Project Files.
-
-# ENB Morning Briefing — [Today's Date]
-
-## What Was Done Last Session
-[4–6 bullet points from most recent DEVLOG entry]
-
-## Current Canonical Versions
-- App: [from CLAUDE.md] | Whitepaper: [from CLAUDE.md] | Site: [from CLAUDE.md]
-
-## Top 3 Priorities Today
-[From 🔴 IMMEDIATE in BACKLOG]
-
-## One Decision Needed From You
-[Single most important unresolved item]
-```
-
----
-
-**Version:** 10.0 — 20 April 2026
+**Version:** 11.0 — 21 April 2026
