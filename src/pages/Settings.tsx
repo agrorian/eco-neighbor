@@ -35,7 +35,7 @@ export default function Settings() {
   const [neighbourhood, setNeighbourhood] = useState(user?.neighbourhood || '');
   const [profession, setProfession] = useState(user?.profession || '');
   const [dob, setDob] = useState((user as any)?.dob || '');
-  const [cnic, setCnic] = useState((user as any)?.cnic || '');
+  const [cnic, setCnic] = useState((user as any)?.cnic_number || '');
   const [profilePic, setProfilePic] = useState((user as any)?.profile_pic_url || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -71,7 +71,7 @@ export default function Settings() {
       neighbourhood: neighbourhood || null,
       profession: profession || null,
       dob: dob || null,
-      cnic: cnic || null,
+      cnic_number: cnic ? cnic.replace(/\D/g, '') : null,
       profile_pic_url: profilePic || null,
     }).eq('id', user.id);
 
