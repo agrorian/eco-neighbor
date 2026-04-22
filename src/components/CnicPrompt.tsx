@@ -90,23 +90,28 @@ export default function CnicPrompt() {
     if (!file) return;
     if (!file.type.startsWith('image/')) { setError('Please select an image file.'); return; }
 
+    // Show preview immediately from local file (does not depend on upload)
     const reader = new FileReader();
     reader.onload = (ev) => setCnicPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
 
     setCnicUploading(true);
+    setCnicPhotoUrl('');
     setError('');
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', 'enb_cnic_private');
+      formData.append('upload_preset', 'enb_photos'); // unsigned preset — enb_cnic_private requires server-side signing
       formData.append('folder', 'enb_cnic');
       const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', { method: 'POST', body: formData });
       const data = await res.json();
-      setCnicPhotoUrl(data.secure_url || '');
-    } catch {
-      setError('Upload failed. Please try again.');
-      setCnicPreview('');
+      if (!res.ok || !data.secure_url) {
+        throw new Error(data.error?.message || 'Upload failed');
+      }
+      setCnicPhotoUrl(data.secure_url);
+    } catch (err: any) {
+      setError('Photo upload failed — please try again or use the camera.');
+      // Keep preview so user sees their image; they can retry without re-selecting
     } finally {
       setCnicUploading(false);
       e.target.value = '';
@@ -290,12 +295,16 @@ export default function CnicPrompt() {
                 <div className="relative rounded-xl overflow-hidden border border-gray-200">
                   <img src={cnicPreview} alt="CNIC" className="w-full h-28 object-cover" />
                   {cnicUploading && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
+                      <span className="text-white text-xs">Uploading…</span>
                     </div>
                   )}
                   {cnicPhotoUrl && !cnicUploading && (
                     <div className="absolute bottom-2 left-2 bg-enb-green text-white text-xs px-2 py-0.5 rounded-full">✓ Uploaded</div>
+                  )}
+                  {!cnicPhotoUrl && !cnicUploading && (
+                    <div className="absolute bottom-2 left-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">⚠ Upload failed — retry</div>
                   )}
                   <button onClick={() => { setCnicPreview(''); setCnicPhotoUrl(''); }}
                     className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center">
