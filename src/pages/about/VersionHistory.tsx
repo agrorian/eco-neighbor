@@ -63,9 +63,19 @@ const WHITEPAPER_VERSIONS = [
     summary: "Emergency Reserve confirmed at 5%. Community Growth Reserve restructured as meritocratic tier milestone bonuses for all members. 10 Neighborhood Anchors replacing single elder. Maturation Bridge updated to 25% lifetime cap. 50 Founding Business Partners across 10 categories. Development Fund wording made vendor-agnostic."
   },
   {
-    version: "v4.9", date: "Mar 2026", type: "CURRENT",
+    version: "v4.9", date: "Mar 2026", type: "PREV",
     title: "CFSP Priority Waterfall Restructured",
     summary: "Schools and orphanages elevated from Tier 3 to Tier 1 (sub-category of Direct Human Consumption) with Pediatric Safety Standard. New Tier 3 = Processed & Value-Added Use (pickling, preservation, cooking classes). All tiers renumbered. Reward schedule updated."
+  },
+  {
+    version: "v5.0", date: "Apr 2026", type: "PREV",
+    title: "Complete Tokenomics & Governance Redesign",
+    summary: "(1) 2% burn replaced by 10% Community Treasury Contribution — self-sustaining from Day 1. (2) Business Liquidity Gate: businesses earn ENB.GLOBAL via atomic burn-and-mint on Solana. (3) Community Treasury Fund: Stability Fund 30%, Market Making 20%, Insurance Pool 20%, Reserve Buffer 30%. (4) Strategic Partnership Reserve: 75,000,000 ENB.GLOBAL for institutional partnerships. (5) Founding Business Partners removed from Founding Pool — earn via Business Liquidity Gate. (6) 10 Neighborhood Anchors become honorary. (7) Founding Pool restructured to 10 positions descending. (8) Executive Summary rewritten. (9) Web App v1.3.0: CNIC identity, real QR codes, Urdu interface, RLS security, Fi.co accepted, Giveth 100/100."
+  },
+  {
+    version: "v6.0", date: "Apr 2026", type: "CURRENT",
+    title: "Auto-Tranche System & Complete Ecosystem Sustainability Architecture",
+    summary: "(1) Auto-Tranche: autonomous 10B ENB mint when CRP reaches 10%, infinite, immutable. (2) T2+ distribution locked in Solana smart contract: CRP 70% / BPR 12% / Liquidity 8% / Dev 5% / Emergency 5% — FCP 0% permanently. (3) Mint authority held by PDA smart contract only — NOT human-accessible. (4) SWAP = Sustainable Work Achieves Prosperity — replaces redemption in all user-facing language. (5) Geographic limits removed. (6) Daily action cap locked at 3 per user per day. (7) CRP Tiered Protection Protocol: 5 fully autonomous zones. (8) Supply rationale completely rewritten. (9) All evening corrections applied."
   }
 ];
 
