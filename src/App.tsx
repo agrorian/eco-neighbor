@@ -57,7 +57,6 @@ import AdminOnboarding from '@/pages/admin/AdminOnboarding';
 import OnboardingQueue from '@/pages/onboarding-team/OnboardingQueue';
 import VolunteerApply from '@/pages/onboarding-team/VolunteerApply';
 import BusinessHistory from '@/pages/business/BusinessHistory';
-import PartnerSignup from '@/pages/directory/PartnerSignup';
 import SignUpStep1 from '@/pages/onboarding/SignUpStep1';
 import SignUpStep2 from '@/pages/onboarding/SignUpStep2';
 import ConnectWallet from '@/pages/onboarding/ConnectWallet';
