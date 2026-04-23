@@ -2,9 +2,18 @@ import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
-import { History, MapPin, AlertTriangle, CheckCircle, XCircle, Clock, Loader2, Camera } from 'lucide-react';
+import {
+  History, MapPin, AlertTriangle, CheckCircle, XCircle,
+  Clock, Loader2, Camera, ChevronRight,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  isTransformationAction,
+  isUnlocked,
+  getTimeUntilUnlock,
+  formatActionLabel,
+} from '@/lib/beforeAfter';
 
 interface Submission {
   id: string;
@@ -16,6 +25,10 @@ interface Submission {
   submitted_at: string;
   photo_urls: string[];
   gps_address: string;
+  submission_phase: string | null;
+  after_unlocks_at: string | null;
+  after_submitted: boolean | null;
+  parent_submission_id: string | null;
 }
 
 const STATUS_CONFIG: Record<string, { icon: any; color: string; bg: string; label: string }> = {
@@ -23,6 +36,47 @@ const STATUS_CONFIG: Record<string, { icon: any; color: string; bg: string; labe
   rejected: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', label: 'Rejected' },
   pending: { icon: Clock, color: 'text-enb-gold', bg: 'bg-enb-gold/10', label: 'Pending Review' },
 };
+
+function AfterPhaseBadge({ sub }: { sub: Submission }) {
+  const [, forceUpdate] = useState(0);
+
+  // Tick every minute so timer text stays fresh
+  useEffect(() => {
+    if (!sub.after_unlocks_at || sub.after_submitted) return;
+    const interval = setInterval(() => forceUpdate(n => n + 1), 60_000);
+    return () => clearInterval(interval);
+  }, [sub.after_unlocks_at, sub.after_submitted]);
+
+  if (!isTransformationAction(sub.action_type)) return null;
+  // Only show on Stage A records
+  if (sub.submission_phase === 'after' || sub.parent_submission_id) return null;
+
+  if (sub.after_submitted) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-enb-green/10 text-enb-green">
+        <CheckCircle className="w-3 h-3" /> Complete
+      </span>
+    );
+  }
+
+  if (!sub.after_unlocks_at) return null;
+
+  if (isUnlocked(sub.after_unlocks_at)) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-enb-gold/10 text-enb-gold animate-pulse">
+        🟢 After photos ready
+      </span>
+    );
+  }
+
+  const { hrs, mins } = getTimeUntilUnlock(sub.after_unlocks_at);
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+      <Clock className="w-3 h-3" />
+      After in {hrs}h {mins}m
+    </span>
+  );
+}
 
 export default function MyHistory() {
   const { user } = useUserStore();
@@ -35,8 +89,13 @@ export default function MyHistory() {
       setLoading(true);
       const { data } = await supabase
         .from('submissions')
-        .select('id, action_type, description, status, enb_awarded, rep_awarded, submitted_at, photo_urls, gps_address')
+        .select(
+          'id, action_type, description, status, enb_awarded, rep_awarded, submitted_at, ' +
+          'photo_urls, gps_address, submission_phase, after_unlocks_at, after_submitted, parent_submission_id',
+        )
         .eq('user_id', user.id)
+        // Only show Stage A / legacy records — after records are nested inside detail
+        .or('submission_phase.is.null,submission_phase.eq.before')
         .order('submitted_at', { ascending: false });
       setSubmissions(data || []);
       setLoading(false);
@@ -52,7 +111,9 @@ export default function MyHistory() {
         <History className="w-6 h-6 text-enb-gold" />
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary">My History</h1>
-          <p className="text-sm text-enb-text-secondary">{submissions.length} submission{submissions.length !== 1 ? 's' : ''} total</p>
+          <p className="text-sm text-enb-text-secondary">
+            {submissions.length} submission{submissions.length !== 1 ? 's' : ''} total
+          </p>
         </div>
       </header>
 
@@ -73,6 +134,8 @@ export default function MyHistory() {
         submissions.map(sub => {
           const cfg = STATUS_CONFIG[sub.status] || STATUS_CONFIG.pending;
           const StatusIcon = cfg.icon;
+          const isTransform = isTransformationAction(sub.action_type);
+
           return (
             <Card key={sub.id} className="border-gray-100 shadow-sm overflow-hidden">
               {/* Photo */}
@@ -91,7 +154,7 @@ export default function MyHistory() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-bold text-enb-text-primary capitalize text-base">
-                      {sub.action_type?.replace(/_/g, ' ')}
+                      {formatActionLabel(sub.action_type)}
                     </h3>
                     {sub.gps_address && (
                       <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
@@ -99,22 +162,28 @@ export default function MyHistory() {
                       </p>
                     )}
                   </div>
-                  {/* Status badge */}
-                  <span className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.color}`}>
+                  <span
+                    className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.color}`}
+                  >
                     <StatusIcon className="w-3 h-3" />
                     {cfg.label}
                   </span>
                 </div>
+
+                {/* After-phase indicator */}
+                <AfterPhaseBadge sub={sub} />
 
                 {/* Description */}
                 {sub.description && (
                   <p className="text-sm text-enb-text-secondary line-clamp-2">{sub.description}</p>
                 )}
 
-                {/* Rewards row */}
+                {/* Rewards / status row */}
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">
-                    {new Date(sub.submitted_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {new Date(sub.submitted_at).toLocaleDateString('en-PK', {
+                      day: 'numeric', month: 'short', year: 'numeric',
+                    })}
                   </span>
                   {sub.status === 'approved' && (
                     <div className="flex gap-3">
@@ -130,8 +199,24 @@ export default function MyHistory() {
                   )}
                 </div>
 
-                {/* Report This button — only on approved submissions (already verified real actions) */}
-                {sub.status === 'approved' && (
+                {/* View Detail — for transformation actions */}
+                {isTransform && (
+                  <div className="pt-1 border-t border-gray-100">
+                    <Link to={`/submission/${sub.id}`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-enb-green hover:bg-enb-green/5 hover:text-enb-green text-xs font-medium flex items-center justify-center gap-1"
+                      >
+                        View Details & Submit After Photos
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+
+                {/* Report concern — only on approved non-transformation submissions */}
+                {sub.status === 'approved' && !isTransform && (
                   <div className="pt-1 border-t border-gray-100">
                     <Link to={`/report?submission=${sub.id}&target=${user.id}`}>
                       <Button

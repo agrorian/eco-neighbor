@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Camera, MapPin, CheckCircle, Loader2, AlertCircle, X, Plus, Users, Clock, Weight, TreePine, Car, Wrench, Package, AlertTriangle } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Camera, MapPin, CheckCircle, Loader2, AlertCircle, X, Plus, Users, Clock, Weight, TreePine, Car, Wrench, Package, AlertTriangle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -12,177 +12,19 @@ interface ActionFormProps {
 
 const MAX_PHOTOS = 5;
 
-// Behavioural CAPTCHA — 15 questions, randomised correct answer positions
-const CAPTCHA_QUESTIONS = [
-
-  // ── CATEGORY 1: LOCAL KNOWLEDGE (proves they know Rawalpindi / Pakistan) ──
-  {
-    q: 'Chaklala Scheme 3 kis shehar mein hai?',
-    options: ['Lahore', 'Rawalpindi', 'Karachi', 'Peshawar'],
-    correct: 1,
-  },
-  {
-    q: 'Pakistan mein qaumi shanaakhti card ka naam kya hai?',
-    options: ['Aadhar Card', 'CNIC', 'NIC', 'Smart Card'],
-    correct: 1,
-  },
-  {
-    q: 'Pakistan mein rozana kitni namazein farz hain?',
-    options: ['3', '4', '5', '6'],
-    correct: 2,
-  },
-  {
-    q: 'Rawalpindi kis sube mein hai?',
-    options: ['Sindh', 'KPK', 'Punjab', 'Balochistan'],
-    correct: 2,
-  },
-  {
-    q: 'Pakistan ka qaumi khel kaunsa hai?',
-    options: ['Cricket', 'Hockey', 'Football', 'Kabaddi'],
-    correct: 1,
-  },
-  {
-    q: 'Mohalle ki safai ke liye kaun zimmedar hai?',
-    options: ['Sirf government', 'Har mohalle wala', 'Sirf safai wale', 'Koi nahi'],
-    correct: 1,
-  },
-  {
-    q: 'Pakistan ka qaumi phool kaunsa hai?',
-    options: ['Gulab', 'Chameli', 'Yasmin', 'Lotus'],
-    correct: 1,
-  },
-
-  // ── CATEGORY 2: ENB ECOSYSTEM KNOWLEDGE (proves they read the app) ──
-  {
-    q: 'ENB ka matlab kya hai?',
-    options: ['Eco-Neighbor', 'Energy Building', 'Earn Now Better', 'Eco Network Bank'],
-    correct: 0,
-  },
-  {
-    q: 'Helper Tier ke liye kitne Rep Score chahiye?',
-    options: ['1,000', '2,500', '5,000', '10,000'],
-    correct: 2,
-  },
-  {
-    q: 'Kya ENB.LOCAL ko DEX par becha ja sakta hai?',
-    options: ['Haan, kabhi bhi', 'Nahi, yeh non-tradeable hai', 'Haan, sirf Pillar Tier ke liye', 'Haan, 1 saal baad'],
-    correct: 1,
-  },
-  {
-    q: 'Har submission ko kitne moderators review karte hain?',
-    options: ['1', '2', '3', '4'],
-    correct: 1,
-  },
-  {
-    q: 'CNIC verify nahi hua toh aapke ENB ka kya hoga?',
-    options: ['Delete ho jayenge', 'Locked rahenge', 'Double ho jayenge', 'Kuch nahi hoga'],
-    correct: 1,
-  },
-  {
-    q: 'Neighbourhood Cleanup karne par kitne ENB milte hain?',
-    options: ['500', '750', '1,000', '2,000'],
-    correct: 2,
-  },
-  {
-    q: 'Maturation Bridge ke liye minimum Rep Score kya hai?',
-    options: ['5,000', '20,000', '50,000', '100,000'],
-    correct: 2,
-  },
-  {
-    q: 'ENB app mein action submit karte waqt photo kaise leni chahiye?',
-    options: ['Gallery se koi bhi photo', 'Live camera se', 'Internet se download karke', 'Screenshot se'],
-    correct: 1,
-  },
-  {
-    q: 'Tree planting karne par kitne ENB milte hain?',
-    options: ['500', '1,000', '1,500', '2,000'],
-    correct: 3,
-  },
-  {
-    q: 'ENB community channel kaun sa hai?',
-    options: ['Telegram', 'WhatsApp', 'Facebook', 'Discord'],
-    correct: 1,
-  },
-  {
-    q: 'Referral code se apne dost ko join karane par kitne ENB milte hain?',
-    options: ['100', '250', '500', '1,000'],
-    correct: 2,
-  },
-
-  // ── CATEGORY 3: CIVIC AWARENESS (reinforces mission values) ──
-  {
-    q: 'Agar aap sadak par illegal kachra dekhen toh kya karein?',
-    options: ['Ignore karein', 'ENB app mein report karein', 'Khud bhi wahan daalein', 'Doosron ko batayein aur chalte rahein'],
-    correct: 1,
-  },
-  {
-    q: 'Inme se kaunsa ENB community action hai?',
-    options: ['TV dekhna', 'Social media chalana', 'Darakhton ki plantng', 'Dukan mein baithna'],
-    correct: 2,
-  },
-  {
-    q: 'Apne mohalle ki safai karna kaisi baat hai?',
-    options: ['Bekar kaam', 'Sirf government ka kaam', 'Puri community ki zimmedari', 'Waste of time'],
-    correct: 2,
-  },
-  {
-    q: 'Khanay ki fizool barbadi rokne se kya faida hota hai?',
-    options: ['Koi faida nahi', 'Maahol behtar hota hai aur zarooratmandoN ki madad hoti hai', 'Sirf paisa bachta hai', 'Koi farq nahi padta'],
-    correct: 1,
-  },
-  {
-    q: 'Hunar sikhana (skill workshop) ENB mein kyun reward hota hai?',
-    options: ['Kyunke yeh asaan hai', 'Kyunke yeh community ko strong banata hai', 'Kyunke yeh fun hai', 'Kyunke rules mein hai'],
-    correct: 1,
-  },
-  {
-    q: 'Which of these is a valid ENB civic action?',
-    options: ['Watching TV at home', 'Planting a tree in the neighbourhood', 'Sleeping all day', 'Shopping at a mall'],
-    correct: 1,
-  },
-  {
-    q: 'If you see a broken streetlight, the right action is:',
-    options: ['Ignore it', 'Report it on the ENB app to earn ENB', 'Break another one', 'Tell your friends and forget about it'],
-    correct: 1,
-  },
-  {
-    q: 'Why does ENB reward carpooling?',
-    options: ['It saves money only', 'It reduces traffic and air pollution', 'It is faster than driving alone', 'It is a fun activity'],
-    correct: 1,
-  },
-  {
-    q: 'Food sharing in ENB is rewarded because:',
-    options: ['It is easy to do', 'It reduces waste and feeds people in need', 'It is a tradition', 'It earns the most ENB'],
-    correct: 1,
-  },
-  {
-    q: 'What makes ENB different from regular money?',
-    options: ['You can invest it in stocks', 'It is earned only through verified community service — not bought', 'It can be exchanged for dollars', 'It expires after one month'],
-    correct: 1,
-  },
-  {
-    q: 'ENB.LOCAL tokens ka maqsad kya hai?',
-    options: ['DEX par trading karna', 'Mahalle mein services aur discounts ke liye kharch karna', 'Bank mein jama karna', 'Online shopping ke liye'],
-    correct: 1,
-  },
-  {
-    q: 'Ek achha shehri apne mohalle ke liye kya karta hai?',
-    options: ['Sirf apne ghar ki fikr karta hai', 'Doosron ki madad karta hai aur maahol behtar banata hai', 'Bahar nahi jaata', 'Sirf social media use karta hai'],
-    correct: 1,
-  },
-];
-
-interface PhotoItem {
-  preview: string;
-  cloudinaryUrl: string | null;
-  uploading: boolean;
-  file: File;
+// ─── Per-action config ──────────────────────────────────────────────────────
+interface FieldDef {
+  id: string;
+  label: string;
+  type: 'text' | 'number' | 'textarea' | 'select' | 'multiselect';
+  placeholder?: string;
+  options?: string[];
+  required: boolean;
 }
 
-// ─── Per-action config ──────────────────────────────────────────────────────
 const ACTION_CONFIG: Record<string, {
   title: string;
-  hint: string;             // what photos to take
+  hint: string;
   photoLabel: string;
   fields: FieldDef[];
 }> = {
@@ -198,7 +40,6 @@ const ACTION_CONFIG: Record<string, {
       { id: 'notes', label: 'Any additional notes', type: 'textarea', placeholder: 'Type of waste found, any hazardous items, etc.', required: false },
     ],
   },
-
   recycling_dropoff: {
     title: 'Recycling Drop-off',
     hint: 'Photo at the recycling centre with your items visible. Include the centre name/sign if possible.',
@@ -210,7 +51,6 @@ const ACTION_CONFIG: Record<string, {
       { id: 'centre_name', label: 'Recycling centre / drop-off point', type: 'text', placeholder: 'e.g. Chaklala Waste Collection Point', required: true },
     ],
   },
-
   carpool: {
     title: 'Carpool',
     hint: 'Photo inside the vehicle showing multiple passengers. Faces can be blurred if preferred.',
@@ -223,7 +63,6 @@ const ACTION_CONFIG: Record<string, {
       { id: 'distance_km', label: 'Approximate distance (km)', type: 'number', placeholder: 'e.g. 12', required: false },
     ],
   },
-
   food_sharing: {
     title: 'Food Sharing',
     hint: 'Photo of the food being shared and the recipients (or the handover moment).',
@@ -237,7 +76,6 @@ const ACTION_CONFIG: Record<string, {
         options: ['Families', 'Daily wage workers', 'Elderly residents', 'Children', 'Mixed community'] },
     ],
   },
-
   skill_workshop: {
     title: 'Skill Workshop',
     hint: 'Photo of the session in progress showing you teaching and attendees participating.',
@@ -251,7 +89,6 @@ const ACTION_CONFIG: Record<string, {
       { id: 'notes', label: 'What was covered', type: 'textarea', placeholder: 'Brief summary of what was taught...', required: false },
     ],
   },
-
   infrastructure_report: {
     title: 'Infrastructure Report',
     hint: 'Clear photo of the issue. Include context (street sign, landmark) so location can be verified.',
@@ -266,7 +103,6 @@ const ACTION_CONFIG: Record<string, {
         options: ['No — first report', 'Yes — still unresolved', 'Unknown'] },
     ],
   },
-
   trade_job: {
     title: 'Trade Job',
     hint: 'Photo of the completed work. Before/after photos are strongly recommended for higher approval rate.',
@@ -282,7 +118,6 @@ const ACTION_CONFIG: Record<string, {
         options: ['Customer present for photo', 'Customer confirmed by WhatsApp', 'Not yet confirmed'] },
     ],
   },
-
   youth_mentoring: {
     title: 'Youth Mentoring',
     hint: 'Photo of the mentoring session. The young person\'s face can be partially obscured for privacy.',
@@ -297,7 +132,6 @@ const ACTION_CONFIG: Record<string, {
         options: ['One-time session', 'Session 2', 'Session 3', 'Session 4+', 'Ongoing regular sessions'] },
     ],
   },
-
   tree_planting: {
     title: 'Tree Planting',
     hint: 'Photo of you planting the tree, showing the sapling in the ground with surrounding area visible.',
@@ -311,7 +145,6 @@ const ACTION_CONFIG: Record<string, {
         options: ['I will water regularly', 'Community member will water', 'Rain-fed / natural', 'Irrigation system nearby'] },
     ],
   },
-
   waste_reporting: {
     title: 'Waste Reporting',
     hint: 'Clear photo showing the dumping site. Include a landmark for location verification.',
@@ -328,17 +161,7 @@ const ACTION_CONFIG: Record<string, {
   },
 };
 
-// ─── Field types ────────────────────────────────────────────────────────────
-interface FieldDef {
-  id: string;
-  label: string;
-  type: 'text' | 'number' | 'textarea' | 'select' | 'multiselect';
-  placeholder?: string;
-  options?: string[];
-  required: boolean;
-}
-
-// ─── Custom fields renderer ─────────────────────────────────────────────────
+// ─── Custom fields renderer ──────────────────────────────────────────────────
 function ActionFields({ fields, values, onChange }: {
   fields: FieldDef[];
   values: Record<string, any>;
@@ -352,72 +175,34 @@ function ActionFields({ fields, values, onChange }: {
             {field.label}
             {field.required && <span className="text-red-500 ml-1">*</span>}
           </label>
-
           {field.type === 'text' && (
-            <Input
-              value={values[field.id] || ''}
-              onChange={e => onChange(field.id, e.target.value)}
-              placeholder={field.placeholder}
-            />
+            <Input value={values[field.id] || ''} onChange={e => onChange(field.id, e.target.value)} placeholder={field.placeholder} />
           )}
-
           {field.type === 'number' && (
-            <Input
-              type="number"
-              min="1"
-              value={values[field.id] || ''}
-              onChange={e => onChange(field.id, e.target.value)}
-              placeholder={field.placeholder}
-            />
+            <Input type="number" min="1" value={values[field.id] || ''} onChange={e => onChange(field.id, e.target.value)} placeholder={field.placeholder} />
           )}
-
           {field.type === 'textarea' && (
-            <Textarea
-              value={values[field.id] || ''}
-              onChange={e => onChange(field.id, e.target.value)}
-              placeholder={field.placeholder}
-              className="resize-none h-20 bg-white"
-            />
+            <Textarea value={values[field.id] || ''} onChange={e => onChange(field.id, e.target.value)} placeholder={field.placeholder} className="resize-none h-20 bg-white" />
           )}
-
           {field.type === 'select' && (
             <div className="flex flex-col gap-1.5">
               {field.options!.map(opt => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => onChange(field.id, opt)}
-                  className={`text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                    values[field.id] === opt
-                      ? 'bg-enb-green text-white border-enb-green'
-                      : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green/40'
-                  }`}
-                >
+                <button key={opt} type="button" onClick={() => onChange(field.id, opt)}
+                  className={`text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${values[field.id] === opt ? 'bg-enb-green text-white border-enb-green' : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green/40'}`}>
                   {opt}
                 </button>
               ))}
             </div>
           )}
-
           {field.type === 'multiselect' && (
             <div className="flex flex-wrap gap-2">
               {field.options!.map(opt => {
                 const selected: string[] = values[field.id] || [];
                 const isSelected = selected.includes(opt);
                 return (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => {
-                      if (isSelected) onChange(field.id, selected.filter(s => s !== opt));
-                      else onChange(field.id, [...selected, opt]);
-                    }}
-                    className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-all ${
-                      isSelected
-                        ? 'bg-enb-green text-white border-enb-green'
-                        : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green/40'
-                    }`}
-                  >
+                  <button key={opt} type="button"
+                    onClick={() => { if (isSelected) onChange(field.id, selected.filter(s => s !== opt)); else onChange(field.id, [...selected, opt]); }}
+                    className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-all ${isSelected ? 'bg-enb-green text-white border-enb-green' : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green/40'}`}>
                     {opt}
                   </button>
                 );
@@ -430,12 +215,46 @@ function ActionFields({ fields, values, onChange }: {
   );
 }
 
-// ─── Main component ──────────────────────────────────────────────────────────
+// ─── reCAPTCHA v3 helpers ────────────────────────────────────────────────────
+declare global { interface Window { grecaptcha: any; } }
+
+function loadRecaptchaScript(siteKey: string): Promise<void> {
+  return new Promise(resolve => {
+    if (window.grecaptcha) { resolve(); return; }
+    const existing = document.getElementById('recaptcha-script');
+    if (existing) { existing.addEventListener('load', () => resolve()); return; }
+    const script = document.createElement('script');
+    script.id = 'recaptcha-script';
+    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.async = true;
+    script.onload = () => resolve();
+    document.head.appendChild(script);
+  });
+}
+
+async function getRecaptchaToken(siteKey: string): Promise<string> {
+  try {
+    await loadRecaptchaScript(siteKey);
+    await new Promise<void>(resolve => window.grecaptcha.ready(resolve));
+    return await window.grecaptcha.execute(siteKey, { action: 'submit_action' });
+  } catch {
+    return 'recaptcha-error';
+  }
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+interface PhotoItem {
+  preview: string;
+  cloudinaryUrl: string | null;
+  uploading: boolean;
+  file: File;
+}
+
 export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormProps) {
   const config = ACTION_CONFIG[actionType] || {
     title: actionType.replace(/_/g, ' '),
-    hint: 'Take a clear photo showing your action.',
-    photoLabel: 'Photo Proof',
+    hint: 'Take a clear photo of your civic action.',
+    photoLabel: 'Action Photo',
     fields: [],
   };
 
@@ -446,27 +265,21 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   const [gpsAddress, setGpsAddress] = useState<string | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [cameraError, setCameraError] = useState('');
-  const [captchaIdx] = useState(() => Math.floor(Math.random() * CAPTCHA_QUESTIONS.length));
-  const [captchaAnswer, setCaptchaAnswer] = useState<number | null>(null);
-  const [captchaFailed, setCaptchaFailed] = useState(false);
-  const [formStartTime] = useState(Date.now());
-  const [touchEvents, setTouchEvents] = useState(0);
   const [cameraActive, setCameraActive] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const captcha = CAPTCHA_QUESTIONS[captchaIdx];
+  const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
 
+  // Preload reCAPTCHA v3 script on mount (invisible — no UI shown to user)
   useEffect(() => {
-    const handler = () => setTouchEvents(n => n + 1);
-    window.addEventListener('touchstart', handler, { passive: true });
-    return () => window.removeEventListener('touchstart', handler);
-  }, []);
-
-  useEffect(() => {
+    if (RECAPTCHA_SITE_KEY) {
+      loadRecaptchaScript(RECAPTCHA_SITE_KEY).catch(() => null);
+    }
     return () => { streamRef.current?.getTracks().forEach(t => t.stop()); };
-  }, []);
+  }, [RECAPTCHA_SITE_KEY]);
 
   const openCamera = async () => {
     if (photos.length >= MAX_PHOTOS) return;
@@ -493,24 +306,21 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           ? 'Camera permission denied. Please allow camera access in your browser settings.'
           : err?.name === 'NotFoundError'
           ? 'No camera found on this device.'
-          : 'Camera access denied. Civic action photos must be taken live — gallery uploads not accepted.'
+          : 'Camera access denied. Civic action photos must be taken live — gallery uploads not accepted.',
       );
     }
   };
 
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const video = videoRef.current; const canvas = canvasRef.current;
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     canvas.getContext('2d')?.drawImage(video, 0, 0);
-    canvas.toBlob((blob) => {
+    canvas.toBlob(blob => {
       if (!blob) return;
       const file = new File([blob], `action_${Date.now()}.jpg`, { type: 'image/jpeg' });
       const preview = canvas.toDataURL('image/jpeg', 0.8);
-      const newPhoto: PhotoItem = { preview, cloudinaryUrl: null, uploading: true, file };
-      setPhotos(prev => [...prev, newPhoto]);
+      setPhotos(prev => [...prev, { preview, cloudinaryUrl: null, uploading: true, file }]);
       streamRef.current?.getTracks().forEach(t => t.stop());
       setCameraActive(false);
       uploadPhoto(file, preview);
@@ -525,41 +335,30 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       formData.append('file', file);
       formData.append('upload_preset', preset);
       formData.append('folder', 'enb_submissions');
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST', body: formData,
-      });
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: formData });
       const data = await res.json();
-      setPhotos(prev => prev.map(p =>
-        p.preview === preview
-          ? { ...p, cloudinaryUrl: data.secure_url || null, uploading: false }
-          : p
-      ));
+      setPhotos(prev => prev.map(p => p.preview === preview ? { ...p, cloudinaryUrl: data.secure_url || null, uploading: false } : p));
     } catch {
-      setPhotos(prev => prev.map(p =>
-        p.preview === preview ? { ...p, uploading: false } : p
-      ));
+      setPhotos(prev => prev.map(p => p.preview === preview ? { ...p, uploading: false } : p));
     }
   };
 
-  const removePhoto = (preview: string) => {
-    setPhotos(prev => prev.filter(p => p.preview !== preview));
-  };
+  const removePhoto = (preview: string) => setPhotos(prev => prev.filter(p => p.preview !== preview));
 
   const handleGetLocation = () => {
     setLoadingLocation(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      pos => {
         setGpsLat(pos.coords.latitude);
         setGpsLng(pos.coords.longitude);
         setGpsAddress(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
         setLoadingLocation(false);
       },
       () => setLoadingLocation(false),
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000 },
     );
   };
 
-  // Check all required custom fields are filled
   const requiredFieldsMet = config.fields
     .filter(f => f.required)
     .every(f => {
@@ -569,17 +368,18 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     });
 
   const anyUploading = photos.some(p => p.uploading);
-  const canSubmit = photos.length > 0 && !anyUploading && requiredFieldsMet && gpsLat && captchaAnswer !== null;
+  const canSubmit = photos.length > 0 && !anyUploading && requiredFieldsMet && !!gpsLat && !submitting;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
-    if (captchaAnswer !== captcha.correct) { setCaptchaFailed(true); return; }
+    setSubmitting(true);
 
-    const timeMs = Date.now() - formStartTime;
-    const captchaScore = parseFloat((Math.min(timeMs / 10000, 1) * 0.4 + Math.min(touchEvents / 5, 1) * 0.3 + 0.3).toFixed(2));
+    // Get reCAPTCHA v3 token (invisible — no friction for user)
+    const recaptchaToken = RECAPTCHA_SITE_KEY
+      ? await getRecaptchaToken(RECAPTCHA_SITE_KEY)
+      : 'no-recaptcha-configured';
+
     const uploadedUrls = photos.filter(p => p.cloudinaryUrl).map(p => p.cloudinaryUrl as string);
-
-    // Serialise custom fields into a structured description string
     const fieldLines = config.fields
       .filter(f => fieldValues[f.id] !== undefined && fieldValues[f.id] !== '')
       .map(f => {
@@ -587,22 +387,23 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         return `${f.label}: ${val}`;
       });
 
-    const structuredDescription = fieldLines.join('\n');
-
     onSubmit({
       actionType,
       photo: uploadedUrls[0] || photos[0].preview,
       photoUrls: uploadedUrls.length > 0 ? uploadedUrls : photos.map(p => p.preview),
       photoCount: photos.length,
-      description: structuredDescription,
+      description: fieldLines.join('\n'),
       customFields: fieldValues,
       gpsLat,
       gpsLng,
       gpsAddress,
       imageSource: 'CAMERA',
-      captchaScore,
+      captchaScore: null,        // legacy field — kept for DB compatibility
+      recaptchaToken,            // v3 token for server-side verification
       timestamp: new Date().toISOString(),
     });
+
+    setSubmitting(false);
   };
 
   return (
@@ -614,7 +415,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         <div className="w-16" />
       </div>
 
-      {/* Photo guidance hint */}
+      {/* Photo guidance */}
       <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-4 flex items-start gap-3">
         <Camera className="w-5 h-5 text-enb-green flex-shrink-0 mt-0.5" />
         <div>
@@ -623,7 +424,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         </div>
       </div>
 
-      {/* ── Photo Section ── */}
+      {/* Photo section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-enb-text-primary">
@@ -631,72 +432,40 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           </label>
           <span className="text-xs text-gray-400">{photos.length}/{MAX_PHOTOS} photos</span>
         </div>
-
         {cameraActive && (
           <div className="relative rounded-xl overflow-hidden bg-black">
-            <video
-              ref={videoRef} autoPlay playsInline muted
-              className="w-full max-h-64 object-cover rounded-xl"
-              onClick={() => videoRef.current?.play()}
-            />
+            <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-64 object-cover rounded-xl" onClick={() => videoRef.current?.play()} />
             <canvas ref={canvasRef} className="hidden" />
-            <Button
-              onClick={capturePhoto}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white"
-            >
+            <Button onClick={capturePhoto} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white">
               <Camera className="w-6 h-6" />
             </Button>
           </div>
         )}
-
         {photos.length > 0 && (
           <div className="flex gap-2 flex-wrap">
             {photos.map((photo, idx) => (
               <div key={photo.preview} className="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
                 <img src={photo.preview} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                {photo.uploading && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <Loader2 className="w-5 h-5 text-white animate-spin" />
-                  </div>
-                )}
-                {!photo.uploading && photo.cloudinaryUrl && (
-                  <div className="absolute bottom-1 left-1 bg-enb-green text-white text-[10px] px-1.5 py-0.5 rounded-full">✓</div>
-                )}
-                {!photo.uploading && (
-                  <button
-                    onClick={() => removePhoto(photo.preview)}
-                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
+                {photo.uploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Loader2 className="w-5 h-5 text-white animate-spin" /></div>}
+                {!photo.uploading && photo.cloudinaryUrl && <div className="absolute bottom-1 left-1 bg-enb-green text-white text-[10px] px-1.5 py-0.5 rounded-full">✓</div>}
+                {!photo.uploading && <button onClick={() => removePhoto(photo.preview)} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"><X className="w-3 h-3" /></button>}
               </div>
             ))}
             {photos.length < MAX_PHOTOS && !cameraActive && (
-              <button
-                onClick={openCamera}
-                className="w-24 h-24 rounded-xl border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 flex flex-col items-center justify-center gap-1 text-enb-green flex-shrink-0"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="text-xs font-medium">Add</span>
+              <button onClick={openCamera} className="w-24 h-24 rounded-xl border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 flex flex-col items-center justify-center gap-1 text-enb-green flex-shrink-0">
+                <Plus className="w-5 h-5" /><span className="text-xs font-medium">Add</span>
               </button>
             )}
           </div>
         )}
-
         {photos.length === 0 && !cameraActive && (
           <div>
-            <Button
-              onClick={openCamera}
-              className="w-full h-24 border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 text-enb-green flex flex-col gap-2 rounded-xl"
-            >
-              <Camera className="w-8 h-8" />
-              <span className="text-sm font-medium">Open Camera</span>
+            <Button onClick={openCamera} className="w-full h-24 border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 text-enb-green flex flex-col gap-2 rounded-xl">
+              <Camera className="w-8 h-8" /><span className="text-sm font-medium">Open Camera</span>
             </Button>
             {cameraError && (
               <div className="mt-2 p-3 bg-red-50 rounded-lg flex items-start gap-2 text-sm text-red-600">
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                {cameraError}
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />{cameraError}
               </div>
             )}
             <p className="text-xs text-gray-400 mt-1 text-center">Gallery uploads not accepted — live photos only</p>
@@ -704,7 +473,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         )}
       </div>
 
-      {/* ── GPS Location ── */}
+      {/* GPS Location */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-enb-text-primary">GPS Location <span className="text-red-500">*</span></label>
         <div
@@ -719,7 +488,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         </div>
       </div>
 
-      {/* ── Custom Action Fields ── */}
+      {/* Custom action fields */}
       {config.fields.length > 0 && (
         <div className="space-y-1">
           <p className="text-sm font-semibold text-enb-text-primary mb-3">Action Details</p>
@@ -731,43 +500,30 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         </div>
       )}
 
-      {/* ── CAPTCHA ── */}
-      <div className="space-y-2 bg-enb-green/5 border border-enb-green/20 rounded-xl p-4">
-        <label className="text-sm font-bold text-enb-text-primary">Quick Check 🌿</label>
-        <p className="text-sm text-enb-text-secondary">{captcha.q}</p>
-        <div className="flex flex-col gap-2 mt-2">
-          {captcha.options.map((opt, i) => (
-            <button
-              key={i}
-              onClick={() => { setCaptchaAnswer(i); setCaptchaFailed(false); }}
-              className={`text-left p-3 rounded-lg border text-sm font-medium transition-all ${captchaAnswer === i ? 'bg-enb-green text-white border-enb-green' : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green'}`}
-            >
-              {opt}
-            </button>
-          ))}
+      {/* reCAPTCHA v3 notice (replaces the old quiz CAPTCHA) */}
+      {RECAPTCHA_SITE_KEY && (
+        <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+          <Shield className="w-3.5 h-3.5 flex-shrink-0 text-gray-400" />
+          <span>This submission is protected by Google reCAPTCHA. By submitting you agree to Google's <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline">Terms</a>.</span>
         </div>
-        {captchaFailed && (
-          <p className="text-sm text-red-500 mt-1">⚠️ Please answer the question correctly to continue.</p>
-        )}
-      </div>
+      )}
 
-      {/* ── Submit ── */}
+      {/* Submit */}
       <Button
         onClick={handleSubmit}
         disabled={!canSubmit}
         className="w-full h-12 text-lg shadow-lg shadow-enb-green/20 bg-enb-green hover:bg-enb-green/90 text-white"
       >
-        {anyUploading
+        {submitting
+          ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing...</>
+          : anyUploading
           ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Uploading photos...</>
           : 'Review Submission'}
       </Button>
 
-      {/* Validation hint */}
-      {!canSubmit && photos.length > 0 && !anyUploading && (
+      {!canSubmit && photos.length > 0 && !anyUploading && !submitting && (
         <p className="text-xs text-center text-gray-400">
-          {!gpsLat ? '📍 GPS location required' :
-           !requiredFieldsMet ? '📋 Please fill all required fields' :
-           captchaAnswer === null ? '🌿 Please answer the quick check' : ''}
+          {!gpsLat ? '📍 GPS location required' : !requiredFieldsMet ? '📋 Please fill all required fields' : ''}
         </p>
       )}
     </div>

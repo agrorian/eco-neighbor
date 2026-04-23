@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import { isTransformationAction, formatActionLabel } from '@/lib/beforeAfter';
+import PairedSubmissionView from '@/components/PairedSubmissionView';
 
 interface Assignment {
   id: string;
@@ -28,12 +30,12 @@ export default function ModQueue() {
   const [decisions, setDecisions] = useState<Record<string, { decision: string; reason: string }>>({});
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [toast, setToast] = useState('');
-  const [timers, setTimers] = useState<Record<string, number>>({});   // seconds elapsed per assignment
+  const [timers, setTimers] = useState<Record<string, number>>({});
   const timerRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
   useEffect(() => { fetchAssignments(); }, []);
 
-  // Start a 30s timer for each assignment when it appears
+  // 30-second minimum review timer per assignment
   useEffect(() => {
     assignments.forEach(a => {
       if (!timerRefs.current[a.id]) {
@@ -43,7 +45,6 @@ export default function ModQueue() {
         }, 1000);
       }
     });
-    // Clean up timers for assignments no longer shown
     return () => {
       Object.keys(timerRefs.current).forEach(id => {
         if (!assignments.find(a => a.id === id)) {
@@ -63,7 +64,6 @@ export default function ModQueue() {
     if (!user) return;
     setLoading(true);
 
-    // Fetch all assignments where this user is mod1 OR mod2
     const { data: assgn } = await supabase
       .from('moderator_assignments')
       .select('*')
@@ -71,7 +71,6 @@ export default function ModQueue() {
       .eq('escalation_flag', false);
 
     if (assgn && assgn.length > 0) {
-      // Filter: only show ones where THIS mod hasn't decided yet
       const pending = assgn.filter(a => {
         const isM1 = a.mod1_id === user.id;
         return isM1 ? !a.decision1 : !a.decision2;
@@ -80,7 +79,9 @@ export default function ModQueue() {
       if (pending.length > 0) {
         const subIds = pending.map(a => a.submission_id);
         const { data: subs } = await supabase
-          .from('submissions').select('*').in('id', subIds);
+          .from('submissions')
+          .select('*')
+          .in('id', subIds);
         const subMap = new Map((subs || []).map(s => [s.id, s]));
         setAssignments(pending.map(a => ({ ...a, submission: subMap.get(a.submission_id) })));
       } else {
@@ -114,9 +115,6 @@ export default function ModQueue() {
       return;
     }
 
-    // Always call evaluate — the SQL function checks status=pending internally
-    // so double-processing is impossible. This eliminates the race condition
-    // where a re-fetch returns stale data and evaluate never gets called.
     const { data: result } = await supabase.rpc('evaluate_mod_decision', { p_assignment_id: assignment.id });
 
     if (result?.status === 'approved') {
@@ -179,54 +177,88 @@ export default function ModQueue() {
           const sub = a.submission;
           const dec = decisions[a.id] || { decision: '', reason: '' };
           const isProcessing = submitting === a.id;
+          const isTransformation = sub?.action_type ? isTransformationAction(sub.action_type) : false;
+
           return (
             <Card key={a.id} className="border-gray-100 shadow-sm overflow-hidden">
-              {/* Photo */}
-              {sub?.photo_urls?.[0] && (
-                <div className="h-52 overflow-hidden bg-gray-100">
-                  <img src={sub.photo_urls[0]} alt="submission" className="w-full h-full object-cover" />
-                </div>
+
+              {/* ── TRANSFORMATION: Paired Before/After view ─────────────── */}
+              {isTransformation ? (
+                <CardContent className="p-5 space-y-4">
+                  {/* Action header */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-enb-text-primary text-lg">
+                        {formatActionLabel(sub?.action_type || '')}
+                      </h3>
+                      <p className="text-xs text-blue-600 font-medium mt-0.5">
+                        📸 Transformation action — Before &amp; After required
+                      </p>
+                    </div>
+                    <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">
+                      {sub?.submitted_at
+                        ? new Date(sub.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : ''}
+                    </span>
+                  </div>
+
+                  {/* PairedSubmissionView — shows Before + After side by side */}
+                  <PairedSubmissionView beforeSubmission={sub} />
+
+                  {sub?.description && (
+                    <p className="text-sm text-enb-text-secondary bg-gray-50 rounded-lg p-3">{sub.description}</p>
+                  )}
+                </CardContent>
+              ) : (
+                /* ── STANDARD: Single-phase submission ───────────────────── */
+                <>
+                  {sub?.photo_urls?.[0] && (
+                    <div className="h-52 overflow-hidden bg-gray-100">
+                      <img src={sub.photo_urls[0]} alt="submission" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <CardContent className="p-5 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-enb-text-primary capitalize text-lg">
+                          {sub?.action_type?.replace(/_/g, ' ')}
+                        </h3>
+                        {sub?.gps_lat && sub?.gps_lng ? (
+                          <a
+                            href={`https://maps.google.com/?q=${sub.gps_lat},${sub.gps_lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-enb-green flex items-center gap-1 mt-1 hover:underline"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <MapPin className="w-3 h-3" />
+                            {sub.gps_address || `${Number(sub.gps_lat).toFixed(5)}, ${Number(sub.gps_lng).toFixed(5)}`}
+                            <span className="text-[10px] text-gray-400">(tap to verify)</span>
+                          </a>
+                        ) : (
+                          <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                            <MapPin className="w-3 h-3" />GPS not recorded
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-lg block">
+                          {sub?.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                        </span>
+                        <span className="text-xs text-gray-400 mt-0.5 block">
+                          {sub?.submitted_at ? new Date(sub.submitted_at).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                      </div>
+                    </div>
+                    {sub?.description && (
+                      <p className="text-sm text-enb-text-secondary bg-gray-50 rounded-lg p-3">{sub.description}</p>
+                    )}
+                  </CardContent>
+                </>
               )}
 
-              <CardContent className="p-5 space-y-4">
-                {/* Action info */}
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-enb-text-primary capitalize text-lg">
-                      {sub?.action_type?.replace(/_/g, ' ')}
-                    </h3>
-                    {sub?.gps_lat && sub?.gps_lng ? (
-                      <a
-                        href={`https://maps.google.com/?q=${sub.gps_lat},${sub.gps_lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-enb-green flex items-center gap-1 mt-1 hover:underline"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <MapPin className="w-3 h-3" />
-                        {sub.gps_address || `${Number(sub.gps_lat).toFixed(5)}, ${Number(sub.gps_lng).toFixed(5)}`}
-                        <span className="text-[10px] text-gray-400">(tap to verify)</span>
-                      </a>
-                    ) : (
-                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                        <MapPin className="w-3 h-3" />GPS not recorded
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-lg block">
-                      {sub?.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
-                    </span>
-                    <span className="text-xs text-gray-400 mt-0.5 block">
-                      {sub?.submitted_at ? new Date(sub.submitted_at).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' }) : ''}
-                    </span>
-                  </div>
-                </div>
-
-                {sub?.description && (
-                  <p className="text-sm text-enb-text-secondary bg-gray-50 rounded-lg p-3">{sub.description}</p>
-                )}
-
+              {/* ── DECISION SECTION (same for all submission types) ───────── */}
+              <CardContent className="px-5 pb-5 pt-0 space-y-4 border-t border-gray-100">
                 {/* Escalation warning */}
                 {a.escalation_flag && (
                   <div className="flex items-center gap-2 text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm">
@@ -235,40 +267,48 @@ export default function ModQueue() {
                   </div>
                 )}
 
-                {/* Decision buttons */}
-                <div className="flex gap-3">
-                  <Button size="sm" onClick={() => setDecisions(d => ({ ...d, [a.id]: { ...dec, decision: 'APPROVE' } }))}
+                {/* Approve / Reject buttons */}
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => setDecisions(d => ({ ...d, [a.id]: { ...dec, decision: 'APPROVE' } }))}
                     className={`flex-1 transition-all ${dec.decision === 'APPROVE'
                       ? 'bg-enb-green text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-enb-green/10 hover:text-enb-green'}`}>
+                      : 'bg-gray-100 text-gray-700 hover:bg-enb-green/10 hover:text-enb-green'}`}
+                  >
                     <CheckCircle className="w-4 h-4 mr-1" /> Approve
                   </Button>
-                  <Button size="sm" onClick={() => setDecisions(d => ({ ...d, [a.id]: { ...dec, decision: 'REJECT' } }))}
+                  <Button
+                    size="sm"
+                    onClick={() => setDecisions(d => ({ ...d, [a.id]: { ...dec, decision: 'REJECT' } }))}
                     className={`flex-1 transition-all ${dec.decision === 'REJECT'
                       ? 'bg-red-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'}`}>
+                      : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'}`}
+                  >
                     <XCircle className="w-4 h-4 mr-1" /> Reject
                   </Button>
                 </div>
 
-                {/* Reason + Submit */}
+                {/* Reason + submit */}
                 {dec.decision && (
-                  <div className="space-y-3 pt-1">
+                  <div className="space-y-3">
                     <Input
                       placeholder="Reason for your decision (minimum 10 characters)"
                       value={dec.reason}
-                      onChange={(e) => setDecisions(d => ({ ...d, [a.id]: { ...dec, reason: e.target.value } }))}
+                      onChange={e => setDecisions(d => ({ ...d, [a.id]: { ...dec, reason: e.target.value } }))}
                       className={dec.reason.length > 0 && dec.reason.length < 10 ? 'border-red-300' : ''}
                     />
                     {dec.reason.length > 0 && dec.reason.length < 10 && (
                       <p className="text-xs text-red-500">{10 - dec.reason.length} more characters needed</p>
                     )}
-                    {/* 30s minimum review timer */}
+                    {/* 30-second minimum review timer */}
                     {(timers[a.id] || 0) < 30 && (
                       <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                         <div className="flex-1 bg-amber-200 rounded-full h-1.5">
-                          <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
-                            style={{ width: `${((timers[a.id] || 0) / 30) * 100}%` }} />
+                          <div
+                            className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
+                            style={{ width: `${((timers[a.id] || 0) / 30) * 100}%` }}
+                          />
                         </div>
                         <span className="text-xs text-amber-700 font-medium whitespace-nowrap">
                           {30 - (timers[a.id] || 0)}s — review carefully
@@ -278,7 +318,8 @@ export default function ModQueue() {
                     <Button
                       onClick={() => submitDecision(a)}
                       disabled={dec.reason.length < 10 || isProcessing || (timers[a.id] || 0) < 30}
-                      className="w-full bg-enb-text-primary text-white hover:bg-enb-text-primary/90 disabled:opacity-50">
+                      className="w-full bg-enb-text-primary text-white hover:bg-enb-text-primary/90 disabled:opacity-50"
+                    >
                       {isProcessing
                         ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
                         : (timers[a.id] || 0) < 30

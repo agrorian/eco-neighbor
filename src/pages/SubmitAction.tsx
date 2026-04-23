@@ -6,6 +6,7 @@ import ActionSelector from './submit/ActionSelector';
 import ActionForm from './submit/ActionForm';
 import SubmissionReview from './submit/SubmissionReview';
 import SubmissionSuccess from './submit/SubmissionSuccess';
+import { isTransformationAction, AFTER_UNLOCK_MS } from '@/lib/beforeAfter';
 
 type Step = 'select' | 'form' | 'review' | 'success';
 
@@ -47,14 +48,13 @@ export default function SubmitAction() {
     setSubmitError('');
 
     try {
-      // Use formData.actionType as source of truth — selectedAction may reset between steps
+      // actionKey is the single source of truth — formData.actionType takes priority
       const actionKey = formData.actionType || selectedAction;
       const rewards = ACTION_REWARDS[actionKey];
       if (!rewards) {
-        console.error('No rewards found for action:', actionKey);
         throw new Error(`Unknown action type: ${actionKey}`);
       }
-      
+
       // Parse GPS
       let lat: number | null = null;
       let lng: number | null = null;
@@ -66,11 +66,19 @@ export default function SubmitAction() {
         if (parts.length === 2) { lat = parseFloat(parts[0]); lng = parseFloat(parts[1]); }
       }
 
+      const isTransformation = isTransformationAction(actionKey);
+      const now = new Date();
+      const afterUnlocksAt = isTransformation
+        ? new Date(now.getTime() + AFTER_UNLOCK_MS).toISOString()
+        : null;
+
       const { error } = await supabase.from('submissions').insert({
         user_id: user.id,
-        action_type: selectedAction,
+        action_type: actionKey,                    // ← fixed: was selectedAction
         description: formData.description,
-        photo_urls: formData.photoUrls?.length > 0 ? formData.photoUrls : (formData.photo ? [formData.photo] : []),
+        photo_urls: formData.photoUrls?.length > 0
+          ? formData.photoUrls
+          : (formData.photo ? [formData.photo] : []),
         gps_lat: lat,
         gps_lng: lng,
         gps_address: formData.gpsAddress || formData.location || null,
@@ -79,7 +87,10 @@ export default function SubmitAction() {
         rep_awarded: rewards.rep,
         image_source: formData.imageSource || 'CAMERA',
         captcha_score: formData.captchaScore || null,
-        submitted_at: new Date().toISOString(),
+        submitted_at: now.toISOString(),
+        submission_phase: isTransformation ? 'before' : null,
+        after_unlocks_at: afterUnlocksAt,
+        after_submitted: isTransformation ? false : null,
       });
 
       if (error) throw error;

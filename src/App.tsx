@@ -45,6 +45,7 @@ const PartnerFloat = lazy(() => import('@/pages/PartnerFloat'));
 const ModQueue = lazy(() => import('@/pages/admin/ModQueue'));
 const EscalationQueue = lazy(() => import('@/pages/admin/EscalationQueue'));
 const MyHistory = lazy(() => import('@/pages/MyHistory'));
+const SubmissionDetail = lazy(() => import('@/pages/SubmissionDetail'));
 
 // --- Onboarding ---
 import Welcome from '@/pages/onboarding/Welcome';
@@ -218,6 +219,7 @@ export default function App() {
                       <Route path="/my-log" element={<MyLog />} />
                       <Route path="/mod-queue" element={<ModQueue />} />
                       <Route path="/history" element={<MyHistory />} />
+                      <Route path="/submission/:id" element={<SubmissionDetail />} />
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/bug-report" element={<BugReport />} />
                       <Route path="/onboarding-queue" element={<OnboardingQueue />} />
