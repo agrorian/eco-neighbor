@@ -34,13 +34,13 @@ const TOKEN_ALLOCATION = [
   { label: 'Emergency Reserve',        amount: '500,000,000',   pct: 5,  color: 'bg-red-400',    note: '5-of-7 multi-sig governance controlled' },
 ];
 
-// CFSP v4.9 Priority Waterfall
+// CFSP v4.9 Priority Waterfall — canonical with ENB rewards
 const CFSP_TIERS = [
-  { tier: 1, name: 'Direct Human Consumption', desc: 'Workers, elderly, schools & orphanages', color: 'bg-enb-green', textColor: 'text-enb-green', note: 'Paediatric safety standard applies' },
-  { tier: 2, name: 'Community Kitchen',         desc: 'Hot meals at Community Food Hubs',       color: 'bg-enb-teal',  textColor: 'text-enb-teal',  note: '' },
-  { tier: 3, name: 'Processed / Value-Added',   desc: 'Pickling, preservation, cooking classes',color: 'bg-blue-400',  textColor: 'text-blue-600',  note: '' },
-  { tier: 4, name: 'Animal Feed',               desc: 'Livestock owners & animal shelters',     color: 'bg-enb-gold',  textColor: 'text-yellow-700',note: '' },
-  { tier: 5, name: 'Composting / Biogas',       desc: 'Unusable produce composted or biogas',   color: 'bg-gray-400',  textColor: 'text-gray-600',  note: '' },
+  { tier: 1, name: 'Direct Human Consumption', desc: 'Daily-wage workers, elderly, food-insecure households, homeless — (b) Schools & Orphanages (Paediatric Safety Standard)', color: 'bg-enb-green', textColor: 'text-enb-green', note: 'T1a: +500 ENB Priority bonus · T1b: +800 ENB Paediatric bonus', reward: '1,000 ENB/batch' },
+  { tier: 2, name: 'Community Kitchen',         desc: 'Hot meals at Community Food Hubs — mosques, community kitchens, seasonal events', color: 'bg-enb-teal',  textColor: 'text-enb-teal',  note: '', reward: '800 ENB/batch + carbon credit' },
+  { tier: 3, name: 'Processed / Value-Added',   desc: 'Pickling, preservation, cooking classes — extends shelf life, reduces waste', color: 'bg-blue-400',  textColor: 'text-blue-600',  note: '+ 300 ENB bonus if product listed on ENB app', reward: '600 ENB/batch' },
+  { tier: 4, name: 'Animal Feed',               desc: 'Past human safety window but not spoiled — livestock owners, animal shelters', color: 'bg-enb-gold',  textColor: 'text-yellow-700', note: '', reward: '300 ENB/batch' },
+  { tier: 5, name: 'Composting / Biogas',       desc: 'Genuinely spoiled items — community compost or Phase 2 biogas conversion', color: 'bg-gray-400',  textColor: 'text-gray-600',  note: '', reward: '200 ENB/kg' },
 ];
 
 export default function ImpactDashboard() {
@@ -206,16 +206,19 @@ export default function ImpactDashboard() {
           <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
             <Apple className="w-4 h-4 text-orange-500" /> Community Food Sharing Programme
           </CardTitle>
-          <p className="text-xs text-enb-text-secondary">v4.9 Priority Waterfall — food is never wasted</p>
+          <p className="text-xs text-enb-text-secondary">v4.9 Priority Waterfall — food is never wasted · ENB rewards per tier shown</p>
         </CardHeader>
         <CardContent className="space-y-2">
           {CFSP_TIERS.map((t) => (
-            <div key={t.tier} className="flex items-start gap-3">
+            <div key={t.tier} className="flex items-start gap-3 py-1.5 border-b border-gray-50 last:border-0">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${t.color} text-white text-xs font-bold`}>
                 {t.tier}
               </div>
               <div className="flex-1 min-w-0">
-                <div className={`text-sm font-bold ${t.textColor}`}>{t.name}</div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className={`text-sm font-bold ${t.textColor}`}>{t.name}</div>
+                  <span className="text-xs font-semibold text-enb-green whitespace-nowrap">🌿 {t.reward}</span>
+                </div>
                 <div className="text-xs text-enb-text-secondary">{t.desc}</div>
                 {t.note && (
                   <div className="text-xs text-orange-600 font-medium mt-0.5">⚠ {t.note}</div>

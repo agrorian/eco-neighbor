@@ -3,39 +3,75 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Apple, Bike, Shield, ClipboardList, ChevronDown, ChevronUp,
   CheckCircle, Loader2, AlertCircle, Leaf, Flame, Users,
-  MapPin, Phone, Truck, X
+  MapPin, Phone, Truck, X, Clock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
-// ── CFSP v4.9 Priority Waterfall ──────────────────────────────────────────────
+// ── CFSP v4.9 Priority Waterfall — Canonical ─────────────────────────────────
+// T1 has two sub-categories (a) and (b) per whitepaper v5.0/v6.0
 const WATERFALL = [
   {
-    tier: 1, label: 'Direct Human Consumption', color: 'bg-enb-green', textColor: 'text-enb-green',
-    recipients: 'Daily-wage workers, elderly, registered food-insecure households, schools & orphanages',
-    note: 'Paediatric safety standard applies for schools & orphanages',
+    tier: '1a', tierNum: 1,
+    label: 'Direct Human Consumption',
+    subLabel: '(a) Community Recipients',
+    color: 'bg-enb-green', textColor: 'text-enb-green',
+    recipients: 'Daily-wage workers at shift end, elderly & disabled, registered food-insecure households, homeless individuals at identified locations — delivered by Food Runner',
+    reward: '1,000 ENB/batch + 500 ENB Priority Recipient bonus',
+    note: '',
+    urgent: true,
   },
   {
-    tier: 2, label: 'Community Kitchen', color: 'bg-enb-teal', textColor: 'text-enb-teal',
-    recipients: 'Bulk hot meals prepared at Community Food Hubs for the wider community',
-    note: '',
+    tier: '1b', tierNum: 1,
+    label: 'Direct Human Consumption',
+    subLabel: '(b) Schools & Orphanages',
+    color: 'bg-enb-green', textColor: 'text-enb-green',
+    recipients: 'Schools & orphanages registered within neighborhood perimeter — Paediatric Safety Standard applies',
+    reward: '1,000 ENB/batch + 800 ENB Paediatric Delivery Bonus',
+    note: 'Cooked within 2hrs · insulated covered container · allergen log maintained · nutritionally complete meal only',
+    urgent: true,
   },
   {
-    tier: 3, label: 'Processed / Value-Added Use', color: 'bg-blue-400', textColor: 'text-blue-600',
-    recipients: 'Pickling, preservation, cooking classes — food given longer shelf life',
+    tier: '2', tierNum: 2,
+    label: 'Community Kitchen',
+    subLabel: '',
+    color: 'bg-enb-teal', textColor: 'text-enb-teal',
+    recipients: 'Volunteer cooks transform surplus into bulk meals at the mosque/school kitchen — served at Community Day events, weekly community lunches, Seasonal Bonus Campaigns',
+    reward: '800 ENB/batch + carbon credit record generated',
     note: '',
+    urgent: false,
   },
   {
-    tier: 4, label: 'Animal Feed', color: 'bg-enb-gold', textColor: 'text-yellow-700',
-    recipients: 'Suitable produce diverted to registered livestock owners or animal shelters',
+    tier: '3', tierNum: 3,
+    label: 'Processed / Value-Added Use',
+    subLabel: '',
+    color: 'bg-blue-400', textColor: 'text-blue-600',
+    recipients: 'Surplus converted to pickles, preserves, jams, chutneys by registered community volunteers — used in cooking classes that teach preservation skills',
+    reward: '600 ENB/batch + 300 ENB bonus if product listed on ENB app for community purchase',
     note: '',
+    urgent: false,
   },
   {
-    tier: 5, label: 'Composting / Biogas', color: 'bg-gray-400', textColor: 'text-gray-600',
-    recipients: 'Unusable produce composted at designated sites or fed into biogas units',
+    tier: '4', tierNum: 4,
+    label: 'Animal Feed',
+    subLabel: '',
+    color: 'bg-enb-gold', textColor: 'text-yellow-700',
+    recipients: 'Food past the human safety window but not spoiled — registered livestock keepers, dairy operations, animal shelters, stray animal feeders',
+    reward: '300 ENB/batch — acknowledges this is better than landfill',
     note: '',
+    urgent: false,
+  },
+  {
+    tier: '5', tierNum: 5,
+    label: 'Composting / Biogas',
+    subLabel: '',
+    color: 'bg-gray-400', textColor: 'text-gray-600',
+    recipients: 'Genuinely spoiled items, mouldy bread, rotten produce — community compost points feed local gardens; Phase 2: biogas partnership converts waste to cooking gas',
+    reward: '200 ENB/kg composted — lowest tier, still rewarded',
+    note: '',
+    urgent: false,
   },
 ];
 
@@ -495,25 +531,74 @@ export default function FoodSharing() {
           <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
             <Flame className="w-4 h-4 text-orange-500" /> Priority Waterfall · v4.9
           </CardTitle>
-          <p className="text-xs text-enb-text-secondary">Food moves through this hierarchy in strict order. No edible food goes to landfill while any lower-tier use is available.</p>
+          <p className="text-xs text-enb-text-secondary">Food moves through this hierarchy in strict priority order. No edible food goes to landfill while any lower-tier use remains available.</p>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {WATERFALL.map((w) => (
-            <div key={w.tier} className="flex items-start gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${w.color} text-white text-sm font-bold`}>
-                {w.tier}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className={`font-bold text-sm ${w.textColor}`}>{w.label}</div>
-                <div className="text-xs text-enb-text-secondary mt-0.5">{w.recipients}</div>
-                {w.note && (
-                  <div className="text-xs text-orange-600 font-medium mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 shrink-0" /> {w.note}
-                  </div>
-                )}
-              </div>
+        <CardContent className="space-y-1">
+
+          {/* Critical Time Rule */}
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 flex items-start gap-3">
+            <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Clock className="w-3.5 h-3.5 text-white" />
             </div>
-          ))}
+            <div>
+              <p className="text-sm font-bold text-red-700">⚡ Critical Time Rule</p>
+              <p className="text-xs text-red-600 mt-0.5">Cooked food from a restaurant must reach a recipient within <strong>2–4 hours</strong> of preparation. This is a food safety biological reality — not a bureaucratic rule. The CFSP is designed for <strong>same-night redistribution</strong>. The Community Food Hub is a rapid-response distribution point, not a storage facility.</p>
+            </div>
+          </div>
+
+          {WATERFALL.map((w, idx) => {
+            const showTierBadge = idx === 0 || WATERFALL[idx - 1].tierNum !== w.tierNum;
+            return (
+              <div key={w.tier} className={`flex items-start gap-3 py-3 ${idx < WATERFALL.length - 1 ? 'border-b border-gray-50' : ''}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white text-xs font-bold ${showTierBadge ? w.color : 'bg-transparent border-2 border-dashed border-gray-200'}`}>
+                  {showTierBadge ? w.tierNum : ''}
+                </div>
+                <div className="flex-1 min-w-0">
+                  {showTierBadge && (
+                    <div className={`font-bold text-sm ${w.textColor}`}>{w.label}</div>
+                  )}
+                  {w.subLabel && (
+                    <div className="text-xs font-semibold text-enb-text-primary mt-0.5">{w.subLabel}</div>
+                  )}
+                  <div className="text-xs text-enb-text-secondary mt-0.5">{w.recipients}</div>
+                  <div className="text-xs font-semibold text-enb-green mt-1.5 flex items-center gap-1">
+                    🌿 {w.reward}
+                  </div>
+                  {w.note && (
+                    <div className="text-xs text-orange-600 font-medium mt-1 flex items-start gap-1 bg-orange-50 rounded-lg px-2 py-1.5">
+                      <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" /> {w.note}
+                    </div>
+                  )}
+                  {w.urgent && (
+                    <div className="text-[10px] text-red-500 font-medium mt-1">⚡ 2–4 hour delivery window</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Three-Point Safety Check */}
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <p className="text-xs font-bold text-enb-text-primary mb-2 flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5 text-enb-green" /> Three-Point Safety Check — Mandatory at Every Intake
+            </p>
+            <div className="space-y-1.5">
+              {[
+                { num: 1, method: 'SIGHT — Visual Inspection', pass: 'Colour correct, no visible mould, container clean, sealed packaging intact', fail: 'Any visible mould, discolouration, or broken seal → immediate rejection' },
+                { num: 2, method: 'SMELL — Olfactory Test', pass: 'Fresh or neutral smell', fail: 'Any sour, fermented, or off odour in cooked food → immediate rejection' },
+                { num: 3, method: 'TIME — Freshness Assessment', pass: 'Cooked within last 4hrs → human distribution. 4–8hrs → animal feed only', fail: 'Over 8hrs → composting only. Expired packaged goods → composting' },
+              ].map(c => (
+                <div key={c.num} className="bg-gray-50 rounded-lg p-2.5 text-xs">
+                  <span className="font-bold text-enb-text-primary">Check {c.num}: {c.method}</span>
+                  <div className="flex gap-3 mt-1">
+                    <span className="text-enb-green font-medium">✓ {c.pass}</span>
+                  </div>
+                  <div className="text-red-500 mt-0.5">✗ {c.fail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="pt-3 mt-1 border-t border-gray-100 text-xs text-gray-400 flex items-start gap-2">
             <Leaf className="w-3.5 h-3.5 text-enb-green shrink-0 mt-0.5" />
             Every kilogram diverted generates an on-chain carbon offset record — feeding ENB's Verra VCS carbon credit methodology currently in development.
