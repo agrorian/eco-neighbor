@@ -153,9 +153,9 @@ export default function GenerateRedemptionQR() {
     if (!qrData) return;
     const biz = businesses.find(b => b.id === selectedBiz);
     const url = `https://eco-neighbor.vercel.app/scan?code=${qrData.code}`;
-    const text = `ENB Redemption\nAmount: ${enbAmount} ENB\nBusiness: ${biz?.business_name}\nScan to redeem: ${url}`;
-    if (navigator.share) navigator.share({ title: 'ENB Redemption', text, url });
-    else { navigator.clipboard.writeText(url); alert('Redemption link copied!'); }
+    const text = `ENB SWAP\nAmount: ${enbAmount} ENB\nBusiness: ${biz?.business_name}\nScan to SWAP: ${url}`;
+    if (navigator.share) navigator.share({ title: 'ENB SWAP', text, url });
+    else { navigator.clipboard.writeText(url); alert('SWAP link copied!'); }
   };
 
   const handleDownloadQR = () => {
@@ -184,7 +184,7 @@ export default function GenerateRedemptionQR() {
         </Link>
         <div>
           <h1 className="text-xl font-bold text-enb-text-primary">{l('wallet', 'qrTitle')}</h1>
-          <p className="text-sm text-enb-text-secondary">Generate a one-time redemption code</p>
+          <p className="text-sm text-enb-text-secondary">Generate a one-time SWAP code</p>
         </div>
       </header>
 
@@ -302,7 +302,7 @@ export default function GenerateRedemptionQR() {
                   <div className="p-2 bg-white rounded-xl border-2 border-enb-green/20">
                     <img
                       src={qrImageUrl}
-                      alt="Redemption QR Code"
+                      alt="SWAP QR Code"
                       className="w-[200px] h-[200px] block"
                     />
                   </div>

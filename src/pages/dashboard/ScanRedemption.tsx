@@ -10,7 +10,8 @@ import { useUserStore } from '@/store/user';
 
 interface RedemptionResult {
   success: boolean;
-  enb_amount?: number;
+  enb_spent?: number;   // field name returned by confirm_redemption RPC
+  enb_amount?: number;  // fallback alias — kept for safety
   member_name?: string;
   error?: string;
 }
@@ -48,7 +49,7 @@ export default function ScanRedemption() {
       if (error) throw error;
       setResult(data);
     } catch (err: any) {
-      setResult({ success: false, error: err.message || 'Redemption failed. Please try again.' });
+      setResult({ success: false, error: err.message || 'SWAP failed. Please try again.' });
     } finally {
       setProcessing(false);
     }
@@ -96,14 +97,13 @@ export default function ScanRedemption() {
           <CheckCircle className="w-12 h-12 text-enb-green" />
         </motion.div>
         <div>
-          <h1 className="text-2xl font-bold text-enb-text-primary">Redemption Confirmed!</h1>
+          <h1 className="text-2xl font-bold text-enb-text-primary">SWAP Confirmed!</h1>
           {result.member_name && (
             <p className="text-enb-text-secondary mt-1">Member: <span className="font-bold text-enb-text-primary">{result.member_name}</span></p>
           )}
-          {result.enb_amount && (
+          {(result.enb_spent || result.enb_amount) && (
             <p className="text-enb-text-secondary mt-1">
-              <span className="font-bold text-enb-green">{result.enb_amount.toLocaleString()} ENB</span> accepted
-              <span className="text-xs text-gray-400 ml-1">(2% burn applied)</span>
+              <span className="font-bold text-enb-green">{(result.enb_spent ?? result.enb_amount)?.toLocaleString()} ENB</span> accepted
             </p>
           )}
         </div>
@@ -125,7 +125,7 @@ export default function ScanRedemption() {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-white hover:bg-white/10">
           <ArrowLeft className="w-6 h-6" />
         </Button>
-        <h1 className="font-bold text-lg">Scan to Redeem</h1>
+        <h1 className="font-bold text-lg">Scan to SWAP</h1>
         <div className="w-10" />
       </header>
 
@@ -134,7 +134,7 @@ export default function ScanRedemption() {
         {processing && !cameraActive && (
           <div className="flex flex-col items-center gap-4 p-8">
             <Loader2 className="w-16 h-16 text-enb-green animate-spin" />
-            <p className="text-white/80 text-center">Processing redemption...</p>
+            <p className="text-white/80 text-center">Processing SWAP...</p>
           </div>
         )}
 
@@ -175,7 +175,7 @@ export default function ScanRedemption() {
             <CardContent className="p-4 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold text-red-700 text-sm">Redemption Failed</p>
+                <p className="font-bold text-red-700 text-sm">SWAP Failed</p>
                 <p className="text-red-600 text-xs mt-1">{result.error}</p>
                 <Button onClick={resetScan} variant="ghost" size="sm" className="text-red-600 mt-2 p-0 h-auto">
                   Try again
@@ -190,7 +190,7 @@ export default function ScanRedemption() {
           <Input
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
-            placeholder="Enter redemption code"
+            placeholder="Enter SWAP code"
             className="text-center font-mono tracking-widest text-sm"
             maxLength={36}
           />
