@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug, Apple } from 'lucide-react';
+import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug, Apple, Flag } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLang } from '@/contexts/LanguageContext';
@@ -27,6 +27,7 @@ export default function More() {
     { icon: Globe, label: 'Community Impact', path: '/impact', color: 'text-enb-green', show: true },
     { icon: Apple, label: 'Food Sharing', path: '/food-sharing', color: 'text-orange-500', show: true },
     { icon: Vote, label: 'Governance', path: '/governance', color: 'text-blue-600', show: true },
+    { icon: Flag, label: 'Community Issues', path: '/issues', color: 'text-orange-500', show: true },
     { icon: Store, label: 'Business Directory', path: '/directory', color: 'text-orange-500', show: true },
     { icon: ArrowRightLeft, label: 'Maturation Bridge', path: '/bridge', color: 'text-enb-teal', show: true },
     { icon: Users, label: 'Referral Hub', path: '/wallet/referrals', color: 'text-enb-green', show: true },

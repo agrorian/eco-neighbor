@@ -46,6 +46,7 @@ const ModQueue = lazy(() => import('@/pages/admin/ModQueue'));
 const EscalationQueue = lazy(() => import('@/pages/admin/EscalationQueue'));
 const MyHistory = lazy(() => import('@/pages/MyHistory'));
 const SubmissionDetail = lazy(() => import('@/pages/SubmissionDetail'));
+const CommunityIssues = lazy(() => import('@/pages/community/CommunityIssues'));
 
 // --- Onboarding ---
 import Welcome from '@/pages/onboarding/Welcome';
@@ -220,6 +221,7 @@ export default function App() {
                       <Route path="/mod-queue" element={<ModQueue />} />
                       <Route path="/history" element={<MyHistory />} />
                       <Route path="/submission/:id" element={<SubmissionDetail />} />
+                      <Route path="/issues" element={<CommunityIssues />} />
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/bug-report" element={<BugReport />} />
                       <Route path="/onboarding-queue" element={<OnboardingQueue />} />

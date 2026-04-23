@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote } from 'lucide-react';
+import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote, Flag } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -23,6 +23,7 @@ export default function DesktopSidebar() {
     { path: '/impact',        icon: Globe,         label: l('nav', 'communityImpact') },
     { path: '/food-sharing',  icon: Apple,         label: 'Food Sharing' },
     { path: '/governance',    icon: Vote,          label: l('nav', 'governance') },
+    { path: '/issues',        icon: Flag,          label: 'Community Issues' },
     { path: '/bridge',        icon: ArrowRightLeft,label: l('nav', 'bridge') },
     { path: '/settings',      icon: Settings,      label: l('nav', 'settings') },
   ];

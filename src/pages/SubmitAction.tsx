@@ -67,6 +67,7 @@ export default function SubmitAction() {
       }
 
       const isTransformation = isTransformationAction(actionKey);
+      const isReporting = ['infrastructure_report', 'waste_reporting'].includes(actionKey);
       const now = new Date();
       const afterUnlocksAt = isTransformation
         ? new Date(now.getTime() + AFTER_UNLOCK_MS).toISOString()
@@ -91,6 +92,7 @@ export default function SubmitAction() {
         submission_phase: isTransformation ? 'before' : null,
         after_unlocks_at: afterUnlocksAt,
         after_submitted: isTransformation ? false : null,
+        report_status: isReporting ? 'open' : null,
       });
 
       if (error) throw error;

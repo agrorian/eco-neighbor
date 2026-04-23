@@ -20,7 +20,7 @@ export const AFTER_UNLOCK_HOURS = 4;
 export const AFTER_UNLOCK_MS = AFTER_UNLOCK_HOURS * 60 * 60 * 1000;
 
 /** After GPS must be within 100 metres of Before GPS */
-export const MAX_GPS_DRIFT_METRES = 100;
+export const MAX_GPS_DRIFT_METRES = 20;
 
 export type SubmissionPhase = 'before' | 'after' | null;
 
