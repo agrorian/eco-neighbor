@@ -41,11 +41,11 @@ export default function BugReport() {
     setUploading(true);
     try {
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dl86obm3b';
-      const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'enb_photos';
+      const preset = import.meta.env.VITE_CLOUDINARY_ACTION_PRESET || 'enb_photos';
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', preset);
-      formData.append('folder', 'bug_reports');
+      formData.append('folder', 'enb/reports/bugs');
       const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: 'POST', body: formData,
       });

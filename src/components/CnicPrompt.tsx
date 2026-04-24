@@ -102,7 +102,7 @@ export default function CnicPrompt() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', 'enb_photos'); // unsigned preset — enb_cnic_private requires server-side signing
-      formData.append('folder', 'enb_cnic');
+      formData.append('folder', 'enb/identity/cnic');
       const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok || !data.secure_url) {
@@ -137,7 +137,7 @@ export default function CnicPrompt() {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', 'enb_photos');
-        formData.append('folder', 'enb_cnic');
+        formData.append('folder', 'enb/identity/cnic');
         const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', { method: 'POST', body: formData });
         const data = await res.json();
         setCnicPhotoUrl(data.secure_url || '');

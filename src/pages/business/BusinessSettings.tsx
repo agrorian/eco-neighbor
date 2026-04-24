@@ -62,6 +62,7 @@ export default function BusinessSettings() {
     else setCoverUploading(true);
     const fd = new FormData();
     fd.append('file', file); fd.append('upload_preset', 'enb_photos');
+    fd.append('folder', 'enb/profiles/businesses');
     const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.secure_url) {

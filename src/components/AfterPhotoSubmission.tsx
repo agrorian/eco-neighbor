@@ -23,13 +23,14 @@ interface AfterPhotoSubmissionProps {
 
 // ── Cloudinary Upload ─────────────────────────────────────────────────────────
 async function uploadToCloudinary(dataUrl: string): Promise<string> {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dl86obm3b'; // ← fixed
-  const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'enb_photos';
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dl86obm3b';
+  // Always use the unsigned preset for after photos — never the signed CNIC preset
+  const preset = 'enb_photos';
   const blob = await fetch(dataUrl).then(r => r.blob());
   const form = new FormData();
   form.append('file', blob, 'after_photo.jpg');
   form.append('upload_preset', preset);
-  form.append('folder', 'enb_after_photos');
+  form.append('folder', 'enb/submissions/after');
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
     method: 'POST', body: form,
   });
@@ -246,7 +247,7 @@ export default function AfterPhotoSubmission({
           gps_lat: gpsLat,
           gps_lng: gpsLng,
           gps_address: gpsAddress || null,
-          description: note || null,
+          description: note.trim() || `${actionType.replace(/_/g, ' ')} — after photo`,
           status: autoStatus,
           submitted_at: new Date().toISOString(),
           gps_out_of_range: gpsFlag,

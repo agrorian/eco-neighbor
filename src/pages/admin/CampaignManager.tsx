@@ -61,6 +61,7 @@ export default function CampaignManager() {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('upload_preset', 'enb_photos');
+      fd.append('folder', 'enb/profiles/campaigns');
       const res = await fetch(CLOUDINARY_UPLOAD, { method: 'POST', body: fd });
       const data = await res.json();
       if (data.secure_url) urls.push(data.secure_url);

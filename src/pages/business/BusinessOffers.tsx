@@ -83,6 +83,7 @@ export default function BusinessOffers() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', 'enb_photos');
+      formData.append('folder', 'enb/profiles/offers');
     try {
       const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', {
         method: 'POST', body: formData,

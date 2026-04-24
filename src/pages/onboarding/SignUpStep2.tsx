@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, ArrowLeft, MessageCircle, Camera, Shield, AlertCircle, CheckCircle, Loader2, X, ImagePlus } from 'lucide-react';
+import { ArrowRight, ArrowLeft, MessageCircle, Camera, Shield, AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const PAKISTAN_NEIGHBOURHOODS = [
@@ -160,7 +160,7 @@ export default function SignUpStep2() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', 'enb_photos');
-      formData.append('folder', 'enb_cnic');
+      formData.append('folder', 'enb/identity/cnic');
       const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', {
         method: 'POST', body: formData,
       });
@@ -198,7 +198,7 @@ export default function SignUpStep2() {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', 'enb_cnic_private');
-        formData.append('folder', 'enb_cnic');
+        formData.append('folder', 'enb/identity/cnic');
         const res = await fetch('https://api.cloudinary.com/v1_1/dl86obm3b/image/upload', {
           method: 'POST', body: formData,
         });
