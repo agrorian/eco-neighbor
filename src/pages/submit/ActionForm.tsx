@@ -1,8 +1,41 @@
-import { useState, useRef, useEffect } from 'react';
-import { Camera, MapPin, CheckCircle, Loader2, AlertCircle, X, Plus, Users, Clock, Weight, TreePine, Car, Wrench, Package, AlertTriangle } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Camera, MapPin, CheckCircle, Loader2, AlertCircle, X, Plus, Users, Clock, Weight, TreePine, Car, Wrench, Package, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+
+// ── reCAPTCHA v3 (invisible) ─────────────────────────────────────────────────
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string;
+
+function loadRecaptchaScript(): Promise<void> {
+  return new Promise((resolve) => {
+    if ((window as any).grecaptcha) { resolve(); return; }
+    if (document.getElementById('recaptcha-script')) {
+      // Already injected — wait for it
+      const interval = setInterval(() => {
+        if ((window as any).grecaptcha) { clearInterval(interval); resolve(); }
+      }, 100);
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'recaptcha-script';
+    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+    script.onload = () => resolve();
+    document.head.appendChild(script);
+  });
+}
+
+async function getRecaptchaToken(action: string): Promise<string> {
+  await loadRecaptchaScript();
+  return new Promise((resolve, reject) => {
+    (window as any).grecaptcha.ready(() => {
+      (window as any).grecaptcha
+        .execute(RECAPTCHA_SITE_KEY, { action })
+        .then(resolve)
+        .catch(reject);
+    });
+  });
+}
 
 interface ActionFormProps {
   actionType: string;
@@ -11,166 +44,6 @@ interface ActionFormProps {
 }
 
 const MAX_PHOTOS = 5;
-
-// Behavioural CAPTCHA — 15 questions, randomised correct answer positions
-const CAPTCHA_QUESTIONS = [
-
-  // ── CATEGORY 1: LOCAL KNOWLEDGE (proves they know Rawalpindi / Pakistan) ──
-  {
-    q: 'Chaklala Scheme 3 kis shehar mein hai?',
-    options: ['Lahore', 'Rawalpindi', 'Karachi', 'Peshawar'],
-    correct: 1,
-  },
-  {
-    q: 'Pakistan mein qaumi shanaakhti card ka naam kya hai?',
-    options: ['Aadhar Card', 'CNIC', 'NIC', 'Smart Card'],
-    correct: 1,
-  },
-  {
-    q: 'Pakistan mein rozana kitni namazein farz hain?',
-    options: ['3', '4', '5', '6'],
-    correct: 2,
-  },
-  {
-    q: 'Rawalpindi kis sube mein hai?',
-    options: ['Sindh', 'KPK', 'Punjab', 'Balochistan'],
-    correct: 2,
-  },
-  {
-    q: 'Pakistan ka qaumi khel kaunsa hai?',
-    options: ['Cricket', 'Hockey', 'Football', 'Kabaddi'],
-    correct: 1,
-  },
-  {
-    q: 'Mohalle ki safai ke liye kaun zimmedar hai?',
-    options: ['Sirf government', 'Har mohalle wala', 'Sirf safai wale', 'Koi nahi'],
-    correct: 1,
-  },
-  {
-    q: 'Pakistan ka qaumi phool kaunsa hai?',
-    options: ['Gulab', 'Chameli', 'Yasmin', 'Lotus'],
-    correct: 1,
-  },
-
-  // ── CATEGORY 2: ENB ECOSYSTEM KNOWLEDGE (proves they read the app) ──
-  {
-    q: 'ENB ka matlab kya hai?',
-    options: ['Eco-Neighbor', 'Energy Building', 'Earn Now Better', 'Eco Network Bank'],
-    correct: 0,
-  },
-  {
-    q: 'Helper Tier ke liye kitne Rep Score chahiye?',
-    options: ['1,000', '2,500', '5,000', '10,000'],
-    correct: 2,
-  },
-  {
-    q: 'Kya ENB.LOCAL ko DEX par becha ja sakta hai?',
-    options: ['Haan, kabhi bhi', 'Nahi, yeh non-tradeable hai', 'Haan, sirf Pillar Tier ke liye', 'Haan, 1 saal baad'],
-    correct: 1,
-  },
-  {
-    q: 'Har submission ko kitne moderators review karte hain?',
-    options: ['1', '2', '3', '4'],
-    correct: 1,
-  },
-  {
-    q: 'CNIC verify nahi hua toh aapke ENB ka kya hoga?',
-    options: ['Delete ho jayenge', 'Locked rahenge', 'Double ho jayenge', 'Kuch nahi hoga'],
-    correct: 1,
-  },
-  {
-    q: 'Neighbourhood Cleanup karne par kitne ENB milte hain?',
-    options: ['500', '750', '1,000', '2,000'],
-    correct: 2,
-  },
-  {
-    q: 'Maturation Bridge ke liye minimum Rep Score kya hai?',
-    options: ['5,000', '20,000', '50,000', '100,000'],
-    correct: 2,
-  },
-  {
-    q: 'ENB app mein action submit karte waqt photo kaise leni chahiye?',
-    options: ['Gallery se koi bhi photo', 'Live camera se', 'Internet se download karke', 'Screenshot se'],
-    correct: 1,
-  },
-  {
-    q: 'Tree planting karne par kitne ENB milte hain?',
-    options: ['500', '1,000', '1,500', '2,000'],
-    correct: 3,
-  },
-  {
-    q: 'ENB community channel kaun sa hai?',
-    options: ['Telegram', 'WhatsApp', 'Facebook', 'Discord'],
-    correct: 1,
-  },
-  {
-    q: 'Referral code se apne dost ko join karane par kitne ENB milte hain?',
-    options: ['100', '250', '500', '1,000'],
-    correct: 2,
-  },
-
-  // ── CATEGORY 3: CIVIC AWARENESS (reinforces mission values) ──
-  {
-    q: 'Agar aap sadak par illegal kachra dekhen toh kya karein?',
-    options: ['Ignore karein', 'ENB app mein report karein', 'Khud bhi wahan daalein', 'Doosron ko batayein aur chalte rahein'],
-    correct: 1,
-  },
-  {
-    q: 'Inme se kaunsa ENB community action hai?',
-    options: ['TV dekhna', 'Social media chalana', 'Darakhton ki plantng', 'Dukan mein baithna'],
-    correct: 2,
-  },
-  {
-    q: 'Apne mohalle ki safai karna kaisi baat hai?',
-    options: ['Bekar kaam', 'Sirf government ka kaam', 'Puri community ki zimmedari', 'Waste of time'],
-    correct: 2,
-  },
-  {
-    q: 'Khanay ki fizool barbadi rokne se kya faida hota hai?',
-    options: ['Koi faida nahi', 'Maahol behtar hota hai aur zarooratmandoN ki madad hoti hai', 'Sirf paisa bachta hai', 'Koi farq nahi padta'],
-    correct: 1,
-  },
-  {
-    q: 'Hunar sikhana (skill workshop) ENB mein kyun reward hota hai?',
-    options: ['Kyunke yeh asaan hai', 'Kyunke yeh community ko strong banata hai', 'Kyunke yeh fun hai', 'Kyunke rules mein hai'],
-    correct: 1,
-  },
-  {
-    q: 'Which of these is a valid ENB civic action?',
-    options: ['Watching TV at home', 'Planting a tree in the neighbourhood', 'Sleeping all day', 'Shopping at a mall'],
-    correct: 1,
-  },
-  {
-    q: 'If you see a broken streetlight, the right action is:',
-    options: ['Ignore it', 'Report it on the ENB app to earn ENB', 'Break another one', 'Tell your friends and forget about it'],
-    correct: 1,
-  },
-  {
-    q: 'Why does ENB reward carpooling?',
-    options: ['It saves money only', 'It reduces traffic and air pollution', 'It is faster than driving alone', 'It is a fun activity'],
-    correct: 1,
-  },
-  {
-    q: 'Food sharing in ENB is rewarded because:',
-    options: ['It is easy to do', 'It reduces waste and feeds people in need', 'It is a tradition', 'It earns the most ENB'],
-    correct: 1,
-  },
-  {
-    q: 'What makes ENB different from regular money?',
-    options: ['You can invest it in stocks', 'It is earned only through verified community service — not bought', 'It can be exchanged for dollars', 'It expires after one month'],
-    correct: 1,
-  },
-  {
-    q: 'ENB.LOCAL tokens ka maqsad kya hai?',
-    options: ['DEX par trading karna', 'Mahalle mein services aur discounts ke liye kharch karna', 'Bank mein jama karna', 'Online shopping ke liye'],
-    correct: 1,
-  },
-  {
-    q: 'Ek achha shehri apne mohalle ke liye kya karta hai?',
-    options: ['Sirf apne ghar ki fikr karta hai', 'Doosron ki madad karta hai aur maahol behtar banata hai', 'Bahar nahi jaata', 'Sirf social media use karta hai'],
-    correct: 1,
-  },
-];
 
 interface PhotoItem {
   preview: string;
@@ -446,17 +319,15 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   const [gpsAddress, setGpsAddress] = useState<string | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [cameraError, setCameraError] = useState('');
-  const [captchaIdx] = useState(() => Math.floor(Math.random() * CAPTCHA_QUESTIONS.length));
-  const [captchaAnswer, setCaptchaAnswer] = useState<number | null>(null);
-  const [captchaFailed, setCaptchaFailed] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const [formStartTime] = useState(Date.now());
   const [touchEvents, setTouchEvents] = useState(0);
-  const [cameraActive, setCameraActive] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [captchaError, setCaptchaError] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-
-  const captcha = CAPTCHA_QUESTIONS[captchaIdx];
 
   useEffect(() => {
     const handler = () => setTouchEvents(n => n + 1);
@@ -465,28 +336,47 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   }, []);
 
   useEffect(() => {
-    return () => { streamRef.current?.getTracks().forEach(t => t.stop()); };
+    return () => { stopCamera(); };
   }, []);
+
+  // Attach stream AFTER cameraActive=true renders <video> into DOM
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      const v = videoRef.current;
+      v.srcObject = streamRef.current;
+      setVideoReady(false);
+      v.onloadedmetadata = () => {
+        v.play().catch(() => {});
+        setVideoReady(true);
+      };
+    }
+  }, [cameraActive]);
+
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setCameraActive(false);
+    setVideoReady(false);
+  };
 
   const openCamera = async () => {
     if (photos.length >= MAX_PHOTOS) return;
     setCameraError('');
+    setVideoReady(false);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       streamRef.current = stream;
+      // srcObject assigned in useEffect after setCameraActive(true) renders <video>
       setCameraActive(true);
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.setAttribute('playsinline', 'true');
-          videoRef.current.muted = true;
-          const p = videoRef.current.play();
-          if (p !== undefined) p.catch(() => videoRef.current?.play());
-        }
-      }, 100);
     } catch (err: any) {
       setCameraError(
         err?.name === 'NotAllowedError'
@@ -498,10 +388,11 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     }
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    if (!video.videoWidth || !video.videoHeight) return;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d')?.drawImage(video, 0, 0);
@@ -509,13 +400,13 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       if (!blob) return;
       const file = new File([blob], `action_${Date.now()}.jpg`, { type: 'image/jpeg' });
       const preview = canvas.toDataURL('image/jpeg', 0.8);
+      if (preview.length < 1000) return; // sanity check — black frame guard
       const newPhoto: PhotoItem = { preview, cloudinaryUrl: null, uploading: true, file };
       setPhotos(prev => [...prev, newPhoto]);
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      setCameraActive(false);
+      stopCamera();
       uploadPhoto(file, preview);
     }, 'image/jpeg', 0.85);
-  };
+  }, []);
 
   const uploadPhoto = async (file: File, preview: string) => {
     try {
@@ -569,14 +460,35 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     });
 
   const anyUploading = photos.some(p => p.uploading);
-  const canSubmit = photos.length > 0 && !anyUploading && requiredFieldsMet && gpsLat && captchaAnswer !== null;
+  const canSubmit = photos.length > 0 && !anyUploading && requiredFieldsMet && !!gpsLat;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
-    if (captchaAnswer !== captcha.correct) { setCaptchaFailed(true); return; }
+    setCaptchaError('');
 
-    const timeMs = Date.now() - formStartTime;
-    const captchaScore = parseFloat((Math.min(timeMs / 10000, 1) * 0.4 + Math.min(touchEvents / 5, 1) * 0.3 + 0.3).toFixed(2));
+    let captchaScore = 0.5;
+    let recaptchaToken = '';
+
+    if (RECAPTCHA_SITE_KEY) {
+      try {
+        recaptchaToken = await getRecaptchaToken('submit_action');
+        // Score is server-side validated via reCAPTCHA; use behavioural proxy for Supabase record
+        const timeMs = Date.now() - formStartTime;
+        captchaScore = parseFloat(
+          (Math.min(timeMs / 10000, 1) * 0.4 + Math.min(touchEvents / 5, 1) * 0.3 + 0.3).toFixed(2)
+        );
+        setCaptchaVerified(true);
+      } catch {
+        setCaptchaError('Security check failed. Please refresh the page and try again.');
+        return;
+      }
+    } else {
+      // No key configured — still compute behavioural score
+      const timeMs = Date.now() - formStartTime;
+      captchaScore = parseFloat(
+        (Math.min(timeMs / 10000, 1) * 0.4 + Math.min(touchEvents / 5, 1) * 0.3 + 0.3).toFixed(2)
+      );
+    }
     const uploadedUrls = photos.filter(p => p.cloudinaryUrl).map(p => p.cloudinaryUrl as string);
 
     // Serialise custom fields into a structured description string
@@ -601,6 +513,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       gpsAddress,
       imageSource: 'CAMERA',
       captchaScore,
+      recaptchaToken,
       timestamp: new Date().toISOString(),
     });
   };
@@ -637,12 +550,18 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
             <video
               ref={videoRef} autoPlay playsInline muted
               className="w-full max-h-64 object-cover rounded-xl"
-              onClick={() => videoRef.current?.play()}
             />
             <canvas ref={canvasRef} className="hidden" />
+            {/* Loading overlay while stream initialises */}
+            {!videoReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                <Loader2 className="w-8 h-8 text-white animate-spin" />
+              </div>
+            )}
             <Button
               onClick={capturePhoto}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white"
+              disabled={!videoReady}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white disabled:opacity-50"
             >
               <Camera className="w-6 h-6" />
             </Button>
@@ -731,29 +650,25 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         </div>
       )}
 
-      {/* ── CAPTCHA ── */}
-      <div className="space-y-2 bg-enb-green/5 border border-enb-green/20 rounded-xl p-4">
-        <label className="text-sm font-bold text-enb-text-primary">Quick Check 🌿</label>
-        <p className="text-sm text-enb-text-secondary">{captcha.q}</p>
-        <div className="flex flex-col gap-2 mt-2">
-          {captcha.options.map((opt, i) => (
-            <button
-              key={i}
-              onClick={() => { setCaptchaAnswer(i); setCaptchaFailed(false); }}
-              className={`text-left p-3 rounded-lg border text-sm font-medium transition-all ${captchaAnswer === i ? 'bg-enb-green text-white border-enb-green' : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green'}`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-        {captchaFailed && (
-          <p className="text-sm text-red-500 mt-1">⚠️ Please answer the question correctly to continue.</p>
-        )}
+      {/* ── reCAPTCHA v3 (invisible) ── */}
+      <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl">
+        <ShieldCheck className="w-4 h-4 text-enb-green flex-shrink-0" />
+        <p className="text-xs text-gray-500 flex-1">
+          Protected by Google reCAPTCHA —{' '}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Privacy</a>
+          {' & '}
+          <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline">Terms</a>
+        </p>
       </div>
+      {captchaError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-sm text-red-600">
+          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />{captchaError}
+        </div>
+      )}
 
       {/* ── Submit ── */}
       <Button
-        onClick={handleSubmit}
+        onClick={() => { handleSubmit(); }}
         disabled={!canSubmit}
         className="w-full h-12 text-lg shadow-lg shadow-enb-green/20 bg-enb-green hover:bg-enb-green/90 text-white"
       >
@@ -766,8 +681,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       {!canSubmit && photos.length > 0 && !anyUploading && (
         <p className="text-xs text-center text-gray-400">
           {!gpsLat ? '📍 GPS location required' :
-           !requiredFieldsMet ? '📋 Please fill all required fields' :
-           captchaAnswer === null ? '🌿 Please answer the quick check' : ''}
+           !requiredFieldsMet ? '📋 Please fill all required fields' : ''}
         </p>
       )}
     </div>

@@ -150,8 +150,23 @@ export default function AfterPhotoSubmission({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => { acquireGPS(); return () => stopCamera(); }, []);
+
+  // Once cameraActive flips to true the <video> element mounts —
+  // attach the stream in the next effect so the ref is guaranteed to exist.
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      const v = videoRef.current;
+      v.srcObject = streamRef.current;
+      setVideoReady(false);
+      v.onloadedmetadata = () => {
+        v.play().catch(() => {});
+        setVideoReady(true);
+      };
+    }
+  }, [cameraActive]);
 
   const acquireGPS = () => {
     if (!navigator.geolocation) return;
@@ -179,26 +194,51 @@ export default function AfterPhotoSubmission({
 
   const openCamera = async () => {
     setCameraError('');
+    setVideoReady(false);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      // Request rear camera first; fall back to any camera
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      // srcObject assigned in useEffect after setCameraActive(true) renders <video>
       setCameraActive(true);
-    } catch { setCameraError('Camera access denied. Please allow camera in browser settings.'); }
+    } catch (err: any) {
+      const msg = err?.name === 'NotAllowedError'
+        ? 'Camera access denied. Please allow camera permissions in your browser settings.'
+        : err?.name === 'NotFoundError'
+        ? 'No camera found on this device.'
+        : 'Could not start camera. Please try again.';
+      setCameraError(msg);
+    }
   };
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
     setCameraActive(false);
+    setVideoReady(false);
   };
 
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
-    const v = videoRef.current; const c = canvasRef.current;
-    c.width = v.videoWidth; c.height = v.videoHeight;
+    const v = videoRef.current;
+    const c = canvasRef.current;
+    // If dimensions aren't ready yet (stream not fully started), bail
+    if (!v.videoWidth || !v.videoHeight) return;
+    c.width = v.videoWidth;
+    c.height = v.videoHeight;
     c.getContext('2d')?.drawImage(v, 0, 0);
     const dataUrl = c.toDataURL('image/jpeg', 0.85);
+    // Sanity check: a valid JPEG data URL is much longer than this
+    if (dataUrl.length < 1000) return;
     stopCamera();
     setPhotos(prev => [...prev, { preview: dataUrl, uploading: true }]);
     uploadToCloudinary(dataUrl)
@@ -303,7 +343,17 @@ export default function AfterPhotoSubmission({
           <div className="relative rounded-xl overflow-hidden bg-black">
             <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-64 object-cover rounded-xl" />
             <canvas ref={canvasRef} className="hidden" />
-            <Button onClick={capturePhoto} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white">
+            {/* Loading overlay while stream initialises */}
+            {!videoReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                <Loader2 className="w-8 h-8 text-white animate-spin" />
+              </div>
+            )}
+            <Button
+              onClick={capturePhoto}
+              disabled={!videoReady}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white text-enb-green border-4 border-enb-green hover:bg-enb-green hover:text-white disabled:opacity-50"
+            >
               <Camera className="w-6 h-6" />
             </Button>
             <button onClick={stopCamera} className="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center">
