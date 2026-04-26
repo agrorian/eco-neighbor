@@ -149,18 +149,15 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
     const v = videoRef.current;
     const c = canvasRef.current;
 
-    // Poll until video has real dimensions — Chrome can report 0x0
-    // immediately after stream starts even though the feed is live.
-    const tryCapture = () => {
-      if (v.videoWidth === 0 || v.videoHeight === 0 || v.readyState < 2) {
-        setTimeout(tryCapture, 150);
-        return;
-      }
-      c.width = v.videoWidth;
-      c.height = v.videoHeight;
+    const doCapture = () => {
+      // Use natural video dimensions; fall back to element size if still 0
+      const w = v.videoWidth || v.clientWidth || 640;
+      const h = v.videoHeight || v.clientHeight || 480;
+      c.width = w;
+      c.height = h;
       const ctx = c.getContext('2d');
       if (!ctx) return;
-      ctx.drawImage(v, 0, 0);
+      ctx.drawImage(v, 0, 0, w, h);
       const dataUrl = c.toDataURL('image/jpeg', 0.85);
       streamRef.current?.getTracks().forEach(t => t.stop());
       setCameraActive(false);
@@ -168,7 +165,17 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
       uploadToCloudinary(dataUrl);
     };
 
-    tryCapture();
+    // If dimensions already available, capture immediately.
+    // Otherwise wait for loadedmetadata which fires when stream is truly ready.
+    if (v.videoWidth > 0 && v.videoHeight > 0) {
+      doCapture();
+    } else {
+      v.addEventListener('loadedmetadata', doCapture, { once: true });
+      // Safety fallback: if event never fires, try after 1s anyway
+      setTimeout(() => {
+        if (v.videoWidth === 0) doCapture();
+      }, 1000);
+    }
   }, []);
 
   const handleSubmit = async () => {
