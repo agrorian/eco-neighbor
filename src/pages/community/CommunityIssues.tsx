@@ -61,6 +61,7 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
   const [gpsLoading, setGpsLoading] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
+  const [videoReady, setVideoReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -69,8 +70,22 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
 
   useEffect(() => {
     acquireGPS();
-    return () => streamRef.current?.getTracks().forEach(t => t.stop());
+    return () => stopCamera();
   }, []);
+
+  // Attach stream AFTER cameraActive=true renders <video> into DOM
+  // (same pattern as ActionForm.tsx — proven to work on all devices)
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      const v = videoRef.current;
+      v.srcObject = streamRef.current;
+      setVideoReady(false);
+      v.onloadedmetadata = () => {
+        v.play().catch(() => {});
+        setVideoReady(true);
+      };
+    }
+  }, [cameraActive]);
 
   const acquireGPS = () => {
     if (!navigator.geolocation) return;
@@ -93,104 +108,83 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
     );
   };
 
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setCameraActive(false);
+    setVideoReady(false);
+  };
+
   const openCamera = async () => {
     setCameraError('');
+    setVideoReady(false);
     try {
-      // ideal: environment = rear cam on mobile, ignored gracefully on desktop
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setCameraActive(true);
-    } catch {
-      // fallback: try without any constraints if environment camera fails
+      let stream: MediaStream;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-        setCameraActive(true);
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
       } catch {
-        setCameraError('Camera access denied. Please allow camera in browser settings.');
+        // Fallback for desktop — no rear camera
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       }
+      streamRef.current = stream;
+      // srcObject is attached in useEffect after <video> is in DOM
+      setCameraActive(true);
+    } catch (err: any) {
+      setCameraError(
+        err?.name === 'NotFoundError'
+          ? 'No camera found on this device.'
+          : 'Camera access denied. Please allow camera in browser settings.'
+      );
     }
   };
 
-  // Converts a canvas dataUrl to a Blob without using fetch(),
-  // which is blocked for data: URLs in Chrome security contexts.
-  const dataUrlToBlob = (dataUrl: string): Blob => {
-    const [header, base64] = dataUrl.split(',');
-    const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new Blob([bytes], { type: mime });
-  };
-
-  const uploadToCloudinary = (dataUrl: string) => {
+  const uploadPhoto = async (file: File, preview: string) => {
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dl86obm3b';
     const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'enb_photos';
     try {
-      const blob = dataUrlToBlob(dataUrl);
       const form = new FormData();
-      form.append('file', blob, 'resolution.jpg');
+      form.append('file', file);
       form.append('upload_preset', preset);
       form.append('folder', 'enb_resolutions');
-      fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: form })
-        .then(r => r.json())
-        .then(data => {
-          setPhotos(prev => prev.map(p => p.preview === dataUrl
-            ? { ...p, url: data.secure_url || null, uploading: false }
-            : p));
-        })
-        .catch(() => {
-          setPhotos(prev => prev.map(p => p.preview === dataUrl
-            ? { ...p, uploading: false }
-            : p));
-        });
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST', body: form,
+      });
+      const data = await res.json();
+      setPhotos(prev => prev.map(p =>
+        p.preview === preview
+          ? { ...p, url: data.secure_url || null, uploading: false }
+          : p
+      ));
     } catch {
-      setPhotos(prev => prev.map(p => p.preview === dataUrl
-        ? { ...p, uploading: false }
-        : p));
+      setPhotos(prev => prev.map(p =>
+        p.preview === preview ? { ...p, uploading: false } : p
+      ));
     }
   };
 
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
-    const v = videoRef.current;
-    const c = canvasRef.current;
-
-    const doCapture = () => {
-      const w = v.videoWidth || 640;
-      const h = v.videoHeight || 480;
-      c.width = w;
-      c.height = h;
-      const ctx = c.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(v, 0, 0, w, h);
-      const dataUrl = c.toDataURL('image/jpeg', 0.85);
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      setCameraActive(false);
-      setPhotos(prev => [...prev, { preview: dataUrl, url: null, uploading: true }]);
-      uploadToCloudinary(dataUrl);
-    };
-
-    // readyState 4 = HAVE_ENOUGH_DATA — video is truly rendering frames
-    if (v.readyState >= 4 && v.videoWidth > 0) {
-      doCapture();
-    } else {
-      // Wait for canplay which guarantees at least one frame is ready
-      const handler = () => { doCapture(); };
-      v.addEventListener('canplay', handler, { once: true });
-      // Hard fallback: 3 seconds
-      setTimeout(() => {
-        v.removeEventListener('canplay', handler);
-        if (v.videoWidth > 0) doCapture();
-      }, 3000);
-    }
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    // Guard: reject if video has no real dimensions (black frame)
+    if (!video.videoWidth || !video.videoHeight) return;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const preview = canvas.toDataURL('image/jpeg', 0.8);
+      // Sanity check — black/blank frames produce very small dataUrls
+      if (preview.length < 1000) return;
+      const file = new File([blob], `resolution_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setPhotos(prev => [...prev, { preview, url: null, uploading: true }]);
+      stopCamera();
+      uploadPhoto(file, preview);
+    }, 'image/jpeg', 0.85);
   }, []);
 
   const handleSubmit = async () => {
@@ -229,8 +223,8 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
   const canSubmit = photos.filter(p => p.url).length > 0 && !!gpsLat && !submitting && !anyUploading;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{touchAction:"none"}}>
-      <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto overscroll-contain" style={{touchAction:"pan-y"}}>
+    <div className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto overscroll-contain" style={{touchAction:"pan-y", WebkitOverflowScrolling:"touch"}}>
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-3xl sm:rounded-t-2xl">
           <div>
@@ -290,10 +284,10 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
               <div className="relative rounded-xl overflow-hidden bg-black">
                 <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-56 object-cover" />
                 <canvas ref={canvasRef} className="hidden" />
-                <Button onClick={capturePhoto} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-white text-enb-green border-4 border-enb-green">
-                  <Camera className="w-5 h-5" />
+                <Button onClick={capturePhoto} disabled={!videoReady} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-white text-enb-green border-4 border-enb-green disabled:opacity-50">
+                  {videoReady ? <Camera className="w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin" />}
                 </Button>
-                <button onClick={() => { streamRef.current?.getTracks().forEach(t => t.stop()); setCameraActive(false); }}
+                <button onClick={stopCamera}
                   className="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center">
                   <X className="w-4 h-4" />
                 </button>
