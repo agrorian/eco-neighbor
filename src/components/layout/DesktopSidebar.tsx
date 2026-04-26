@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote, Flag } from 'lucide-react';
+import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote, Flag, Bell } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useT } from '@/contexts/LanguageContext';
+import InboxBell from '@/components/InboxBell';
 
 export default function DesktopSidebar() {
   const location = useLocation();
@@ -15,6 +16,7 @@ export default function DesktopSidebar() {
   if (!user) return null;
 
   const memberNav = [
+    { path: '/inbox',        icon: Bell,          label: 'Inbox' },
     { path: '/',              icon: Home,          label: l('nav', 'dashboard') },
     { path: '/submit',        icon: PlusCircle,    label: l('nav', 'submitAction') },
     { path: '/wallet',        icon: Wallet,        label: l('nav', 'wallet') },
@@ -84,7 +86,7 @@ export default function DesktopSidebar() {
           <div className="bg-enb-green p-2.5 rounded-xl flex-shrink-0">
             <ENBLeaf size={30} />
           </div>
-          <div className="overflow-hidden">
+          <div className="overflow-hidden flex-1">
             <span className="font-bold text-xl tracking-tight text-enb-text-primary block truncate">Eco-Neighbor</span>
             <span
               className="text-xs text-enb-text-muted font-medium"
@@ -92,6 +94,7 @@ export default function DesktopSidebar() {
               style={{ unicodeBidi: 'embed', direction: 'ltr', display: 'block' }}
             >$ENB · App v1.4.1</span>
           </div>
+          <InboxBell />
         </div>
       </div>
 
