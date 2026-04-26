@@ -279,7 +279,7 @@ export default function AfterPhotoSubmission({
       const { data: afterRec, error: insertErr } = await supabase
         .from('submissions')
         .insert({
-          user_id: user.id,              // ← was missing, now fixed
+          user_id: user.id,
           parent_submission_id: submissionId,
           submission_phase: 'after',
           action_type: actionType,
@@ -295,16 +295,44 @@ export default function AfterPhotoSubmission({
           ai_review_verdict: aiVerdict,
           ai_review_reason: aiReason,
           ai_review_confidence: aiConfidence,
+          enb_awarded: 0,   // rewards belong to the Before record only
+          rep_awarded: 0,
         })
         .select('id')
         .single();
 
       if (insertErr) throw insertErr;
 
-      await supabase
+      // ⚠️ CRITICAL: await this update before calling onSuccess()
+      // Otherwise SubmissionDetail re-fetches Before while after_submitted is still false
+      const { error: updateErr } = await supabase
         .from('submissions')
         .update({ after_submitted: true, after_submission_id: afterRec.id })
         .eq('id', submissionId);
+
+      if (updateErr) throw updateErr;
+
+      // Assign the SAME two moderators to the After submission as the Before.
+      // This ensures both mods see Before + After side-by-side in their queue.
+      const { data: beforeAssignment } = await supabase
+        .from('moderator_assignments')
+        .select('mod1_id, mod2_id')
+        .eq('submission_id', submissionId)
+        .limit(1)
+        .maybeSingle();
+
+      if (beforeAssignment?.mod1_id && beforeAssignment?.mod2_id) {
+        await supabase
+          .from('moderator_assignments')
+          .insert({
+            submission_id: afterRec.id,
+            mod1_id: beforeAssignment.mod1_id,
+            mod2_id: beforeAssignment.mod2_id,
+            escalation_flag: false,
+          });
+      }
+      // If no Before assignment exists yet (edge case), the DB trigger
+      // will create one for the After record automatically.
 
       onSuccess();
     } catch (err: any) {

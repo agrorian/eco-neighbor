@@ -142,12 +142,18 @@ export default function SubmissionDetail() {
       <Card className="border-gray-100 shadow-sm overflow-hidden">
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
           {isTransformation && (
-            <span className="text-xs font-bold uppercase tracking-wider text-enb-text-secondary bg-enb-green/10 text-enb-green px-2 py-0.5 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-wider text-enb-green bg-enb-green/10 px-2 py-0.5 rounded-full">
               Before
             </span>
           )}
-          <span className="text-sm font-semibold text-enb-text-primary">Submission Details</span>
-          <span className="ml-auto text-xs text-gray-400">🔒 Locked</span>
+          <span className="text-sm font-semibold text-enb-text-primary flex-1">Submission Details</span>
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <Lock className="w-3.5 h-3.5" />
+            <span>{new Date(submission.submitted_at).toLocaleDateString('en-PK', {
+              day: 'numeric', month: 'short', year: 'numeric',
+              hour: '2-digit', minute: '2-digit',
+            })}</span>
+          </div>
         </div>
 
         {/* Before photos */}
@@ -219,11 +225,22 @@ export default function SubmissionDetail() {
                   : 'After Photos Locked'}
               </span>
               {afterStatus === 'waiting' && <Lock className="w-4 h-4 text-gray-400" />}
-              {afterStatus === 'complete' && <CheckCircle className="w-4 h-4 text-enb-green" />}
+              {afterStatus === 'complete' && afterRecord && (
+                <div className="flex items-center gap-1.5 text-xs text-enb-green">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>{new Date(afterRecord.submitted_at).toLocaleDateString('en-PK', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                  })}</span>
+                </div>
+              )}
+              {afterStatus === 'complete' && !afterRecord && (
+                <CheckCircle className="w-4 h-4 text-enb-green" />
+              )}
             </div>
 
             <CardContent className="p-4">
-              {/* Complete state — show after photos */}
+              {/* Complete state — show after photos, locked and logged */}
               {afterStatus === 'complete' && afterRecord && (
                 <div className="space-y-4">
                   {afterRecord.photo_urls?.length > 0 && (
@@ -244,11 +261,26 @@ export default function SubmissionDetail() {
                   {afterRecord.description && (
                     <p className="text-sm text-enb-text-secondary leading-relaxed">{afterRecord.description}</p>
                   )}
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <Clock className="w-3 h-3" />
-                    Submitted {new Date(afterRecord.submitted_at).toLocaleDateString('en-PK', {
-                      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-                    })}
+                  {/* Locked + logged confirmation strip */}
+                  <div className="flex items-center gap-2 p-2.5 bg-enb-green/5 border border-enb-green/20 rounded-xl">
+                    <CheckCircle className="w-4 h-4 text-enb-green flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-enb-green">Logged &amp; Locked</p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {new Date(afterRecord.submitted_at).toLocaleDateString('en-PK', {
+                          weekday: 'short', day: 'numeric', month: 'long', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      afterRecord.status === 'approved' ? 'bg-enb-green/10 text-enb-green' :
+                      afterRecord.status === 'rejected' ? 'bg-red-50 text-red-500' :
+                      'bg-enb-gold/10 text-enb-gold'
+                    }`}>
+                      {afterRecord.status === 'approved' ? 'Approved' :
+                       afterRecord.status === 'rejected' ? 'Rejected' : 'Pending Review'}
+                    </span>
                   </div>
                 </div>
               )}

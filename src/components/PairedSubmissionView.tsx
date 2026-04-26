@@ -74,19 +74,27 @@ export default function PairedSubmissionView({ beforeSubmission: sub }: PairedSu
   const [afterRecord, setAfterRecord] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Guard: this component must only receive 'before' phase submissions.
+  // If an 'after' record is passed in (ModQueue bug), render nothing.
+  if (sub.submission_phase === 'after') return null;
+
   useEffect(() => {
-    const fetch = async () => {
-      if (!sub.after_submitted) { setLoading(false); return; }
+    const fetchAfter = async () => {
+      setLoading(true);
+      // Always query by parent_submission_id — don't rely solely on the
+      // after_submitted flag which can be stale due to race conditions.
       const { data } = await supabase
         .from('submissions')
         .select('*')
         .eq('parent_submission_id', sub.id)
         .eq('submission_phase', 'after')
-        .single();
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       setAfterRecord(data || null);
       setLoading(false);
     };
-    fetch();
+    fetchAfter();
   }, [sub.id]);
 
   const gpsDistance =
@@ -162,12 +170,12 @@ export default function PairedSubmissionView({ beforeSubmission: sub }: PairedSu
         </Card>
 
         {/* After */}
-        <Card className={`border-gray-100 shadow-sm ${!sub.after_submitted ? 'opacity-50' : ''}`}>
+        <Card className={`border-gray-100 shadow-sm ${!afterRecord && !loading ? 'opacity-50' : ''}`}>
           <div className={`px-3 py-2 border-b rounded-t-xl ${
-            sub.after_submitted ? 'bg-enb-green/5 border-enb-green/20' : 'bg-gray-50 border-gray-100'
+            afterRecord ? 'bg-enb-green/5 border-enb-green/20' : 'bg-gray-50 border-gray-100'
           }`}>
             <span className={`text-xs font-bold uppercase tracking-wider ${
-              sub.after_submitted ? 'text-enb-green' : 'text-gray-400'
+              afterRecord ? 'text-enb-green' : 'text-gray-400'
             }`}>After</span>
           </div>
           <CardContent className="p-3 space-y-3">

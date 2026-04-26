@@ -206,10 +206,31 @@ export default function MyHistory() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full text-enb-green hover:bg-enb-green/5 hover:text-enb-green text-xs font-medium flex items-center justify-center gap-1"
+                        className={`w-full text-xs font-medium flex items-center justify-center gap-1 ${
+                          sub.after_submitted
+                            ? 'text-enb-green hover:bg-enb-green/5 hover:text-enb-green'
+                            : isUnlocked(sub.after_unlocks_at)
+                            ? 'text-enb-gold hover:bg-enb-gold/5 hover:text-enb-gold'
+                            : 'text-enb-text-secondary hover:bg-gray-50'
+                        }`}
                       >
-                        View Details & Submit After Photos
-                        <ChevronRight className="w-3.5 h-3.5" />
+                        {sub.after_submitted ? (
+                          <>
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            View Submission · Locked &amp; Logged
+                          </>
+                        ) : isUnlocked(sub.after_unlocks_at) ? (
+                          <>
+                            <Camera className="w-3.5 h-3.5" />
+                            Submit After Photos Now
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3.5 h-3.5" />
+                            View Details
+                          </>
+                        )}
+                        <ChevronRight className="w-3.5 h-3.5 ml-auto" />
                       </Button>
                     </Link>
                   </div>

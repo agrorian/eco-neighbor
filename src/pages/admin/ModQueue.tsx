@@ -82,8 +82,44 @@ export default function ModQueue() {
           .from('submissions')
           .select('*')
           .in('id', subIds);
+
+        // For After-phase submissions, resolve to their Before (parent) record
+        // so PairedSubmissionView always receives a Before record.
+        // The After data is fetched inside PairedSubmissionView via parent_submission_id.
+        const afterSubs = (subs || []).filter(s => s.submission_phase === 'after' && s.parent_submission_id);
+        let parentMap = new Map<string, any>();
+
+        if (afterSubs.length > 0) {
+          const parentIds = [...new Set(afterSubs.map(s => s.parent_submission_id))];
+          const { data: parents } = await supabase
+            .from('submissions')
+            .select('*')
+            .in('id', parentIds);
+          (parents || []).forEach(p => parentMap.set(p.id, p));
+        }
+
         const subMap = new Map((subs || []).map(s => [s.id, s]));
-        setAssignments(pending.map(a => ({ ...a, submission: subMap.get(a.submission_id) })));
+
+        // Deduplicate: if an After assignment resolved to the same Before parent
+        // as an existing Before assignment, keep only one card (the Before assignment).
+        const seenSubmissionIds = new Set<string>();
+        const deduped = pending
+          .map(a => {
+            const sub = subMap.get(a.submission_id);
+            const resolvedSub =
+              sub?.submission_phase === 'after' && sub?.parent_submission_id
+                ? parentMap.get(sub.parent_submission_id) ?? sub
+                : sub;
+            return { ...a, submission: resolvedSub };
+          })
+          .filter(a => {
+            const sid = a.submission?.id;
+            if (!sid || seenSubmissionIds.has(sid)) return false;
+            seenSubmissionIds.add(sid);
+            return true;
+          });
+
+        setAssignments(deduped);
       } else {
         setAssignments([]);
       }
@@ -178,6 +214,8 @@ export default function ModQueue() {
           const dec = decisions[a.id] || { decision: '', reason: '' };
           const isProcessing = submitting === a.id;
           const isTransformation = sub?.action_type ? isTransformationAction(sub.action_type) : false;
+          // For transformation actions, only allow a decision once After is submitted
+          const afterPending = isTransformation && !sub?.after_submitted;
 
           return (
             <Card key={a.id} className="border-gray-100 shadow-sm overflow-hidden">
@@ -202,8 +240,19 @@ export default function ModQueue() {
                     </span>
                   </div>
 
-                  {/* PairedSubmissionView — shows Before + After side by side */}
-                  <PairedSubmissionView beforeSubmission={sub} />
+                  {afterPending ? (
+                    /* After not yet submitted — show Before details + waiting notice */
+                    <div className="space-y-3">
+                      <PairedSubmissionView beforeSubmission={sub} />
+                      <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        Waiting for user to submit After photos. You can review once both phases are complete.
+                      </div>
+                    </div>
+                  ) : (
+                    /* After submitted — show full paired view */
+                    <PairedSubmissionView beforeSubmission={sub} />
+                  )}
 
                   {sub?.description && (
                     <p className="text-sm text-enb-text-secondary bg-gray-50 rounded-lg p-3">{sub.description}</p>
@@ -259,7 +308,13 @@ export default function ModQueue() {
 
               {/* ── DECISION SECTION (same for all submission types) ───────── */}
               <CardContent className="px-5 pb-5 pt-0 space-y-4 border-t border-gray-100">
-                {/* Escalation warning */}
+                {/* Block decisions until After is submitted for transformation actions */}
+                {afterPending ? (
+                  <p className="text-sm text-center text-gray-400 py-2">
+                    Decisions locked until After photos are submitted.
+                  </p>
+                ) : (
+                  <>
                 {a.escalation_flag && (
                   <div className="flex items-center gap-2 text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm">
                     <AlertTriangle className="w-4 h-4 flex-shrink-0" />
@@ -327,6 +382,8 @@ export default function ModQueue() {
                           : `Submit ${dec.decision === 'APPROVE' ? 'Approval' : 'Rejection'}`}
                     </Button>
                   </div>
+                )}
+                </>
                 )}
               </CardContent>
             </Card>
