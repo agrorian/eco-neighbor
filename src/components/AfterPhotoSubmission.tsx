@@ -305,12 +305,22 @@ export default function AfterPhotoSubmission({
 
       // ⚠️ CRITICAL: await this update before calling onSuccess()
       // Otherwise SubmissionDetail re-fetches Before while after_submitted is still false
-      const { error: updateErr } = await supabase
+      const { error: updateErr, count: updateCount } = await supabase
         .from('submissions')
         .update({ after_submitted: true, after_submission_id: afterRec.id })
-        .eq('id', submissionId);
+        .eq('id', submissionId)
+        .select(); // select() forces Supabase to return affected rows
 
-      if (updateErr) throw updateErr;
+      if (updateErr) throw new Error(`Before record update failed: ${updateErr.message}`);
+      // RLS silent failure: update ran but matched 0 rows (policy blocked it)
+      // In this case we use an RPC fallback that runs with SECURITY DEFINER
+      if (!updateCount || updateCount === 0) {
+        const { error: rpcErr } = await supabase.rpc('mark_before_submitted', {
+          p_submission_id: submissionId,
+          p_after_id: afterRec.id,
+        });
+        if (rpcErr) throw new Error(`RLS blocked update and RPC fallback failed: ${rpcErr.message}`);
+      }
 
       // Assign the SAME two moderators to the After submission as the Before.
       // This ensures both mods see Before + After side-by-side in their queue.

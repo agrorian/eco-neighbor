@@ -32,6 +32,9 @@ export default function ModQueue() {
   const [toast, setToast] = useState('');
   const [timers, setTimers] = useState<Record<string, number>>({});
   const timerRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({});
+  // Tracks whether PairedSubmissionView found an After record in the DB for each assignment.
+  // This bypasses the stale after_submitted flag on the Before record (RLS update race condition).
+  const [afterExists, setAfterExists] = useState<Record<string, boolean>>({});
 
   useEffect(() => { fetchAssignments(); }, []);
 
@@ -214,8 +217,11 @@ export default function ModQueue() {
           const dec = decisions[a.id] || { decision: '', reason: '' };
           const isProcessing = submitting === a.id;
           const isTransformation = sub?.action_type ? isTransformationAction(sub.action_type) : false;
-          // For transformation actions, only allow a decision once After is submitted
-          const afterPending = isTransformation && !sub?.after_submitted;
+          // afterPending: true only if PairedSubmissionView confirmed no After record exists in DB.
+          // We use afterExists[a.id] (set by onAfterResolved callback) rather than the stale
+          // after_submitted flag on the Before record, which may not be updated due to RLS.
+          // While loading (afterExists[a.id] is undefined), default to NOT blocking decisions.
+          const afterPending = isTransformation && afterExists[a.id] === false;
 
           return (
             <Card key={a.id} className="border-gray-100 shadow-sm overflow-hidden">
@@ -243,7 +249,10 @@ export default function ModQueue() {
                   {afterPending ? (
                     /* After not yet submitted — show Before details + waiting notice */
                     <div className="space-y-3">
-                      <PairedSubmissionView beforeSubmission={sub} />
+                      <PairedSubmissionView
+                        beforeSubmission={sub}
+                        onAfterResolved={(has) => setAfterExists(prev => ({ ...prev, [a.id]: has }))}
+                      />
                       <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                         Waiting for user to submit After photos. You can review once both phases are complete.
@@ -251,7 +260,10 @@ export default function ModQueue() {
                     </div>
                   ) : (
                     /* After submitted — show full paired view */
-                    <PairedSubmissionView beforeSubmission={sub} />
+                    <PairedSubmissionView
+                      beforeSubmission={sub}
+                      onAfterResolved={(has) => setAfterExists(prev => ({ ...prev, [a.id]: has }))}
+                    />
                   )}
 
                   {sub?.description && (

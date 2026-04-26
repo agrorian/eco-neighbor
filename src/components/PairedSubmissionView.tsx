@@ -26,6 +26,7 @@ interface Submission {
 
 interface PairedSubmissionViewProps {
   beforeSubmission: Submission;
+  onAfterResolved?: (hasAfter: boolean) => void; // tells parent whether After record exists
 }
 
 function formatDelta(ms: number): string {
@@ -70,19 +71,16 @@ function PhotoGrid({ urls, label }: { urls: string[]; label: string }) {
   );
 }
 
-export default function PairedSubmissionView({ beforeSubmission: sub }: PairedSubmissionViewProps) {
+export default function PairedSubmissionView({ beforeSubmission: sub, onAfterResolved }: PairedSubmissionViewProps) {
   const [afterRecord, setAfterRecord] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Guard: this component must only receive 'before' phase submissions.
-  // If an 'after' record is passed in (ModQueue bug), render nothing.
   if (sub.submission_phase === 'after') return null;
 
   useEffect(() => {
     const fetchAfter = async () => {
       setLoading(true);
-      // Always query by parent_submission_id — don't rely solely on the
-      // after_submitted flag which can be stale due to race conditions.
       const { data } = await supabase
         .from('submissions')
         .select('*')
@@ -92,6 +90,9 @@ export default function PairedSubmissionView({ beforeSubmission: sub }: PairedSu
         .limit(1)
         .maybeSingle();
       setAfterRecord(data || null);
+      // ✅ Tell the parent (ModQueue) whether After actually exists in the DB
+      // This bypasses the stale after_submitted flag on the Before record
+      onAfterResolved?.(!!data);
       setLoading(false);
     };
     fetchAfter();
@@ -110,16 +111,25 @@ export default function PairedSubmissionView({ beforeSubmission: sub }: PairedSu
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {/* Header — Before date left, After date right */}
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-enb-text-primary capitalize">
           {formatActionLabel(sub.action_type)}
         </h3>
-        <span className="text-xs text-gray-400">
-          {new Date(sub.submitted_at).toLocaleDateString('en-PK', {
-            day: 'numeric', month: 'short', year: 'numeric',
-          })}
-        </span>
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-xs text-gray-400">
+            Before: {new Date(sub.submitted_at).toLocaleDateString('en-PK', {
+              day: 'numeric', month: 'short', year: 'numeric',
+            })}
+          </span>
+          {afterRecord && (
+            <span className="text-xs text-enb-green font-medium">
+              After: {new Date(afterRecord.submitted_at).toLocaleDateString('en-PK', {
+                day: 'numeric', month: 'short', year: 'numeric',
+              })}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Time delta */}
@@ -196,7 +206,8 @@ export default function PairedSubmissionView({ beforeSubmission: sub }: PairedSu
                   <p className="text-xs text-enb-text-secondary line-clamp-3">{afterRecord.description}</p>
                 )}
                 <div className="text-xs text-gray-400">
-                  {new Date(afterRecord.submitted_at).toLocaleTimeString('en-PK', {
+                  {new Date(afterRecord.submitted_at).toLocaleDateString('en-PK', {
+                    day: 'numeric', month: 'short', year: 'numeric',
                     hour: '2-digit', minute: '2-digit',
                   })}
                 </div>
