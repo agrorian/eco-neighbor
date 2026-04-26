@@ -95,23 +95,27 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
 
   const openCamera = async () => {
     setCameraError('');
-    // On mobile, prefer the rear camera. On desktop, facingMode: 'environment'
-    // causes a black feed because laptops have no rear camera — so we omit it.
-    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    const videoConstraints = isMobile
-      ? { facingMode: { ideal: 'environment' } }
-      : true;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+      // ideal: environment = rear cam on mobile, ignored gracefully on desktop
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Ensure video plays — required for capture to work
-        videoRef.current.play().catch(() => {});
       }
       setCameraActive(true);
     } catch {
-      setCameraError('Camera access denied. Please allow camera in browser settings.');
+      // fallback: try without any constraints if environment camera fails
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        streamRef.current = stream;
+        if (videoRef.current) videoRef.current.srcObject = stream;
+        setCameraActive(true);
+      } catch {
+        setCameraError('Camera access denied. Please allow camera in browser settings.');
+      }
     }
   };
 
@@ -160,9 +164,8 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
     const c = canvasRef.current;
 
     const doCapture = () => {
-      // Use natural video dimensions; fall back to element size if still 0
-      const w = v.videoWidth || v.clientWidth || 640;
-      const h = v.videoHeight || v.clientHeight || 480;
+      const w = v.videoWidth || 640;
+      const h = v.videoHeight || 480;
       c.width = w;
       c.height = h;
       const ctx = c.getContext('2d');
@@ -175,19 +178,18 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
       uploadToCloudinary(dataUrl);
     };
 
-    // Capture as soon as the video is genuinely playing and has dimensions.
-    // We listen for 'playing' which fires after the first frame is rendered,
-    // guaranteeing we won't get a black frame from an unready stream.
-    if (v.videoWidth > 0 && v.videoHeight > 0 && !v.paused) {
+    // readyState 4 = HAVE_ENOUGH_DATA — video is truly rendering frames
+    if (v.readyState >= 4 && v.videoWidth > 0) {
       doCapture();
     } else {
-      const onPlaying = () => { doCapture(); };
-      v.addEventListener('playing', onPlaying, { once: true });
-      // Safety fallback after 2s in case 'playing' never fires
+      // Wait for canplay which guarantees at least one frame is ready
+      const handler = () => { doCapture(); };
+      v.addEventListener('canplay', handler, { once: true });
+      // Hard fallback: 3 seconds
       setTimeout(() => {
-        v.removeEventListener('playing', onPlaying);
-        doCapture();
-      }, 2000);
+        v.removeEventListener('canplay', handler);
+        if (v.videoWidth > 0) doCapture();
+      }, 3000);
     }
   }, []);
 
@@ -227,8 +229,8 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
   const canSubmit = photos.filter(p => p.url).length > 0 && !!gpsLat && !submitting && !anyUploading;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{touchAction:"none"}}>
+      <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto overscroll-contain" style={{touchAction:"pan-y"}}>
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-3xl sm:rounded-t-2xl">
           <div>
