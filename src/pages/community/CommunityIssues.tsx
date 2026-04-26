@@ -116,20 +116,9 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
     return new Blob([bytes], { type: mime });
   };
 
-  const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const v = videoRef.current; const c = canvasRef.current;
-    c.width = v.videoWidth; c.height = v.videoHeight;
-    c.getContext('2d')?.drawImage(v, 0, 0);
-    const dataUrl = c.toDataURL('image/jpeg', 0.85);
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    setCameraActive(false);
-    const newPhoto = { preview: dataUrl, url: null, uploading: true };
-    setPhotos(prev => [...prev, newPhoto]);
-
+  const uploadToCloudinary = (dataUrl: string) => {
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dl86obm3b';
     const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'enb_photos';
-
     try {
       const blob = dataUrlToBlob(dataUrl);
       const form = new FormData();
@@ -153,6 +142,33 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
         ? { ...p, uploading: false }
         : p));
     }
+  };
+
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const v = videoRef.current;
+    const c = canvasRef.current;
+
+    // Poll until video has real dimensions — Chrome can report 0x0
+    // immediately after stream starts even though the feed is live.
+    const tryCapture = () => {
+      if (v.videoWidth === 0 || v.videoHeight === 0 || v.readyState < 2) {
+        setTimeout(tryCapture, 150);
+        return;
+      }
+      c.width = v.videoWidth;
+      c.height = v.videoHeight;
+      const ctx = c.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(v, 0, 0);
+      const dataUrl = c.toDataURL('image/jpeg', 0.85);
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      setCameraActive(false);
+      setPhotos(prev => [...prev, { preview: dataUrl, url: null, uploading: true }]);
+      uploadToCloudinary(dataUrl);
+    };
+
+    tryCapture();
   }, []);
 
   const handleSubmit = async () => {
