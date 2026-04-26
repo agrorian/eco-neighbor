@@ -105,6 +105,17 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
     }
   };
 
+  // Converts a canvas dataUrl to a Blob without using fetch(),
+  // which is blocked for data: URLs in Chrome security contexts.
+  const dataUrlToBlob = (dataUrl: string): Blob => {
+    const [header, base64] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+  };
+
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
     const v = videoRef.current; const c = canvasRef.current;
@@ -118,17 +129,30 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
 
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dl86obm3b';
     const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'enb_photos';
-    fetch(dataUrl).then(r => r.blob()).then(blob => {
+
+    try {
+      const blob = dataUrlToBlob(dataUrl);
       const form = new FormData();
       form.append('file', blob, 'resolution.jpg');
       form.append('upload_preset', preset);
       form.append('folder', 'enb_resolutions');
-      return fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: form });
-    }).then(r => r.json()).then(data => {
-      setPhotos(prev => prev.map(p => p.preview === dataUrl ? { ...p, url: data.secure_url || null, uploading: false } : p));
-    }).catch(() => {
-      setPhotos(prev => prev.map(p => p.preview === dataUrl ? { ...p, uploading: false } : p));
-    });
+      fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: form })
+        .then(r => r.json())
+        .then(data => {
+          setPhotos(prev => prev.map(p => p.preview === dataUrl
+            ? { ...p, url: data.secure_url || null, uploading: false }
+            : p));
+        })
+        .catch(() => {
+          setPhotos(prev => prev.map(p => p.preview === dataUrl
+            ? { ...p, uploading: false }
+            : p));
+        });
+    } catch {
+      setPhotos(prev => prev.map(p => p.preview === dataUrl
+        ? { ...p, uploading: false }
+        : p));
+    }
   }, []);
 
   const handleSubmit = async () => {
