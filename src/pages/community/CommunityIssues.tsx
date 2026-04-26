@@ -284,8 +284,15 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
               <div className="relative rounded-xl overflow-hidden bg-black">
                 <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-56 object-cover" />
                 <canvas ref={canvasRef} className="hidden" />
-                <Button onClick={capturePhoto} disabled={!videoReady} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-white text-enb-green border-4 border-enb-green disabled:opacity-50">
-                  {videoReady ? <Camera className="w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin" />}
+                {/* Loading overlay — blocks shutter until stream has real frames */}
+                {!videoReady && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  </div>
+                )}
+                <Button onClick={capturePhoto} disabled={!videoReady}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-white text-enb-green border-4 border-enb-green disabled:opacity-50 hover:bg-enb-green hover:text-white">
+                  <Camera className="w-5 h-5" />
                 </Button>
                 <button onClick={stopCamera}
                   className="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center">
