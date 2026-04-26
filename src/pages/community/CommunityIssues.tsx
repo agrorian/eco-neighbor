@@ -95,10 +95,20 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
 
   const openCamera = async () => {
     setCameraError('');
+    // On mobile, prefer the rear camera. On desktop, facingMode: 'environment'
+    // causes a black feed because laptops have no rear camera — so we omit it.
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const videoConstraints = isMobile
+      ? { facingMode: { ideal: 'environment' } }
+      : true;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        // Ensure video plays — required for capture to work
+        videoRef.current.play().catch(() => {});
+      }
       setCameraActive(true);
     } catch {
       setCameraError('Camera access denied. Please allow camera in browser settings.');
@@ -165,16 +175,19 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
       uploadToCloudinary(dataUrl);
     };
 
-    // If dimensions already available, capture immediately.
-    // Otherwise wait for loadedmetadata which fires when stream is truly ready.
-    if (v.videoWidth > 0 && v.videoHeight > 0) {
+    // Capture as soon as the video is genuinely playing and has dimensions.
+    // We listen for 'playing' which fires after the first frame is rendered,
+    // guaranteeing we won't get a black frame from an unready stream.
+    if (v.videoWidth > 0 && v.videoHeight > 0 && !v.paused) {
       doCapture();
     } else {
-      v.addEventListener('loadedmetadata', doCapture, { once: true });
-      // Safety fallback: if event never fires, try after 1s anyway
+      const onPlaying = () => { doCapture(); };
+      v.addEventListener('playing', onPlaying, { once: true });
+      // Safety fallback after 2s in case 'playing' never fires
       setTimeout(() => {
-        if (v.videoWidth === 0) doCapture();
-      }, 1000);
+        v.removeEventListener('playing', onPlaying);
+        doCapture();
+      }, 2000);
     }
   }, []);
 
