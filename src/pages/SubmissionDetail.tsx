@@ -70,12 +70,23 @@ export default function SubmissionDetail() {
       }
       // Fetch linked after record if it exists
       if (data.after_submitted) {
-        const { data: afterData } = await supabase
-          .from('submissions')
-          .select('*')
-          .eq('parent_submission_id', subId)
-          .eq('submission_phase', 'after')
-          .single();
+        // Prefer fetching by after_submission_id (direct link, always unique)
+        // Fall back to parent_submission_id query ordered by most recent
+        const afterId = data.after_submission_id;
+        const { data: afterData } = afterId
+          ? await supabase
+              .from('submissions')
+              .select('*')
+              .eq('id', afterId)
+              .maybeSingle()
+          : await supabase
+              .from('submissions')
+              .select('*')
+              .eq('parent_submission_id', subId)
+              .eq('submission_phase', 'after')
+              .order('submitted_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
         if (afterData) setAfterRecord(afterData);
       }
     }
