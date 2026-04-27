@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug, Apple, Flag, Bell } from 'lucide-react';
+import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug, Apple, Flag, Bell, MessageSquare } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLang } from '@/contexts/LanguageContext';
@@ -24,6 +24,7 @@ export default function More() {
 
   const allItems = [
     { icon: Bell,         label: 'Inbox',           path: '/inbox',           color: 'text-enb-green',  show: true },
+    { icon: MessageSquare,label: 'Messages',         path: '/messages',        color: 'text-blue-600',   show: true },
     { icon: Trophy, label: 'Leaderboard', path: '/leaderboard', color: 'text-enb-gold', show: true },
     { icon: Globe, label: 'Community Impact', path: '/impact', color: 'text-enb-green', show: true },
     { icon: Apple, label: 'Food Sharing', path: '/food-sharing', color: 'text-orange-500', show: true },

@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, Wallet, Store, MoreHorizontal, ShieldCheck, Shield } from 'lucide-react';
+import { Home, PlusCircle, Wallet, Store, MoreHorizontal, ShieldCheck, Shield, MessageSquare } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import { useT } from '@/contexts/LanguageContext';
 
 const ITEM_STYLES: Record<string, { color: string; bg: string; activeBg: string }> = {
+  'messages':        { color: 'text-blue-600',   bg: 'bg-blue-50',       activeBg: 'bg-blue-600' },
   'dashboard':       { color: 'text-enb-green',  bg: 'bg-enb-green/10',  activeBg: 'bg-enb-green' },
   'submitAction':    { color: 'text-blue-600',   bg: 'bg-blue-50',       activeBg: 'bg-blue-600' },
   'wallet':          { color: 'text-amber-500',  bg: 'bg-amber-50',      activeBg: 'bg-amber-500' },
@@ -112,9 +113,10 @@ export default function MobileNav() {
 
   // ── All other roles ────────────────────────────────────────────────────────
   const navItems = [
-    { path: '/',       icon: Home,       styleKey: 'dashboard',   label: l('nav', 'dashboard') },
-    { path: '/submit', icon: PlusCircle, styleKey: 'submitAction',label: l('nav', 'submitAction') },
-    { path: '/wallet', icon: Wallet,     styleKey: 'wallet',      label: l('nav', 'wallet') },
+    { path: '/',       icon: Home,           styleKey: 'dashboard',    label: l('nav', 'dashboard') },
+    { path: '/submit', icon: PlusCircle,     styleKey: 'submitAction', label: l('nav', 'submitAction') },
+    { path: '/wallet', icon: Wallet,         styleKey: 'wallet',       label: l('nav', 'wallet') },
+    { path: '/messages', icon: MessageSquare, styleKey: 'messages',    label: 'Messages' },
     ...(user.role === 'admin'
       ? [{ path: '/admin',            icon: ShieldCheck,    styleKey: 'admin',        label: l('nav', 'admin') },
          { path: '/more',             icon: MoreHorizontal, styleKey: 'more',         label: l('nav', 'more') }]

@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote, Flag, Bell } from 'lucide-react';
+import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote, Flag, Bell, MessageSquare } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -17,6 +17,7 @@ export default function DesktopSidebar() {
 
   const memberNav = [
     { path: '/inbox',        icon: Bell,          label: 'Inbox' },
+    { path: '/messages',     icon: MessageSquare, label: 'Messages' },
     { path: '/',              icon: Home,          label: l('nav', 'dashboard') },
     { path: '/submit',        icon: PlusCircle,    label: l('nav', 'submitAction') },
     { path: '/wallet',        icon: Wallet,        label: l('nav', 'wallet') },

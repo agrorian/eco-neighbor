@@ -39,6 +39,7 @@ import PartnerManager from '@/pages/admin/PartnerManager';
 import BridgeManager from '@/pages/admin/BridgeManager';
 import AnnouncementsPage from '@/pages/admin/AnnouncementsPage';
 import Inbox from '@/pages/Inbox';
+import MessagesPage from '@/pages/Messages';
 
 // --- Lazily loaded (newer pages, role-gated) ---
 const FounderSale = lazy(() => import('@/pages/FounderSale'));
@@ -228,6 +229,8 @@ export default function App() {
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/bug-report" element={<BugReport />} />
                       <Route path="/inbox" element={<Inbox />} />
+                      <Route path="/messages" element={<MessagesPage />} />
+                      <Route path="/messages/:userId" element={<MessagesPage />} />
                       <Route path="/onboarding-queue" element={<OnboardingQueue />} />
                       <Route path="/volunteer-apply" element={<VolunteerApply />} />
                       <Route path="/business" element={<BusinessDashboard />} />
