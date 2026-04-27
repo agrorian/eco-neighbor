@@ -65,7 +65,7 @@ function isSameDay(a: string, b: string): boolean {
 
 function isOnline(lastSeen?: string): boolean {
   if (!lastSeen) return false;
-  return (Date.now() - new Date(lastSeen).getTime()) < 3 * 60 * 1000; // 3 min threshold
+  return (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000; // 5 min threshold
 }
 
 function Avatar({ user, size = 'md', showOnline = false }: {
@@ -133,6 +133,16 @@ function ConvoItem({ convo, isActive, onClick }: {
 // ─── Chat Bubble ──────────────────────────────────────────────────────────────
 
 function ChatBubble({ msg, isMine }: { msg: Message; isMine: boolean }) {
+  // Tick logic:
+  // ✓  (gray)  = sent, not yet delivered (no read_at, recent)
+  // ✓✓ (gray)  = delivered (message exists in DB = delivered)
+  // ✓✓ (blue)  = read by recipient (read_at is set)
+  const ticks = isMine ? (
+    msg.read_at
+      ? <span className="text-[11px] text-blue-300 font-bold tracking-tighter">✓✓</span>
+      : <span className="text-[11px] text-white/50 tracking-tighter">✓✓</span>
+  ) : null;
+
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed
@@ -145,11 +155,7 @@ function ChatBubble({ msg, isMine }: { msg: Message; isMine: boolean }) {
           <span className={`text-[10px] ${isMine ? 'text-white/70' : 'text-enb-text-secondary'}`}>
             {formatTime(msg.created_at)}
           </span>
-          {isMine && (
-            <span className={`text-[10px] ${msg.read_at ? 'text-white' : 'text-white/50'}`}>
-              {msg.read_at ? '✓✓' : '✓'}
-            </span>
-          )}
+          {ticks}
         </div>
       </div>
     </div>
@@ -249,13 +255,19 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── Update last_seen every 60s ────────────────────────────────────────────
+  // ── Update last_seen every 60s + on focus ────────────────────────────────
   useEffect(() => {
     if (!user) return;
     const updateSeen = () => supabase.rpc('update_last_seen');
-    updateSeen();
+    updateSeen(); // immediately on mount
     const interval = setInterval(updateSeen, 60000);
-    return () => clearInterval(interval);
+    window.addEventListener('focus', updateSeen);
+    window.addEventListener('click', updateSeen);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', updateSeen);
+      window.removeEventListener('click', updateSeen);
+    };
   }, [user]);
 
   // ── Fetch conversations ───────────────────────────────────────────────────
@@ -329,7 +341,7 @@ export default function MessagesPage() {
       .is('read_at', null);
   }, [user]);
 
-  // ── Realtime ──────────────────────────────────────────────────────────────
+  // ── Realtime: messages + partner last_seen ───────────────────────────────
   useEffect(() => {
     fetchConversations();
     if (!user) return;
@@ -348,13 +360,32 @@ export default function MessagesPage() {
           if (activePartner &&
             (msg.sender_id === activePartner.id || msg.recipient_id === activePartner.id)) {
             setMessages(prev => [...prev, msg]);
-            // Mark as read immediately if chat is open
             if (msg.sender_id === activePartner.id) {
               supabase.from('messages').update({ read_at: new Date().toISOString() })
                 .eq('id', msg.id).then(() => {});
             }
           }
         }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'users',
+      }, (payload) => {
+        // Update active partner's last_seen in real time
+        if (activePartner && payload.new.id === activePartner.id) {
+          setActivePartner(prev => prev ? { ...prev, last_seen: payload.new.last_seen } : prev);
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'messages',
+      }, (payload) => {
+        // Update read receipts in real time
+        setMessages(prev => prev.map(m =>
+          m.id === payload.new.id ? { ...m, read_at: payload.new.read_at } : m
+        ));
       })
       .subscribe();
 
