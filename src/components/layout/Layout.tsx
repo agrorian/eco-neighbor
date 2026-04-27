@@ -1,9 +1,10 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import MobileNav from './MobileNav';
 import FloatingBugButton from '@/components/FloatingBugButton';
 import DesktopSidebar from './DesktopSidebar';
 import { useUserStore } from '@/store/user';
 import InboxBell from '@/components/InboxBell';
+import { supabase } from '@/lib/supabase';
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,8 +12,27 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const { user } = useUserStore();
-  if (!user) return <>{children}</>;
 
+  // ── Global last_seen updater — runs app-wide ──────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    const updateSeen = () => {
+      supabase
+        .from('users')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('id', user.id)
+        .then(() => {});
+    };
+    updateSeen();
+    const interval = setInterval(updateSeen, 30000);
+    window.addEventListener('focus', updateSeen);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', updateSeen);
+    };
+  }, [user]);
+
+  if (!user) return <>{children}</>;
   return (
     <div className="min-h-screen bg-enb-surface">
       <DesktopSidebar />

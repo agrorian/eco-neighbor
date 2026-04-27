@@ -255,28 +255,7 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── Update last_seen directly (no RPC) ───────────────────────────────────
-  useEffect(() => {
-    if (!user) return;
-    const updateSeen = () => {
-      supabase
-        .from('users')
-        .update({ last_seen: new Date().toISOString() })
-        .eq('id', user.id)
-        .then(({ error }) => {
-          if (error) console.error('last_seen update error:', error);
-        });
-    };
-    updateSeen();
-    const interval = setInterval(updateSeen, 30000); // every 30s
-    window.addEventListener('focus', updateSeen);
-    window.addEventListener('click', updateSeen);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', updateSeen);
-      window.removeEventListener('click', updateSeen);
-    };
-  }, [user]);
+  // last_seen is updated globally in Layout.tsx
 
   // ── Fetch conversations ───────────────────────────────────────────────────
   const fetchConversations = useCallback(async () => {
@@ -339,14 +318,22 @@ export default function MessagesPage() {
     setMessages(data || []);
     setLoadingMsgs(false);
 
-    // Mark received messages as read
+    // Mark ALL unread messages from this partner as read
+    const now = new Date().toISOString();
     await supabase
       .from('messages')
-      .update({ read_at: new Date().toISOString() })
+      .update({ read_at: now })
       .eq('message_type', 'direct')
       .eq('sender_id', partnerId)
       .eq('recipient_id', user.id)
       .is('read_at', null);
+
+    // Update local state to reflect read status immediately
+    setMessages(prev => prev.map(m =>
+      m.sender_id === partnerId && m.recipient_id === user.id && !m.read_at
+        ? { ...m, read_at: now }
+        : m
+    ));
   }, [user]);
 
   // ── Realtime: messages + partner last_seen ───────────────────────────────
