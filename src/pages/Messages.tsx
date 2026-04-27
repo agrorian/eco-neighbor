@@ -255,12 +255,20 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── Update last_seen every 60s + on focus ────────────────────────────────
+  // ── Update last_seen directly (no RPC) ───────────────────────────────────
   useEffect(() => {
     if (!user) return;
-    const updateSeen = () => supabase.rpc('update_last_seen');
-    updateSeen(); // immediately on mount
-    const interval = setInterval(updateSeen, 60000);
+    const updateSeen = () => {
+      supabase
+        .from('users')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('id', user.id)
+        .then(({ error }) => {
+          if (error) console.error('last_seen update error:', error);
+        });
+    };
+    updateSeen();
+    const interval = setInterval(updateSeen, 30000); // every 30s
     window.addEventListener('focus', updateSeen);
     window.addEventListener('click', updateSeen);
     return () => {
