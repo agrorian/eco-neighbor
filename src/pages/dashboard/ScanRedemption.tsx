@@ -1,12 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Camera, CheckCircle, AlertCircle, ArrowRight, Loader2, RefreshCw, CameraOff } from 'lucide-react';
+import {
+  ArrowLeft, Camera, CheckCircle, AlertCircle,
+  ArrowRight, Loader2, RefreshCw, CameraOff
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser';
 
 interface RedemptionResult {
   success: boolean;
@@ -27,9 +31,10 @@ export default function ScanRedemption() {
   const [result, setResult] = useState<RedemptionResult | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraState, setCameraState] = useState<CameraState>('idle');
-  const streamRef = useRef<MediaStream | null>(null);
+  const scannerControlsRef = useRef<IScannerControls | null>(null);
+  const hasScannedRef = useRef(false);
 
-  // Auto-populate and immediately process when arriving via QR scan URL
+  // Auto-process when arriving via QR scan URL
   useEffect(() => {
     const code = searchParams.get('code');
     if (code) {
@@ -38,7 +43,7 @@ export default function ScanRedemption() {
     }
   }, []);
 
-  // Cleanup camera on unmount
+  // Cleanup scanner on unmount
   useEffect(() => {
     return () => { stopCamera(); };
   }, []);
@@ -67,65 +72,75 @@ export default function ScanRedemption() {
 
   const openCamera = async () => {
     setCameraState('requesting');
+    hasScannedRef.current = false;
 
-    // Check if mediaDevices API is available at all
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setCameraState('unavailable');
       return;
     }
 
-    // Check permission status first if API is available
+    // Check permission state if API available
     if (navigator.permissions) {
       try {
-        const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
-        if (permissionStatus.state === 'denied') {
+        const status = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        if (status.state === 'denied') {
           setCameraState('denied');
           return;
         }
-      } catch {
-        // permissions.query not supported — proceed anyway
-      }
+      } catch { /* not supported — proceed */ }
     }
 
-    // Safety timeout — if camera doesn't resolve in 8 seconds, show unavailable
+    // 8-second safety timeout
     const timeout = setTimeout(() => {
       setCameraState('unavailable');
     }, 8000);
 
     try {
-      // Try rear camera first, fall back to any camera
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } },
-          audio: false,
-        });
-      } catch {
-        // facingMode constraint failed — try without constraint
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false,
-        });
+      const codeReader = new BrowserQRCodeReader();
+
+      if (!videoRef.current) {
+        clearTimeout(timeout);
+        setCameraState('unavailable');
+        return;
       }
+
+      // Start continuous QR decode from camera
+      const controls = await codeReader.decodeFromVideoDevice(
+        undefined, // default camera (rear on mobile)
+        videoRef.current,
+        (result, error) => {
+          if (result && !hasScannedRef.current) {
+            hasScannedRef.current = true;
+            const scannedText = result.getText();
+
+            // Extract code from full URL if scanned as URL
+            let code = scannedText;
+            try {
+              const url = new URL(scannedText);
+              const param = url.searchParams.get('code');
+              if (param) code = param;
+            } catch {
+              // not a URL — use raw text
+            }
+
+            stopCamera();
+            setManualCode(code);
+            processCode(code);
+          }
+          if (error && !error.message?.includes('No MultiFormat')) {
+            console.debug('QR scan frame:', error.message);
+          }
+        }
+      );
 
       clearTimeout(timeout);
-      streamRef.current = stream;
+      scannerControlsRef.current = controls;
+      setCameraState('active');
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        // Use onloadedmetadata to ensure video is ready before playing
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().catch(console.error);
-        };
-        setCameraState('active');
-      }
     } catch (err: any) {
       clearTimeout(timeout);
       console.error('Camera error:', err?.name, err?.message);
-      if (
-        err?.name === 'NotAllowedError' ||
-        err?.name === 'PermissionDeniedError'
-      ) {
+      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
         setCameraState('denied');
       } else {
         setCameraState('unavailable');
@@ -134,18 +149,18 @@ export default function ScanRedemption() {
   };
 
   const stopCamera = () => {
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
+    scannerControlsRef.current?.stop();
+    scannerControlsRef.current = null;
     setCameraState('idle');
   };
 
   const resetScan = () => {
     setResult(null);
     setManualCode('');
+    hasScannedRef.current = false;
     stopCamera();
   };
 
-  // Camera permission denied message
   const renderCameraError = () => {
     const isDenied = cameraState === 'denied';
     return (
@@ -157,11 +172,11 @@ export default function ScanRedemption() {
         <p className="text-white/60 text-sm">
           {isDenied
             ? 'Please allow camera access in your browser settings, then try again.'
-            : 'Your device or browser does not support camera access.'}
+            : 'Your device or browser does not support camera access on this page.'}
         </p>
         {isDenied && (
-          <p className="text-white/40 text-xs">
-            In your browser: tap the 🔒 lock icon in the address bar → Site permissions → Camera → Allow
+          <p className="text-white/40 text-xs px-4">
+            Tap the 🔒 lock icon in the address bar → Site permissions → Camera → Allow → Refresh
           </p>
         )}
         <Button
@@ -175,7 +190,7 @@ export default function ScanRedemption() {
     );
   };
 
-  // Success screen
+  // ── Success screen ──────────────────────────────────────────────────────────
   if (result?.success) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 text-center space-y-6">
@@ -197,8 +212,7 @@ export default function ScanRedemption() {
             <p className="text-enb-text-secondary mt-1">
               <span className="font-bold text-enb-green">
                 {(result.enb_spent ?? result.enb_amount)?.toLocaleString()} ENB
-              </span>{' '}
-              accepted
+              </span>{' '}accepted
             </p>
           )}
         </div>
@@ -214,6 +228,7 @@ export default function ScanRedemption() {
     );
   }
 
+  // ── Main scan screen ────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <header className="p-4 flex items-center justify-between bg-black/50 backdrop-blur-md absolute top-0 left-0 right-0 z-10">
@@ -232,14 +247,14 @@ export default function ScanRedemption() {
       <div className="flex-1 relative flex items-center justify-center overflow-hidden pt-16">
 
         {/* Processing spinner */}
-        {processing && !cameraState.includes('active') && (
+        {processing && (
           <div className="flex flex-col items-center gap-4 p-8">
             <Loader2 className="w-16 h-16 text-enb-green animate-spin" />
             <p className="text-white/80 text-center">Processing SWAP...</p>
           </div>
         )}
 
-        {/* Requesting permission spinner */}
+        {/* Requesting permission */}
         {!processing && cameraState === 'requesting' && (
           <div className="flex flex-col items-center gap-4 p-8">
             <Loader2 className="w-12 h-12 text-white/60 animate-spin" />
@@ -247,30 +262,31 @@ export default function ScanRedemption() {
           </div>
         )}
 
-        {/* Camera error states */}
+        {/* Error states */}
         {!processing && (cameraState === 'denied' || cameraState === 'unavailable') && renderCameraError()}
 
-        {/* Active camera viewfinder */}
+        {/* Active camera + viewfinder — video always rendered so ref is available */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`absolute inset-0 w-full h-full object-cover ${cameraState === 'active' && !processing ? 'block' : 'hidden'}`}
+        />
         {!processing && cameraState === 'active' && (
           <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            {/* Viewfinder overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-64 h-64 border-2 border-white/50 relative">
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-enb-green -mt-1 -ml-1" />
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-enb-green -mt-1 -mr-1" />
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-enb-green -mb-1 -ml-1" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-enb-green -mb-1 -mr-1" />
-                {/* Scanning line animation */}
-                <div className="absolute inset-x-0 top-0 h-0.5 bg-enb-green/70 animate-[scan_2s_ease-in-out_infinite]" />
+              <div className="relative w-64 h-64">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-enb-green" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-enb-green" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-enb-green" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-enb-green" />
+                <div className="absolute inset-x-2 h-0.5 bg-enb-green/80 animate-[scan_2s_ease-in-out_infinite]" />
               </div>
             </div>
+            <p className="absolute bottom-48 left-0 right-0 text-center text-white/60 text-sm px-8">
+              Point camera at the member's QR code
+            </p>
             <Button
               onClick={stopCamera}
               className="absolute top-20 right-4 bg-white/20 text-white hover:bg-white/30 text-sm"
@@ -280,28 +296,24 @@ export default function ScanRedemption() {
           </>
         )}
 
-        {/* Idle state — camera not yet opened */}
+        {/* Idle */}
         {!processing && cameraState === 'idle' && (
           <div className="flex flex-col items-center gap-4 p-8">
             <Camera className="w-24 h-24 text-white/30" />
             <p className="text-white/60 text-center text-sm">
               Scan member's QR code or enter code below
             </p>
-            <Button
-              onClick={openCamera}
-              className="bg-enb-green hover:bg-enb-green/90 text-white"
-            >
+            <Button onClick={openCamera} className="bg-enb-green hover:bg-enb-green/90 text-white">
               <Camera className="w-4 h-4 mr-2" /> Open Camera
             </Button>
           </div>
         )}
       </div>
 
-      {/* Manual entry + result panel */}
+      {/* Manual entry panel */}
       <div className="bg-white text-enb-text-primary p-6 rounded-t-3xl relative z-10">
         <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
 
-        {/* Error result */}
         {result && !result.success && (
           <Card className="mb-4 border-red-200 bg-red-50">
             <CardContent className="p-4 flex items-start gap-3">
@@ -309,12 +321,7 @@ export default function ScanRedemption() {
               <div>
                 <p className="font-bold text-red-700 text-sm">SWAP Failed</p>
                 <p className="text-red-600 text-xs mt-1">{result.error}</p>
-                <Button
-                  onClick={resetScan}
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600 mt-2 p-0 h-auto"
-                >
+                <Button onClick={resetScan} variant="ghost" size="sm" className="text-red-600 mt-2 p-0 h-auto">
                   Try again
                 </Button>
               </div>
@@ -338,19 +345,12 @@ export default function ScanRedemption() {
             disabled={manualCode.length < 4 || processing}
             className="bg-enb-teal hover:bg-enb-teal/90 text-white px-4"
           >
-            {processing ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <ArrowRight className="w-5 h-5" />
-            )}
+            {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
           </Button>
         </form>
-        <p className="text-xs text-gray-400 text-center mt-2">
-          QR codes expire after 10 minutes
-        </p>
+        <p className="text-xs text-gray-400 text-center mt-2">QR codes expire after 10 minutes</p>
       </div>
 
-      {/* Scanning line keyframe */}
       <style>{`
         @keyframes scan {
           0%, 100% { top: 0; }
