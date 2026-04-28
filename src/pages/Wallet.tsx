@@ -1,21 +1,68 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, QrCode, Users, Lock } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, QrCode, Users, Lock, Clock, ShieldCheck, Info, X } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
 import TransactionHistory from './wallet/TransactionHistory';
 
+// ─── Locked ENB.GLOBAL info panel ────────────────────────────────────────────
+function GlobalLockInfo({
+  pendingAmount,
+  onClose,
+}: {
+  pendingAmount: number;
+  onClose: () => void;
+}) {
+  return (
+    <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 space-y-2 relative">
+      <button
+        onClick={onClose}
+        className="absolute top-2 right-2 text-amber-400 hover:text-amber-700"
+        aria-label="Close"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+      <div className="font-semibold text-amber-800 flex items-center gap-1.5 mb-1">
+        <Lock className="w-3.5 h-3.5" /> Why is my ENB.GLOBAL locked?
+      </div>
+      <p>Your ENB.GLOBAL balance of <strong>{pendingAmount.toLocaleString()} ENB</strong> is earned but not yet liquid. Unlock requires all of the following:</p>
+      <ul className="space-y-1 pl-1">
+        <li className="flex items-start gap-1.5">
+          <Clock className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
+          <span><strong>365 days</strong> hold from the date each batch was earned</span>
+        </li>
+        <li className="flex items-start gap-1.5">
+          <ShieldCheck className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
+          <span><strong>Pillar Tier</strong> reputation required (7,500 REP)</span>
+        </li>
+        <li className="flex items-start gap-1.5">
+          <ArrowUpRight className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
+          <span>Max <strong>50,000 ENB</strong> per release event</span>
+        </li>
+        <li className="flex items-start gap-1.5">
+          <RefreshCw className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
+          <span>Max <strong>2 release events</strong> per calendar year</span>
+        </li>
+      </ul>
+      <p className="text-amber-700 pt-1 border-t border-amber-200">
+        ENB.GLOBAL goes live on Solana Mainnet at TGE. Your balance is being recorded now and will be honoured in full.
+      </p>
+    </div>
+  );
+}
+
+// ─── Main Wallet ──────────────────────────────────────────────────────────────
 export default function Wallet() {
   const { user, setUser } = useUserStore();
   const { l } = useT();
+  const [showGlobalInfo, setShowGlobalInfo] = useState(false);
 
   useEffect(() => {
     if (!user) return;
 
-    // Initial fetch
     const refreshBalance = async () => {
       const { data } = await supabase
         .from('users')
@@ -26,7 +73,6 @@ export default function Wallet() {
     };
     refreshBalance();
 
-    // Real-time subscription — updates balance instantly when DB changes
     const channel = supabase
       .channel(`wallet-user-${user.id}`)
       .on(
@@ -52,6 +98,11 @@ export default function Wallet() {
 
   if (!user) return null;
 
+  // ENB.GLOBAL is always locked until all conditions are met post-TGE.
+  // For now (pre-TGE) the entire balance is pending/locked.
+  const globalBal = user.enb_global_bal || 0;
+  const isGlobalLocked = globalBal > 0; // always true pre-TGE; post-TGE gated by conditions
+
   return (
     <div className="space-y-6 pb-24">
       <header className="mb-6">
@@ -66,8 +117,12 @@ export default function Wallet() {
             {user.tier?.charAt(0) || 'N'}
           </div>
           <div>
-            <div className="font-bold text-enb-text-primary">{user.tier} {l('wallet', 'newcomerTier').split(' ').slice(-1)[0]}</div>
-            <div className="text-xs text-enb-text-secondary">{l('wallet', 'repScore')}: {user.rep_score}</div>
+            <div className="font-bold text-enb-text-primary">
+              {user.tier} {l('wallet', 'newcomerTier').split(' ').slice(-1)[0]}
+            </div>
+            <div className="text-xs text-enb-text-secondary">
+              {l('wallet', 'repScore')}: {user.rep_score}
+            </div>
           </div>
         </div>
         <Link to="/leaderboard">
@@ -80,10 +135,12 @@ export default function Wallet() {
       {/* Token Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        {/* ENB.LOCAL Card */}
+        {/* ENB.LOCAL Card — unchanged */}
         <Card className="border-l-4 border-l-enb-green shadow-md">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">ENB.LOCAL</CardTitle>
+            <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">
+              ENB.LOCAL
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {user.cnic_verified ? (
@@ -127,26 +184,88 @@ export default function Wallet() {
           </CardContent>
         </Card>
 
-        {/* ENB.GLOBAL Card */}
+        {/* ENB.GLOBAL Card — with locked badge */}
         <Card className="border-l-4 border-l-enb-gold shadow-md">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">ENB.GLOBAL</CardTitle>
+            {/* Title row with LOCKED superscript badge */}
+            <div className="flex items-start justify-between">
+              <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">
+                ENB.GLOBAL
+              </CardTitle>
+              {isGlobalLocked && (
+                <button
+                  onClick={() => setShowGlobalInfo((v) => !v)}
+                  className="flex items-center gap-1 bg-amber-100 hover:bg-amber-200 text-amber-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-300 transition-colors ml-2 mt-0.5"
+                  aria-label="Learn about ENB.GLOBAL lock conditions"
+                >
+                  <Lock className="w-2.5 h-2.5" />
+                  LOCKED
+                  <Info className="w-2.5 h-2.5 ml-0.5 opacity-70" />
+                </button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-enb-gold mb-1">
-              {(user.enb_global_bal || 0).toLocaleString()}
+            {/* Balance — amber when locked, gold when free */}
+            <div className="flex items-end gap-2 mb-1">
+              <div className={`text-4xl font-bold ${isGlobalLocked ? 'text-amber-500' : 'text-enb-gold'}`}>
+                {globalBal.toLocaleString()}
+              </div>
+              {isGlobalLocked && globalBal > 0 && (
+                <span className="text-xs text-amber-500 font-medium mb-1.5 leading-none">
+                  pending
+                </span>
+              )}
             </div>
-            <p className="text-xs text-enb-text-secondary mb-5">{l('wallet', 'tradeable')}</p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button className="w-full bg-enb-dark text-white hover:bg-enb-dark/90 shadow-sm text-sm" size="sm">
-                <ArrowUpRight className="w-4 h-4 mr-2 flex-shrink-0" />
-                {l('wallet', 'send')}
-              </Button>
-              <Button variant="outline" size="sm" className="w-full text-sm">
-                <ArrowDownLeft className="w-4 h-4 mr-2 flex-shrink-0" />
-                {l('wallet', 'receive')}
-              </Button>
-            </div>
+
+            {/* Subtitle */}
+            {isGlobalLocked ? (
+              <p className="text-xs text-amber-600 font-medium mb-1">
+                Earned · Conditions not yet met
+              </p>
+            ) : (
+              <p className="text-xs text-enb-text-secondary mb-5">{l('wallet', 'tradeable')}</p>
+            )}
+
+            {/* Expandable info panel */}
+            {showGlobalInfo && (
+              <GlobalLockInfo
+                pendingAmount={globalBal}
+                onClose={() => setShowGlobalInfo(false)}
+              />
+            )}
+
+            {/* Action buttons — disabled pre-TGE */}
+            {!showGlobalInfo && (
+              <div className={`grid grid-cols-2 gap-2 ${isGlobalLocked ? 'mt-4' : 'mt-5'}`}>
+                <Button
+                  className="w-full bg-enb-dark text-white hover:bg-enb-dark/90 shadow-sm text-sm disabled:opacity-40"
+                  size="sm"
+                  disabled={isGlobalLocked}
+                  title={isGlobalLocked ? 'Available after TGE and lock conditions are met' : ''}
+                >
+                  <ArrowUpRight className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {l('wallet', 'send')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-sm disabled:opacity-40"
+                  disabled={isGlobalLocked}
+                  title={isGlobalLocked ? 'Available after TGE and lock conditions are met' : ''}
+                >
+                  <ArrowDownLeft className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {l('wallet', 'receive')}
+                </Button>
+              </div>
+            )}
+
+            {/* Zero balance — pre-TGE explainer */}
+            {globalBal === 0 && (
+              <p className="text-xs text-enb-text-secondary mt-3">
+                Accept SWAPs at your business to start earning ENB.GLOBAL.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
