@@ -21,18 +21,35 @@ interface Department {
 }
 
 const PERMISSION_META: Record<string, { label: string; description: string; group: string }> = {
-  can_post_announcements: { label: 'Post Announcements',  description: 'Broadcast messages to channel/dept members', group: 'Communication' },
-  can_add_members:        { label: 'Add Members',         description: 'Invite users to department or channel',       group: 'Communication' },
-  can_remove_members:     { label: 'Remove Members',      description: 'Remove users from department or channel',     group: 'Communication' },
-  can_create_channels:    { label: 'Create Channels',     description: 'Create new group channels',                   group: 'Communication' },
-  can_assign_roles:       { label: 'Assign Roles',        description: 'Assign org roles to members',                 group: 'Management' },
-  can_view_reports:       { label: 'View Reports',        description: 'Access analytics and activity reports',       group: 'Management' },
-  can_moderate_content:   { label: 'Moderate Content',    description: 'Review and action flagged content',           group: 'Moderation' },
-  can_audit:              { label: 'Audit',               description: 'Read-only access to all dept activity',       group: 'Moderation' },
-  can_investigate:        { label: 'Investigate',         description: 'Deep-dive access for investigations',         group: 'Moderation' },
+  // Communication
+  can_post_announcements: { label: 'Post Announcements',       description: 'Broadcast messages to channel/dept members',              group: 'Communication' },
+  can_add_members:        { label: 'Add Members',              description: 'Invite users to department or channel',                    group: 'Communication' },
+  can_remove_members:     { label: 'Remove Members',           description: 'Remove users from department or channel',                  group: 'Communication' },
+  can_create_channels:    { label: 'Create Channels',          description: 'Create new group channels',                               group: 'Communication' },
+  // Management
+  can_assign_roles:       { label: 'Assign Roles',             description: 'Assign org roles to members',                             group: 'Management' },
+  can_view_reports:       { label: 'View Reports',             description: 'Access analytics and activity reports',                   group: 'Management' },
+  // Moderation
+  can_moderate_content:   { label: 'Moderate Content',         description: 'Review and action flagged content',                       group: 'Moderation' },
+  can_audit:              { label: 'Audit',                    description: 'Read-only access to all dept activity',                   group: 'Moderation' },
+  can_investigate:        { label: 'Investigate',              description: 'Deep-dive access for investigations',                     group: 'Moderation' },
+  // CFG — Community Food Guardian
+  can_manage_food_hub:          { label: 'Manage Food Hub',          description: 'Operate the Community Food Hub during intake and distribution windows', group: 'Community Food Guardian' },
+  can_log_safety_checks:        { label: 'Log Safety Checks',        description: 'Conduct and log Three-Point Safety Checks on incoming food batches',    group: 'Community Food Guardian' },
+  can_register_priority_recipients: { label: 'Register Priority Recipients', description: 'Register elderly, disabled, food-insecure households for direct delivery', group: 'Community Food Guardian' },
+  can_log_food_intake:          { label: 'Log Food Intake',          description: 'Log intake, safety check, and distribution events — permanent on-chain record', group: 'Community Food Guardian' },
+  can_notify_community:         { label: 'Notify Community',         description: 'Notify the community via ENB app when food becomes available',           group: 'Community Food Guardian' },
+  can_coordinate_food_runners:  { label: 'Coordinate Food Runners',  description: 'Coordinate with Food Runners on pickup schedules',                       group: 'Community Food Guardian' },
+  can_submit_food_flow_data:    { label: 'Submit Food Flow Data',     description: 'Submit monthly food flow data to the ENB Governance Committee',          group: 'Community Food Guardian' },
+  // Governance
+  can_create_proposals:   { label: 'Create Proposals',         description: 'Submit governance proposals (Founders and Pillar Tier members)',               group: 'Governance' },
+  can_vote_proposals:     { label: 'Vote on Proposals',        description: 'Cast votes on community proposals',                                            group: 'Governance' },
+  can_vote_financial:     { label: 'Vote on Financial Matters', description: 'Multi-sig committee vote on financial decisions (5-7 rotating members)',      group: 'Governance' },
+  can_manage_multisig:    { label: 'Manage Multi-Sig',         description: 'Access and manage multi-signature financial committee rotation',                group: 'Governance' },
+  can_view_governance_reports: { label: 'View Governance Reports', description: 'Access full governance activity, voting history and outcomes',             group: 'Governance' },
 };
 
-const PERMISSION_GROUPS = ['Communication', 'Management', 'Moderation'];
+const PERMISSION_GROUPS = ['Communication', 'Management', 'Moderation', 'Community Food Guardian', 'Governance'];
 
 function PermissionToggle({
   permKey,
