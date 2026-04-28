@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
-import { AlertTriangle, LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList, Bug, Radio } from 'lucide-react';
+import { AlertTriangle, LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList, Bug, Radio, GitBranch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard',   path: '/admin',            color: 'text-enb-green',  bg: 'bg-enb-green/10' },
-  { icon: Users,           label: 'Users',        path: '/admin/users',      color: 'text-purple-600', bg: 'bg-purple-50' },
+  { icon: Users,           label: 'Users',          path: '/admin/users',          color: 'text-purple-600', bg: 'bg-purple-50' },
+  { icon: GitBranch,       label: 'Org Structure',  path: '/admin/org-structure',  color: 'text-blue-600',   bg: 'bg-blue-50' },
   { icon: Megaphone,       label: 'Campaigns',      path: '/admin/campaigns',      color: 'text-enb-teal',   bg: 'bg-teal-50' },
   { icon: Radio,           label: 'Announcements',  path: '/admin/announcements',  color: 'text-blue-600',   bg: 'bg-blue-50' },
   { icon: Store,           label: 'Partners',     path: '/admin/partners',   color: 'text-enb-gold',   bg: 'bg-amber-50' },

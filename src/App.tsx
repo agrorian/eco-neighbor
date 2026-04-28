@@ -38,6 +38,7 @@ import CampaignManager from '@/pages/admin/CampaignManager';
 import PartnerManager from '@/pages/admin/PartnerManager';
 import BridgeManager from '@/pages/admin/BridgeManager';
 import AnnouncementsPage from '@/pages/admin/AnnouncementsPage';
+import OrgStructurePage from '@/pages/admin/org/OrgStructurePage';
 import Inbox from '@/pages/Inbox';
 import MessagesPage from '@/pages/Messages';
 
@@ -199,6 +200,7 @@ export default function App() {
                 <Route path="bugs" element={<AdminBugReports />} />
                 <Route path="onboarding" element={<AdminOnboarding />} />
                 <Route path="announcements" element={<AnnouncementsPage />} />
+                <Route path="org-structure" element={<OrgStructurePage />} />
               </Route>
               <Route path="/*" element={
                 <Layout>
