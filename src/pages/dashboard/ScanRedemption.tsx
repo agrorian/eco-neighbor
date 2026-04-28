@@ -87,6 +87,11 @@ export default function ScanRedemption() {
       }
     }
 
+    // Safety timeout — if camera doesn't resolve in 8 seconds, show unavailable
+    const timeout = setTimeout(() => {
+      setCameraState('unavailable');
+    }, 8000);
+
     try {
       // Try rear camera first, fall back to any camera
       let stream: MediaStream;
@@ -103,6 +108,7 @@ export default function ScanRedemption() {
         });
       }
 
+      clearTimeout(timeout);
       streamRef.current = stream;
 
       if (videoRef.current) {
@@ -114,6 +120,7 @@ export default function ScanRedemption() {
         setCameraState('active');
       }
     } catch (err: any) {
+      clearTimeout(timeout);
       console.error('Camera error:', err?.name, err?.message);
       if (
         err?.name === 'NotAllowedError' ||
