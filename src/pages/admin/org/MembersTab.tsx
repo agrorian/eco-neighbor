@@ -261,19 +261,43 @@ export default function MembersTab() {
   const { user } = useUserStore();
 
   const fetchAll = useCallback(async () => {
-    const [memRes, deptRes, regRes, roleRes] = await Promise.all([
-      supabase.from('user_org_memberships')
-        .select(`*, users(full_name, email, profile_pic_url), departments(name, icon), regions(name, level), org_roles(name)`)
-        .eq('is_active', true)
-        .order('assigned_at', { ascending: false }),
+    // Fetch memberships first
+    const { data: memData, error: memErr } = await supabase
+      .from('user_org_memberships')
+      .select('*')
+      .eq('is_active', true)
+      .order('assigned_at', { ascending: false });
+
+    if (memErr) { console.error('memberships error:', memErr); }
+
+    const mems = memData || [];
+
+    // Fetch supporting data in parallel
+    const [usersRes, deptRes, regRes, roleRes] = await Promise.all([
+      supabase.from('users').select('id, full_name, email, profile_pic_url'),
       supabase.from('departments').select('id, name, icon').eq('is_active', true).order('name'),
       supabase.from('regions').select('id, name, level').order('name'),
-      supabase.from('org_roles').select('id, name').eq('is_active', true).order('name'),
+      supabase.from('org_roles').select('id, name').order('name'),
     ]);
-    setMemberships(memRes.data || []);
-    setDepartments(deptRes.data || []);
-    setRegions(regRes.data || []);
-    setRoles(roleRes.data || []);
+
+    const usersMap   = new Map((usersRes.data   || []).map(u => [u.id, u]));
+    const deptsMap   = new Map((deptRes.data    || []).map(d => [d.id, d]));
+    const regionsMap = new Map((regRes.data     || []).map(r => [r.id, r]));
+    const rolesMap   = new Map((roleRes.data    || []).map(r => [r.id, r]));
+
+    // Manually join
+    const joined = mems.map(m => ({
+      ...m,
+      users:       usersMap.get(m.user_id)       || { full_name: 'Unknown', email: '', profile_pic_url: null },
+      departments: deptsMap.get(m.department_id) || { name: 'Unknown', icon: null },
+      regions:     regionsMap.get(m.region_id)   || { name: 'Unknown', level: '' },
+      org_roles:   m.org_role_id ? rolesMap.get(m.org_role_id) || null : null,
+    }));
+
+    setMemberships(joined as any);
+    setDepartments(deptRes.data  || []);
+    setRegions(regRes.data       || []);
+    setRoles(roleRes.data        || []);
     setLoading(false);
   }, []);
 
