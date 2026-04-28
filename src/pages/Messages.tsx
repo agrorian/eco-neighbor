@@ -1,11 +1,14 @@
 // src/pages/Messages.tsx
-// ENB Direct Messages — WhatsApp-style full page chat
-// Stack: React 19, Supabase JS 2.98, Tailwind CSS 4
+// ENB Messages — Direct Messages + Channels in one WhatsApp-style page
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Send, ArrowLeft, MessageCircle, Circle } from 'lucide-react';
+import { Search, Send, ArrowLeft, MessageCircle, Circle, Hash } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import ChannelsSidebar from './channels/ChannelsSidebar';
+import ChannelView from './channels/ChannelView';
+import CreateChannelModal from './channels/CreateChannelModal';
+import GenerateChannelsModal from './channels/GenerateChannelsModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -243,6 +246,7 @@ function NewMessageModal({ currentUserId, onSelect, onClose }: {
 
 export default function MessagesPage() {
   const { user } = useUserStore();
+  const [activeTab, setActiveTab] = useState<'dms' | 'channels'>('dms');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activePartner, setActivePartner] = useState<UserProfile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -251,7 +255,18 @@ export default function MessagesPage() {
   const [showNewMsg, setShowNewMsg] = useState(false);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sending, setSending] = useState(false);
-  const [showChat, setShowChat] = useState(false); // mobile: show chat panel
+  const [showChat, setShowChat] = useState(false);
+
+  // Channel state
+  const [channels, setChannels] = useState<any[]>([]);
+  const [activeChannel, setActiveChannel] = useState<any | null>(null);
+  const [showChannelChat, setShowChannelChat] = useState(false);
+  const [loadingChannels, setLoadingChannels] = useState(false);
+  const [showCreateChannel, setShowCreateChannel] = useState(false);
+  const [showGenerateChannels, setShowGenerateChannels] = useState(false);
+
+  const isSuperAdmin = user?.role === 'admin';
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -336,9 +351,50 @@ export default function MessagesPage() {
     ));
   }, [user]);
 
-  // ── Realtime: messages + partner last_seen ───────────────────────────────
+  // ── Fetch channels ────────────────────────────────────────────────────────
+  const fetchChannels = useCallback(async () => {
+    if (!user) return;
+    setLoadingChannels(true);
+
+    // Get channels user is a member of
+    const { data: memberOf } = await supabase
+      .from('channel_members')
+      .select('channel_id')
+      .eq('user_id', user.id);
+
+    const channelIds = (memberOf || []).map(m => m.channel_id);
+
+    if (channelIds.length === 0) {
+      // SA can see all channels
+      if (isSuperAdmin) {
+        const { data } = await supabase.from('channels').select('*').eq('is_active', true).order('name');
+        setChannels(data || []);
+      } else {
+        setChannels([]);
+      }
+      setLoadingChannels(false);
+      return;
+    }
+
+    const { data } = await supabase
+      .from('channels')
+      .select('*')
+      .in('id', isSuperAdmin ? [] : channelIds)
+      .eq('is_active', true)
+      .order('name');
+
+    // SA sees all
+    if (isSuperAdmin) {
+      const { data: all } = await supabase.from('channels').select('*').eq('is_active', true).order('name');
+      setChannels(all || []);
+    } else {
+      setChannels(data || []);
+    }
+    setLoadingChannels(false);
+  }, [user, isSuperAdmin]);
   useEffect(() => {
     fetchConversations();
+    fetchChannels();
     if (!user) return;
 
     const channel = supabase
@@ -436,104 +492,138 @@ export default function MessagesPage() {
 
   if (!user) return null;
 
-  // ─────────────────────────────────────────────────────────────────────────
-
   return (
     <div className="flex h-[calc(100vh-0px)] md:h-[calc(100vh-0px)] -m-4 md:-m-6 overflow-hidden">
 
-      {/* ── Left: Conversation List ── */}
+      {/* ── Left: Conversation / Channel List ── */}
       <div className={`flex flex-col w-full md:w-80 bg-white border-r border-gray-100 flex-shrink-0
-        ${showChat ? 'hidden md:flex' : 'flex'}`}>
+        ${(showChat || showChannelChat) ? 'hidden md:flex' : 'flex'}`}>
 
-        {/* Header */}
-        <div className="px-4 py-4 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold text-enb-text-primary">Messages</h1>
-            <button
-              onClick={() => setShowNewMsg(true)}
-              className="w-9 h-9 rounded-xl bg-enb-green/10 flex items-center justify-center
-                hover:bg-enb-green/20 transition-colors"
-              title="New message"
-            >
-              <MessageCircle className="w-4 h-4 text-enb-green" />
-            </button>
-          </div>
-          <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
-            <Search className="w-4 h-4 text-gray-400 shrink-0" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search conversations..."
-              className="flex-1 bg-transparent text-sm outline-none text-enb-text-primary placeholder:text-gray-400"
+        {/* Tab bar — DMs / Channels */}
+        <div className="flex border-b border-gray-100 shrink-0">
+          <button
+            onClick={() => setActiveTab('dms')}
+            className={`flex-1 py-3 text-sm font-semibold transition-colors
+              ${activeTab === 'dms'
+                ? 'text-enb-green border-b-2 border-enb-green'
+                : 'text-enb-text-secondary hover:text-enb-text-primary'
+              }`}
+          >
+            Messages
+          </button>
+          <button
+            onClick={() => { setActiveTab('channels'); fetchChannels(); }}
+            className={`flex-1 py-3 text-sm font-semibold transition-colors
+              ${activeTab === 'channels'
+                ? 'text-enb-green border-b-2 border-enb-green'
+                : 'text-enb-text-secondary hover:text-enb-text-primary'
+              }`}
+          >
+            Channels
+          </button>
+        </div>
+
+        {/* DMs panel */}
+        {activeTab === 'dms' && (
+          <>
+            <div className="px-4 py-3 border-b border-gray-100 shrink-0">
+              <div className="flex items-center justify-between mb-3">
+                <h1 className="text-base font-bold text-enb-text-primary">Direct Messages</h1>
+                <button onClick={() => setShowNewMsg(true)}
+                  className="w-8 h-8 rounded-xl bg-enb-green/10 flex items-center justify-center hover:bg-enb-green/20">
+                  <MessageCircle className="w-4 h-4 text-enb-green" />
+                </button>
+              </div>
+              <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
+                <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Search conversations..."
+                  className="flex-1 bg-transparent text-sm outline-none text-enb-text-primary placeholder:text-gray-400" />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {filteredConvos.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                  <MessageCircle className="w-12 h-12 text-gray-200 mb-3" />
+                  <p className="font-semibold text-enb-text-primary text-sm">No messages yet</p>
+                  <p className="text-xs text-enb-text-secondary mt-1 mb-4">Start a conversation with a team member</p>
+                  <button onClick={() => setShowNewMsg(true)}
+                    className="px-4 py-2 bg-enb-green text-white text-sm font-semibold rounded-xl hover:bg-enb-green/90">
+                    New Message
+                  </button>
+                </div>
+              ) : (
+                filteredConvos.map(c => (
+                  <ConvoItem key={c.partner.id} convo={c}
+                    isActive={activePartner?.id === c.partner.id}
+                    onClick={() => openConversation(c.partner)} />
+                ))
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Channels panel */}
+        {activeTab === 'channels' && (
+          <div className="flex-1 overflow-hidden">
+            <ChannelsSidebar
+              channels={channels}
+              activeChannelId={activeChannel?.id || null}
+              onSelectChannel={ch => { setActiveChannel(ch); setShowChannelChat(true); }}
+              onCreateChannel={() => setShowCreateChannel(true)}
+              onGenerateChannels={() => setShowGenerateChannels(true)}
+              isSuperAdmin={isSuperAdmin}
+              loading={loadingChannels}
             />
           </div>
-        </div>
-
-        {/* Conversations */}
-        <div className="flex-1 overflow-y-auto">
-          {filteredConvos.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <MessageCircle className="w-12 h-12 text-gray-200 mb-3" />
-              <p className="font-semibold text-enb-text-primary text-sm">No messages yet</p>
-              <p className="text-xs text-enb-text-secondary mt-1 mb-4">
-                Start a conversation with a team member
-              </p>
-              <button
-                onClick={() => setShowNewMsg(true)}
-                className="px-4 py-2 bg-enb-green text-white text-sm font-semibold rounded-xl
-                  hover:bg-enb-green/90 transition-colors"
-              >
-                New Message
-              </button>
-            </div>
-          ) : (
-            filteredConvos.map(c => (
-              <ConvoItem
-                key={c.partner.id}
-                convo={c}
-                isActive={activePartner?.id === c.partner.id}
-                onClick={() => openConversation(c.partner)}
-              />
-            ))
-          )}
-        </div>
+        )}
       </div>
 
       {/* ── Right: Chat Panel ── */}
-      <div className={`flex-1 flex flex-col bg-enb-surface
-        ${showChat ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`flex-1 flex flex-col bg-enb-surface overflow-hidden
+        ${(showChat || showChannelChat) ? 'flex' : 'hidden md:flex'}`}>
 
-        {activePartner ? (
+        {/* Channel view */}
+        {activeTab === 'channels' && activeChannel && (
+          <ChannelView
+            channel={activeChannel}
+            onBack={() => { setShowChannelChat(false); setActiveChannel(null); }}
+          />
+        )}
+
+        {/* Channel empty state */}
+        {activeTab === 'channels' && !activeChannel && (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+              <Hash className="w-8 h-8 text-gray-300" />
+            </div>
+            <h2 className="font-bold text-enb-text-primary text-lg">Channels</h2>
+            <p className="text-sm text-enb-text-secondary mt-2 max-w-xs">
+              Select a channel to start reading and posting group messages.
+            </p>
+          </div>
+        )}
+
+        {/* DM views */}
+        {activeTab === 'dms' && activePartner && (
           <>
-            {/* Chat header */}
-            <div className="flex items-center gap-3 px-4 py-3.5 bg-white border-b border-gray-100">
-              <button
-                onClick={() => setShowChat(false)}
-                className="md:hidden w-8 h-8 flex items-center justify-center rounded-xl
-                  hover:bg-gray-100 transition-colors"
-              >
+            <div className="flex items-center gap-3 px-4 py-3.5 bg-white border-b border-gray-100 shrink-0">
+              <button onClick={() => setShowChat(false)}
+                className="md:hidden w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100">
                 <ArrowLeft className="w-4 h-4 text-enb-text-secondary" />
               </button>
               <Avatar user={activePartner} size="md" showOnline />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-enb-text-primary text-sm truncate">
-                  {activePartner.full_name}
-                </p>
+                <p className="font-semibold text-enb-text-primary text-sm truncate">{activePartner.full_name}</p>
                 <div className="flex items-center gap-1.5">
-                  <Circle className={`w-2 h-2 fill-current
-                    ${isOnline(activePartner.last_seen) ? 'text-green-500' : 'text-gray-300'}`} />
+                  <Circle className={`w-2 h-2 fill-current ${isOnline(activePartner.last_seen) ? 'text-green-500' : 'text-gray-300'}`} />
                   <span className="text-xs text-enb-text-secondary">
-                    {isOnline(activePartner.last_seen)
-                      ? 'Online'
-                      : activePartner.last_seen
-                        ? `Last seen ${timeAgo(activePartner.last_seen)}`
-                        : 'Offline'}
+                    {isOnline(activePartner.last_seen) ? 'Online'
+                      : activePartner.last_seen ? `Last seen ${timeAgo(activePartner.last_seen)}` : 'Offline'}
                   </span>
                 </div>
               </div>
             </div>
-
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
               {loadingMsgs ? (
                 <div className="flex items-center justify-center h-full">
@@ -542,9 +632,7 @@ export default function MessagesPage() {
               ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <Avatar user={activePartner} size="lg" />
-                  <p className="font-semibold text-enb-text-primary mt-3">
-                    {activePartner.full_name}
-                  </p>
+                  <p className="font-semibold text-enb-text-primary mt-3">{activePartner.full_name}</p>
                   <p className="text-xs text-enb-text-secondary mt-1 capitalize">
                     {activePartner.role}{activePartner.neighbourhood ? ` · ${activePartner.neighbourhood}` : ''}
                   </p>
@@ -573,60 +661,56 @@ export default function MessagesPage() {
               )}
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Input */}
-            <div className="px-4 py-3 bg-white border-t border-gray-100">
+            <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0">
               <div className="flex items-center gap-2">
-                <input
-                  ref={inputRef}
-                  value={newMsg}
-                  onChange={e => setNewMsg(e.target.value)}
+                <input ref={inputRef} value={newMsg} onChange={e => setNewMsg(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={`Message ${activePartner.full_name}...`}
                   className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-sm outline-none
                     text-enb-text-primary placeholder:text-gray-400 border border-gray-100
-                    focus:border-enb-green/40 focus:bg-white transition-colors"
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={!newMsg.trim() || sending}
+                    focus:border-enb-green/40 focus:bg-white transition-colors" />
+                <button onClick={sendMessage} disabled={!newMsg.trim() || sending}
                   className="w-10 h-10 rounded-xl bg-enb-green flex items-center justify-center
-                    hover:bg-enb-green/90 disabled:opacity-40 transition-all shrink-0"
-                >
+                    hover:bg-enb-green/90 disabled:opacity-40 transition-all shrink-0">
                   <Send className="w-4 h-4 text-white" />
                 </button>
               </div>
             </div>
           </>
-        ) : (
-          /* Empty state — no conversation selected */
+        )}
+
+        {activeTab === 'dms' && !activePartner && (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <div className="w-16 h-16 rounded-2xl bg-enb-green/10 flex items-center justify-center mb-4">
               <MessageCircle className="w-8 h-8 text-enb-green" />
             </div>
             <h2 className="font-bold text-enb-text-primary text-lg">Your Messages</h2>
             <p className="text-sm text-enb-text-secondary mt-2 max-w-xs">
-              Send private messages to team members, moderators, and other ENB community members.
+              Send private messages to team members and other ENB community members.
             </p>
-            <button
-              onClick={() => setShowNewMsg(true)}
-              className="mt-6 px-6 py-2.5 bg-enb-green text-white text-sm font-semibold
-                rounded-xl hover:bg-enb-green/90 transition-colors"
-            >
+            <button onClick={() => setShowNewMsg(true)}
+              className="mt-6 px-6 py-2.5 bg-enb-green text-white text-sm font-semibold rounded-xl hover:bg-enb-green/90">
               Start a Conversation
             </button>
           </div>
         )}
       </div>
 
-      {/* New Message Modal */}
+      {/* Modals */}
       {showNewMsg && (
-        <NewMessageModal
-          currentUserId={user.id}
-          onSelect={startNewDM}
-          onClose={() => setShowNewMsg(false)}
+        <NewMessageModal currentUserId={user.id} onSelect={startNewDM} onClose={() => setShowNewMsg(false)} />
+      )}
+      {showCreateChannel && (
+        <CreateChannelModal
+          onCreated={() => { setShowCreateChannel(false); fetchChannels(); }}
+          onClose={() => setShowCreateChannel(false)}
+        />
+      )}
+      {showGenerateChannels && (
+        <GenerateChannelsModal
+          onGenerated={() => { setShowGenerateChannels(false); fetchChannels(); }}
+          onClose={() => setShowGenerateChannels(false)}
         />
       )}
     </div>
   );
-}
