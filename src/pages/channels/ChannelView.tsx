@@ -2,10 +2,11 @@
 // Channel chat panel — realtime group messaging
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Hash, Users, Megaphone, Lock, ArrowLeft, Info } from 'lucide-react';
+import { Hash, Users, Megaphone, Lock, ArrowLeft, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import ChannelInfoPanel from './ChannelInfoPanel';
+import RichTextEditor from '@/components/RichTextEditor';
 
 interface Channel {
   id: string;
@@ -87,7 +88,17 @@ function MessageBubble({ msg, isMine, showAvatar }: {
             ? 'bg-enb-green text-white rounded-br-sm'
             : 'bg-white border border-gray-100 text-enb-text-primary rounded-bl-sm shadow-sm'
           }`}>
-          <p>{msg.content}</p>
+          <div
+            className="prose prose-sm max-w-none
+              prose-headings:font-semibold prose-headings:my-0.5
+              prose-p:my-0 prose-li:my-0
+              prose-a:no-underline hover:prose-a:underline
+              prose-code:px-1 prose-code:rounded prose-code:text-[0.8em]
+              prose-blockquote:my-1 prose-blockquote:pl-2 prose-blockquote:border-l-2
+              prose-hr:my-1"
+            style={isMine ? { color: 'white' } : {}}
+            dangerouslySetInnerHTML={{ __html: msg.content }}
+          />
           <p className={`text-[10px] mt-1 ${isMine ? 'text-white/70 text-right' : 'text-enb-text-secondary'}`}>
             {formatTime(msg.created_at)}
           </p>
@@ -105,14 +116,13 @@ interface ChannelViewProps {
 export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   const { user } = useUserStore();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMsg, setNewMsg] = useState('');
   const [sending, setSending] = useState(false);
   const [membership, setMembership] = useState<ChannelMember | null>(null);
   const [memberCount, setMemberCount] = useState(channel.member_count || 0);
   const [showInfo, setShowInfo] = useState(false);
   const [channelData, setChannelData] = useState(channel);
+  const [clearTrigger, setClearTrigger] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // ── Check membership + fetch messages ─────────────────────────────────────
   const fetchMessages = useCallback(async () => {
@@ -210,26 +220,21 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   };
 
   // ── Send message ───────────────────────────────────────────────────────────
-  const sendMessage = async () => {
-    if (!newMsg.trim() || !user || sending || !canPost) return;
-    const content = newMsg.trim();
-    setNewMsg('');
+  const sendMessage = async (html: string) => {
+    if (!html.trim() || !user || sending || !canPost) return;
     setSending(true);
 
     await supabase.from('messages').insert({
       sender_id:    user.id,
       channel_id:   channel.id,
       message_type: 'channel',
-      content,
+      content:      html,
       recipient_id: null,
       team_id:      null,
     });
 
+    setClearTrigger(t => t + 1);
     setSending(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
   if (!user) return null;
@@ -315,7 +320,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
         </div>
 
         {/* Input */}
-        <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0">
+        <div className="px-3 py-3 bg-white border-t border-gray-100 shrink-0">
           {!isMember ? (
             <button onClick={joinChannel}
               className="w-full py-2.5 bg-enb-green text-white text-sm font-semibold rounded-xl
@@ -327,23 +332,15 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
               <p className="text-xs text-enb-text-secondary">Only admins and Super Admin can post here.</p>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                value={newMsg}
-                onChange={e => setNewMsg(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={`Message #${channelData.name}...`}
-                className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-sm outline-none
-                  text-enb-text-primary placeholder:text-gray-400 border border-gray-100
-                  focus:border-enb-green/40 focus:bg-white transition-colors"
-              />
-              <button onClick={sendMessage} disabled={!newMsg.trim() || sending}
-                className="w-10 h-10 rounded-xl bg-enb-green flex items-center justify-center
-                  hover:bg-enb-green/90 disabled:opacity-40 transition-all shrink-0">
-                <Send className="w-4 h-4 text-white" />
-              </button>
-            </div>
+            <RichTextEditor
+              placeholder={`Message #${channelData.name}...`}
+              minHeight="44px"
+              maxHeight="160px"
+              onSubmit={sendMessage}
+              submitLabel="Send"
+              submitting={sending}
+              clearTrigger={clearTrigger}
+            />
           )}
         </div>
       </div>
