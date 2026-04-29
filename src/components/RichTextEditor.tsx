@@ -364,8 +364,9 @@ export default function RichTextEditor({
           return [
             'span',
             {
-              class: 'mention inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-semibold bg-enb-green/15 text-enb-green cursor-default',
+              class: 'mention',
               'data-mention-id': node.attrs.id,
+              style: 'display:inline-flex;align-items:center;padding:1px 6px;border-radius:5px;font-size:0.8em;font-weight:700;background:rgba(255,255,255,0.25);color:inherit;cursor:default;text-decoration:underline;',
             },
             `@${node.attrs.label}`,
           ];
@@ -479,7 +480,8 @@ export default function RichTextEditor({
           [&_.ProseMirror_li[data-type=taskItem]]:flex [&_.ProseMirror_li[data-type=taskItem]]:gap-2 [&_.ProseMirror_li[data-type=taskItem]]:items-start
           [&_.ProseMirror_li[data-type=taskItem]_label]:flex [&_.ProseMirror_li[data-type=taskItem]_label]:items-center [&_.ProseMirror_li[data-type=taskItem]_label]:mt-0.5
           [&_.ProseMirror_li[data-type=taskItem]_input]:w-3.5 [&_.ProseMirror_li[data-type=taskItem]_input]:h-3.5 [&_.ProseMirror_li[data-type=taskItem]_input]:accent-enb-green
-          [&_.ProseMirror_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_.is-editor-empty:first-child::before]:text-gray-400 [&_.ProseMirror_.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_.is-editor-empty:first-child::before]:h-0"
+          [&_.ProseMirror_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_.is-editor-empty:first-child::before]:text-gray-400 [&_.ProseMirror_.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_.is-editor-empty:first-child::before]:h-0
+          [&_.ProseMirror_.mention]:bg-enb-green/15 [&_.ProseMirror_.mention]:text-enb-green [&_.ProseMirror_.mention]:font-bold [&_.ProseMirror_.mention]:rounded [&_.ProseMirror_.mention]:px-1 [&_.ProseMirror_.mention]:text-[0.85em] [&_.ProseMirror_.mention]:no-underline"
       />
 
       {/* Footer */}
