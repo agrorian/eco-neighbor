@@ -279,10 +279,14 @@ export default function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable built-ins we're replacing
+        // Disable extensions we're adding separately with custom config
         heading: { levels: [1, 2, 3] },
         codeBlock: {},
         blockquote: {},
+        // Disable built-in Link and Underline — we add our own configured versions
+        // @ts-ignore — v3 StarterKit accepts these
+        link: false,
+        underline: false,
       }),
       Underline,
       Link.configure({
