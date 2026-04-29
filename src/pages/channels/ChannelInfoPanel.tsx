@@ -37,6 +37,47 @@ interface SearchUser {
   profile_pic_url: string | null;
 }
 
+const CHANNEL_ROLES = [
+  {
+    value: 'admin',
+    label: 'Admin',
+    description: 'Can manage members, settings and post in any mode',
+    color: 'text-amber-600',
+    bg: 'bg-amber-50',
+    badgeColor: 'bg-amber-50 text-amber-600',
+  },
+  {
+    value: 'moderator',
+    label: 'Moderator',
+    description: 'Can moderate content and manage members',
+    color: 'text-blue-600',
+    bg: 'bg-blue-50',
+    badgeColor: 'bg-blue-50 text-blue-600',
+  },
+  {
+    value: 'member',
+    label: 'Member',
+    description: 'Standard channel member',
+    color: 'text-gray-500',
+    bg: 'bg-gray-50',
+    badgeColor: 'bg-gray-100 text-gray-500',
+  },
+] as const;
+
+function getRoleMeta(role: string, userRole?: string) {
+  if (userRole === 'admin') return {
+    label: 'Super Admin',
+    badgeColor: 'bg-enb-green/10 text-enb-green',
+    icon: true,
+  };
+  const found = CHANNEL_ROLES.find(r => r.value === role);
+  return {
+    label: found?.label || 'Member',
+    badgeColor: found?.badgeColor || 'bg-gray-100 text-gray-500',
+    icon: role === 'admin',
+  };
+}
+
 const POSTING_MODES = [
   { value: 'open',       label: 'Open',         description: 'Anyone can post',              icon: Hash,     color: 'text-enb-green' },
   { value: 'moderated',  label: 'Moderated',    description: 'Admin approves posts',         icon: Lock,     color: 'text-amber-600' },
@@ -141,7 +182,8 @@ export default function ChannelInfoPanel({
     return () => clearTimeout(t);
   }, [memberSearch, members]);
 
-  const canManage = isSuperAdmin || myRole === 'admin';
+  const canManage = isSuperAdmin || myRole === 'admin' || myRole === 'moderator';
+  const canManageFully = isSuperAdmin || myRole === 'admin'; // settings, delete, promote to admin
 
   // ── Save name ──────────────────────────────────────────────────────────────
   const saveName = async () => {
@@ -169,10 +211,11 @@ export default function ChannelInfoPanel({
   // ── Add member ─────────────────────────────────────────────────────────────
   const addMember = async (u: SearchUser) => {
     setAddingMember(true);
+    const role = u.role === 'admin' ? 'admin' : 'member';
     await supabase.from('channel_members').insert({
       channel_id: channel.id,
       user_id:    u.id,
-      role:       'member',
+      role,
     });
     setMemberSearch('');
     setSearchResults([]);
@@ -210,7 +253,7 @@ export default function ChannelInfoPanel({
 
   // ── Delete channel ─────────────────────────────────────────────────────────
   const deleteChannel = async () => {
-    if (!canManage) return;
+    if (!canManageFully) return;
     if (!confirm('Delete this channel? This cannot be undone.')) return;
     await supabase.from('channels').delete().eq('id', channel.id);
     onChannelDeleted();
@@ -258,7 +301,7 @@ export default function ChannelInfoPanel({
               ) : (
                 <div className="flex items-center gap-1">
                   <p className="font-semibold text-enb-text-primary truncate">{nameVal}</p>
-                  {canManage && (
+                  {canManageFully && (
                     <button onClick={() => setEditingName(true)}
                       className="w-5 h-5 rounded flex items-center justify-center hover:bg-gray-100">
                       <Pencil className="w-3 h-3 text-gray-400" />
@@ -290,9 +333,9 @@ export default function ChannelInfoPanel({
             ) : (
               <div className="flex items-start gap-1 group">
                 <p className="text-xs text-enb-text-secondary flex-1">
-                  {descVal || (canManage ? 'Add a description...' : 'No description')}
+                  {descVal || (canManageFully ? 'Add a description...' : 'No description')}
                 </p>
-                {canManage && (
+                {canManageFully && (
                   <button onClick={() => setEditingDesc(true)}
                     className="w-5 h-5 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-gray-100 shrink-0">
                     <Pencil className="w-3 h-3 text-gray-400" />
@@ -307,7 +350,7 @@ export default function ChannelInfoPanel({
         <div className="px-4 py-3 border-b border-gray-50">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-bold text-enb-text-secondary uppercase tracking-wider">Posting Mode</p>
-            {canManage && (
+            {canManageFully && (
               <button onClick={() => setEditingMode(m => !m)}
                 className="flex items-center gap-1 text-xs text-enb-green font-medium">
                 Change <ChevronDown className={`w-3 h-3 transition-transform ${editingMode ? 'rotate-180' : ''}`} />
@@ -409,23 +452,39 @@ export default function ChannelInfoPanel({
                         <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-enb-green/10 text-enb-green font-medium shrink-0">You</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1">
-                      {m.role === 'admin' && (
-                        <Shield className="w-2.5 h-2.5 text-amber-500" />
-                      )}
-                      <p className="text-[10px] text-enb-text-secondary capitalize">{m.role}</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      {(() => {
+                        const meta = getRoleMeta(m.role, m.user_role);
+                        return (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${meta.badgeColor}`}>
+                            {meta.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
 
-                  {/* Actions — only for admins, not on yourself */}
-                  {canManage && m.user_id !== user?.id && (
+                  {/* Actions — only for admins/mods, not on yourself, not on other SAs */}
+                  {canManage && m.user_id !== user?.id && m.user_role !== 'admin' && (
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => changeMemberRole(m.user_id, m.role === 'admin' ? 'member' : 'admin')}
-                        title={m.role === 'admin' ? 'Remove admin' : 'Make admin'}
-                        className="w-6 h-6 rounded-lg hover:bg-amber-50 flex items-center justify-center">
-                        <Shield className={`w-3 h-3 ${m.role === 'admin' ? 'text-amber-500' : 'text-gray-300'}`} />
-                      </button>
+                      {/* Role change — only canManageFully can promote to admin */}
+                      {canManageFully && (
+                        <select
+                          value={m.role}
+                          onChange={e => changeMemberRole(m.user_id, e.target.value)}
+                          className="text-[10px] px-1.5 py-1 rounded-lg border border-gray-200
+                            bg-white outline-none text-enb-text-secondary cursor-pointer
+                            hover:border-enb-green/40 transition-colors"
+                        >
+                          {CHANNEL_ROLES.map(r => (
+                            <option key={r.value} value={r.value}>{r.label}</option>
+                          ))}
+                        </select>
+                      )}
+                      {/* Moderators can only remove members, not change roles */}
+                      {!canManageFully && canManage && m.role === 'member' && (
+                        <span className="text-[10px] text-enb-text-secondary px-1">Member</span>
+                      )}
                       <button
                         onClick={() => removeMember(m.user_id)}
                         title="Remove from channel"
@@ -443,7 +502,7 @@ export default function ChannelInfoPanel({
 
       {/* Footer actions */}
       <div className="px-4 py-3 border-t border-gray-100 space-y-2 shrink-0">
-        {myRole && myRole !== 'admin' && (
+        {myRole && myRole !== 'admin' && !isSuperAdmin && (
           <button onClick={leaveChannel}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
               border border-orange-200 text-orange-600 text-sm font-medium hover:bg-orange-50 transition-colors">
@@ -451,7 +510,7 @@ export default function ChannelInfoPanel({
             Leave Channel
           </button>
         )}
-        {canManage && (
+        {canManageFully && (
           <button onClick={deleteChannel}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
               border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors">

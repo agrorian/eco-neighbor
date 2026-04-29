@@ -186,24 +186,27 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   }, [messages]);
 
   // ── Can user post? ─────────────────────────────────────────────────────────
-  const isAdmin = membership?.role === 'admin' || user?.role === 'admin';
+  const isSuperAdmin = user?.role === 'admin';
+  const isAdmin = membership?.role === 'admin' || isSuperAdmin;
+  const isModerator = membership?.role === 'moderator';
   const canPost = channelData.posting_mode === 'open'
     ? !!membership
     : channelData.posting_mode === 'admin_only'
       ? isAdmin
-      : !!membership;
+      : !!membership; // moderated — anyone can post, admin approves
 
   const isMember = !!membership;
 
   // ── Join channel ───────────────────────────────────────────────────────────
   const joinChannel = async () => {
     if (!user) return;
+    const role = user.role === 'admin' ? 'admin' : 'member';
     await supabase.from('channel_members').insert({
       channel_id: channel.id,
       user_id: user.id,
-      role: 'member',
+      role,
     });
-    setMembership({ user_id: user.id, role: 'member' });
+    setMembership({ user_id: user.id, role });
   };
 
   // ── Send message ───────────────────────────────────────────────────────────
@@ -321,7 +324,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
             </button>
           ) : !canPost ? (
             <div className="text-center py-2">
-              <p className="text-xs text-enb-text-secondary">Only channel admins can post here.</p>
+              <p className="text-xs text-enb-text-secondary">Only admins and Super Admin can post here.</p>
             </div>
           ) : (
             <div className="flex items-center gap-2">
