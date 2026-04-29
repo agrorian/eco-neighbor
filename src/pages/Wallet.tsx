@@ -1,7 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, QrCode, Users, Lock, Clock, ShieldCheck, Info, X } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  RefreshCw,
+  QrCode,
+  Users,
+  Lock,
+  Clock,
+  ShieldCheck,
+  Info,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Landmark,
+  Wallet2,
+} from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
@@ -28,28 +43,81 @@ function GlobalLockInfo({
       <div className="font-semibold text-amber-800 flex items-center gap-1.5 mb-1">
         <Lock className="w-3.5 h-3.5" /> Why is my ENB.GLOBAL locked?
       </div>
-      <p>Your ENB.GLOBAL balance of <strong>{pendingAmount.toLocaleString()} ENB</strong> is earned but not yet liquid. Unlock requires all of the following:</p>
+      <p>
+        Your ENB.GLOBAL balance of <strong>{pendingAmount.toLocaleString()} ENB</strong> is earned
+        but not yet liquid. Unlock requires all of the following:
+      </p>
       <ul className="space-y-1 pl-1">
         <li className="flex items-start gap-1.5">
           <Clock className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
-          <span><strong>365 days</strong> hold from the date each batch was earned</span>
+          <span>
+            <strong>365 days</strong> hold from the date each batch was earned
+          </span>
         </li>
         <li className="flex items-start gap-1.5">
           <ShieldCheck className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
-          <span><strong>Pillar Tier</strong> reputation required (7,500 REP)</span>
+          <span>
+            <strong>Pillar Tier</strong> reputation required (7,500 REP)
+          </span>
         </li>
         <li className="flex items-start gap-1.5">
           <ArrowUpRight className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
-          <span>Max <strong>50,000 ENB</strong> per release event</span>
+          <span>
+            Max <strong>50,000 ENB</strong> per release event
+          </span>
         </li>
         <li className="flex items-start gap-1.5">
           <RefreshCw className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
-          <span>Max <strong>2 release events</strong> per calendar year</span>
+          <span>
+            Max <strong>2 release events</strong> per calendar year
+          </span>
         </li>
       </ul>
       <p className="text-amber-700 pt-1 border-t border-amber-200">
-        ENB.GLOBAL goes live on Solana Mainnet at TGE. Your balance is being recorded now and will be honoured in full.
+        ENB.GLOBAL goes live on Solana Mainnet at TGE. Your balance is being recorded now and will
+        be honoured in full.
       </p>
+    </div>
+  );
+}
+
+// ─── ENB.GLOBAL sub-stream breakdown ─────────────────────────────────────────
+function GlobalBreakdown({
+  personalBal,
+  businessBal,
+}: {
+  personalBal: number;
+  businessBal: number;
+}) {
+  return (
+    <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl overflow-hidden text-xs">
+      {/* Personal stream */}
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-amber-200/60">
+        <div className="flex items-center gap-2 text-amber-800">
+          <Wallet2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+          <div>
+            <div className="font-semibold">Personal GLOBAL</div>
+            <div className="text-[10px] text-amber-600 font-normal">via Maturation Bridge</div>
+          </div>
+        </div>
+        <div className="font-bold text-amber-700 tabular-nums">
+          {personalBal.toLocaleString()} ENB
+        </div>
+      </div>
+
+      {/* Business stream */}
+      <div className="flex items-center justify-between px-3 py-2.5">
+        <div className="flex items-center gap-2 text-amber-800">
+          <Landmark className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+          <div>
+            <div className="font-semibold">Business GLOBAL</div>
+            <div className="text-[10px] text-amber-600 font-normal">via SWAP acceptance</div>
+          </div>
+        </div>
+        <div className="font-bold text-amber-700 tabular-nums">
+          {businessBal.toLocaleString()} ENB
+        </div>
+      </div>
     </div>
   );
 }
@@ -59,7 +127,10 @@ export default function Wallet() {
   const { user, setUser } = useUserStore();
   const { l } = useT();
   const [showGlobalInfo, setShowGlobalInfo] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [businessGlobalBal, setBusinessGlobalBal] = useState(0);
 
+  // Fetch & subscribe to user balances
   useEffect(() => {
     if (!user) return;
 
@@ -84,9 +155,7 @@ export default function Wallet() {
           filter: `id=eq.${user.id}`,
         },
         (payload) => {
-          if (payload.new) {
-            setUser({ ...user, ...payload.new });
-          }
+          if (payload.new) setUser({ ...user, ...payload.new });
         }
       )
       .subscribe();
@@ -96,12 +165,49 @@ export default function Wallet() {
     };
   }, [user?.id]);
 
+  // Fetch business partner ENB.GLOBAL balance
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchBusinessBal = async () => {
+      const { data } = await supabase
+        .from('business_partners')
+        .select('enb_global_bal')
+        .eq('owner_user_id', user.id)
+        .maybeSingle();
+      setBusinessGlobalBal(data?.enb_global_bal ?? 0);
+    };
+    fetchBusinessBal();
+
+    const bpChannel = supabase
+      .channel(`wallet-bp-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'business_partners',
+          filter: `owner_user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new?.enb_global_bal !== undefined) {
+            setBusinessGlobalBal(payload.new.enb_global_bal ?? 0);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(bpChannel);
+    };
+  }, [user?.id]);
+
   if (!user) return null;
 
-  // ENB.GLOBAL is always locked until all conditions are met post-TGE.
-  // For now (pre-TGE) the entire balance is pending/locked.
-  const globalBal = user.enb_global_bal || 0;
-  const isGlobalLocked = globalBal > 0; // always true pre-TGE; post-TGE gated by conditions
+  const personalGlobalBal = user.enb_global_bal || 0;
+  const totalGlobalBal = personalGlobalBal + businessGlobalBal;
+  const isGlobalLocked = totalGlobalBal > 0; // always true pre-TGE
+  const hasMultipleStreams = personalGlobalBal > 0 && businessGlobalBal > 0;
 
   return (
     <div className="space-y-6 pb-24">
@@ -126,7 +232,11 @@ export default function Wallet() {
           </div>
         </div>
         <Link to="/leaderboard">
-          <Button variant="ghost" size="sm" className="text-enb-gold hover:text-enb-gold hover:bg-enb-gold/10">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-enb-gold hover:text-enb-gold hover:bg-enb-gold/10"
+          >
             {l('wallet', 'viewProgress')}
           </Button>
         </Link>
@@ -157,7 +267,11 @@ export default function Wallet() {
                     </Button>
                   </Link>
                   <Link to="/bridge">
-                    <Button variant="outline" size="sm" className="w-full text-enb-gold border-enb-gold/20 hover:bg-enb-gold/5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-enb-gold border-enb-gold/20 hover:bg-enb-gold/5"
+                    >
                       <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0" />
                       {l('wallet', 'bridge')}
                     </Button>
@@ -172,7 +286,9 @@ export default function Wallet() {
                     {(user.enb_local_bal || 0).toLocaleString()}
                   </div>
                 </div>
-                <p className="text-xs text-amber-600 font-medium mb-2">{l('wallet', 'lockedPending')}</p>
+                <p className="text-xs text-amber-600 font-medium mb-2">
+                  {l('wallet', 'lockedPending')}
+                </p>
                 <p className="text-xs text-enb-text-secondary mb-4">{l('wallet', 'lockedHint')}</p>
                 <Link to="/">
                   <Button size="sm" className="w-full bg-amber-500 hover:bg-amber-600 text-white">
@@ -184,17 +300,20 @@ export default function Wallet() {
           </CardContent>
         </Card>
 
-        {/* ENB.GLOBAL Card — with locked badge */}
+        {/* ENB.GLOBAL Card — dual sub-streams */}
         <Card className="border-l-4 border-l-enb-gold shadow-md">
           <CardHeader className="pb-2">
-            {/* Title row with LOCKED superscript badge */}
+            {/* Title row with LOCKED badge */}
             <div className="flex items-start justify-between">
               <CardTitle className="text-sm font-medium text-enb-text-secondary uppercase tracking-wider">
                 ENB.GLOBAL
               </CardTitle>
               {isGlobalLocked && (
                 <button
-                  onClick={() => setShowGlobalInfo((v) => !v)}
+                  onClick={() => {
+                    setShowGlobalInfo((v) => !v);
+                    if (showBreakdown) setShowBreakdown(false);
+                  }}
                   className="flex items-center gap-1 bg-amber-100 hover:bg-amber-200 text-amber-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-300 transition-colors ml-2 mt-0.5"
                   aria-label="Learn about ENB.GLOBAL lock conditions"
                 >
@@ -206,31 +325,58 @@ export default function Wallet() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Balance — amber when locked, gold when free */}
+            {/* Combined total balance */}
             <div className="flex items-end gap-2 mb-1">
               <div className={`text-4xl font-bold ${isGlobalLocked ? 'text-amber-500' : 'text-enb-gold'}`}>
-                {globalBal.toLocaleString()}
+                {totalGlobalBal.toLocaleString()}
               </div>
-              {isGlobalLocked && globalBal > 0 && (
+              {isGlobalLocked && totalGlobalBal > 0 && (
                 <span className="text-xs text-amber-500 font-medium mb-1.5 leading-none">
                   pending
                 </span>
               )}
             </div>
 
-            {/* Subtitle */}
-            {isGlobalLocked ? (
-              <p className="text-xs text-amber-600 font-medium mb-1">
-                Earned · Conditions not yet met
-              </p>
-            ) : (
-              <p className="text-xs text-enb-text-secondary mb-5">{l('wallet', 'tradeable')}</p>
+            {/* Subtitle + breakdown toggle */}
+            <div className="flex items-center justify-between mb-1">
+              {isGlobalLocked ? (
+                <p className="text-xs text-amber-600 font-medium">Earned · Conditions not yet met</p>
+              ) : (
+                <p className="text-xs text-enb-text-secondary">{l('wallet', 'tradeable')}</p>
+              )}
+
+              {/* Show breakdown toggle only when there is something to break down */}
+              {totalGlobalBal > 0 && !showGlobalInfo && (
+                <button
+                  onClick={() => setShowBreakdown((v) => !v)}
+                  className="flex items-center gap-0.5 text-[10px] text-amber-600 hover:text-amber-800 font-medium transition-colors ml-2 flex-shrink-0"
+                  aria-label={showBreakdown ? 'Hide breakdown' : 'Show breakdown'}
+                >
+                  {showBreakdown ? (
+                    <>
+                      Hide <ChevronUp className="w-3 h-3" />
+                    </>
+                  ) : (
+                    <>
+                      Breakdown <ChevronDown className="w-3 h-3" />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Sub-stream breakdown */}
+            {showBreakdown && !showGlobalInfo && (
+              <GlobalBreakdown
+                personalBal={personalGlobalBal}
+                businessBal={businessGlobalBal}
+              />
             )}
 
-            {/* Expandable info panel */}
+            {/* Expandable lock-conditions info panel */}
             {showGlobalInfo && (
               <GlobalLockInfo
-                pendingAmount={globalBal}
+                pendingAmount={totalGlobalBal}
                 onClose={() => setShowGlobalInfo(false)}
               />
             )}
@@ -261,7 +407,7 @@ export default function Wallet() {
             )}
 
             {/* Zero balance — pre-TGE explainer */}
-            {globalBal === 0 && (
+            {totalGlobalBal === 0 && (
               <p className="text-xs text-enb-text-secondary mt-3">
                 Accept SWAPs at your business to start earning ENB.GLOBAL.
               </p>
@@ -270,7 +416,7 @@ export default function Wallet() {
         </Card>
       </div>
 
-      {/* Referral Banner */}
+      {/* Referral Banner — unchanged */}
       <Link to="/wallet/referrals">
         <div className="bg-gradient-to-r from-enb-green/10 to-enb-teal/10 p-4 rounded-xl border border-enb-green/20 flex items-center justify-between cursor-pointer hover:bg-enb-green/20 transition-colors">
           <div className="flex items-center gap-3">
