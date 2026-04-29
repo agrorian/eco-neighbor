@@ -1,5 +1,5 @@
 # 🌿 Eco-Neighbor Token (ENB)
-### A Hyper-Local Circular Economy on Solana — Built for Rawalpindi, Pakistan
+### A Hyper-Local Circular Economy on Solana — for Pakistan — Built to replicate Globally!
 
 [![Live App](https://img.shields.io/badge/Live%20App-eco--neighbor.vercel.app-1A6B3C?style=for-the-badge)](https://eco-neighbor.vercel.app)
 [![Built on Solana](https://img.shields.io/badge/Built%20on-Solana-9945FF?style=for-the-badge&logo=solana)](https://solana.com)
