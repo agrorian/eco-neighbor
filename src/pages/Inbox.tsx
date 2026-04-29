@@ -15,6 +15,8 @@ interface Message {
   is_pinned: boolean;
   created_at: string;
   sender_id: string;
+  message_type: string;
+  channel_id: string | null;
 }
 
 const TARGET_LABELS: Record<string, string> = {
@@ -61,9 +63,12 @@ function MessageCard({ msg, isRead, onRead }: {
   isRead: boolean;
   onRead: (id: string) => void;
 }) {
+  const isMention = msg.message_type === 'mention';
   const target = msg.target_audience || 'all';
-  const tagStyle = TARGET_COLORS[target] || TARGET_COLORS.all;
-  const tagLabel = TARGET_LABELS[target] || 'All Users';
+  const tagStyle = isMention
+    ? 'bg-enb-green/10 text-enb-green border-enb-green/20'
+    : TARGET_COLORS[target] || TARGET_COLORS.all;
+  const tagLabel = isMention ? '@mention' : (TARGET_LABELS[target] || 'All Users');
 
   return (
     <div
@@ -139,12 +144,14 @@ export default function Inbox() {
   const fetchMessages = useCallback(async () => {
     if (!user) return;
 
-    // Fetch broadcasts relevant to this user's role
+    // Fetch broadcasts + mention notifications for this user
     const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .eq('message_type', 'broadcast')
-      .in('target_audience', ['all', user.role || 'member'])
+      .or(
+        `and(message_type.eq.broadcast,target_audience.in.("all","${user.role || 'member'}")),` +
+        `and(message_type.eq.mention,recipient_id.eq.${user.id})`
+      )
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(100);
@@ -166,6 +173,15 @@ export default function Inbox() {
         table: 'messages',
         filter: 'message_type=eq.broadcast',
       }, () => fetchMessages())
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `message_type=eq.mention`,
+      }, (payload) => {
+        // Only refresh if this mention is for the current user
+        if (payload.new?.recipient_id === user?.id) fetchMessages();
+      })
       .subscribe();
 
     return () => supabase.removeChannel(channel);

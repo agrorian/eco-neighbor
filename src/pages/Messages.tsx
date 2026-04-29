@@ -682,6 +682,8 @@ export default function MessagesPage() {
                 submitting={sending}
                 clearTrigger={dmClearTrigger}
                 mode="compact"
+                currentUserId={user.id}
+                channelId={null}
               />
             </div>
           </>

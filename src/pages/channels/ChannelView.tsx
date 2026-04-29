@@ -340,6 +340,8 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
               submitLabel="Send"
               submitting={sending}
               clearTrigger={clearTrigger}
+              channelId={channel.id}
+              currentUserId={user.id}
             />
           )}
         </div>

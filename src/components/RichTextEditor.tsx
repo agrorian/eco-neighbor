@@ -3,6 +3,7 @@
 // Tiptap v3 + React 19
 
 import { useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -16,6 +17,8 @@ import CharacterCount from '@tiptap/extension-character-count';
 import Typography from '@tiptap/extension-typography';
 import Color from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
+import Mention from '@tiptap/extension-mention';
+import { mentionSuggestion } from './MentionSuggestion';
 
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
@@ -46,6 +49,9 @@ interface RichTextEditorProps {
   readOnly?: boolean;
   // Mode — compact hides some toolbar groups
   mode?: 'full' | 'compact';
+  // For mention notifications
+  channelId?: string | null;
+  currentUserId?: string;
 }
 
 // ─── Toolbar primitives ───────────────────────────────────────────────────────
@@ -274,7 +280,50 @@ export default function RichTextEditor({
   content,
   readOnly = false,
   mode = 'full',
+  channelId,
+  currentUserId,
 }: RichTextEditorProps) {
+
+  // ── Extract mentioned user IDs from editor HTML ────────────────────────────
+  const extractMentionIds = useCallback((html: string): string[] => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const mentions = div.querySelectorAll('[data-mention-id]');
+    return [...new Set(Array.from(mentions).map(el => el.getAttribute('data-mention-id')!).filter(Boolean))];
+  }, []);
+
+  // ── Send mention notifications ─────────────────────────────────────────────
+  const sendMentionNotifications = useCallback(async (html: string, messageContent: string) => {
+    if (!currentUserId) return;
+    const mentionedIds = extractMentionIds(html);
+    if (!mentionedIds.length) return;
+
+    // Don't notify yourself
+    const others = mentionedIds.filter(id => id !== currentUserId);
+    if (!others.length) return;
+
+    // Get sender's name
+    const { data: sender } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', currentUserId)
+      .single();
+    const senderName = sender?.full_name || 'Someone';
+
+    // Insert a notification message for each mentioned user
+    const notifications = others.map(recipientId => ({
+      sender_id:       currentUserId,
+      recipient_id:    recipientId,
+      message_type:    'mention',
+      content:         `<strong>${senderName}</strong> mentioned you${channelId ? ' in a channel' : ''}: ${messageContent}`,
+      channel_id:      channelId || null,
+      team_id:         null,
+      is_pinned:       false,
+      target_audience: 'all',
+    }));
+
+    await supabase.from('messages').insert(notifications);
+  }, [currentUserId, channelId, extractMentionIds]);
 
   const editor = useEditor({
     extensions: [
@@ -306,6 +355,22 @@ export default function RichTextEditor({
       Typography,
       TextStyle,
       Color,
+      Mention.configure({
+        HTMLAttributes: {
+          class: 'mention',
+        },
+        suggestion: mentionSuggestion,
+        renderHTML({ options, node }) {
+          return [
+            'span',
+            {
+              class: 'mention inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-semibold bg-enb-green/15 text-enb-green cursor-default',
+              'data-mention-id': node.attrs.id,
+            },
+            `@${node.attrs.label}`,
+          ];
+        },
+      }),
     ],
     content: content || '',
     editable: !disabled && !readOnly,
@@ -344,8 +409,12 @@ export default function RichTextEditor({
 
   const handleSubmit = useCallback(() => {
     if (!editor || editor.isEmpty || submitting || disabled) return;
-    onSubmit?.(editor.getHTML());
-  }, [editor, onSubmit, submitting, disabled]);
+    const html = editor.getHTML();
+    const plainText = editor.getText();
+    onSubmit?.(html);
+    // Fire mention notifications async — don't await, non-blocking
+    sendMentionNotifications(html, plainText);
+  }, [editor, onSubmit, submitting, disabled, sendMentionNotifications]);
 
   // ── Listen for Ctrl+Enter trigger from editorProps ───────────────────────
   const isEmpty = !editor || editor.isEmpty;
