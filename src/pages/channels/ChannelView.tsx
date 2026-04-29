@@ -2,7 +2,7 @@
 // Channel chat panel — realtime group messaging
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Hash, Users, Settings, Megaphone, Lock, ArrowLeft, Info } from 'lucide-react';
+import { Send, Hash, Users, Megaphone, Lock, ArrowLeft, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import ChannelInfoPanel from './ChannelInfoPanel';
@@ -14,6 +14,9 @@ interface Channel {
   posting_mode: string;
   type: string;
   member_count: number;
+  created_by: string;
+  dept_id: string | null;
+  region_id: string | null;
 }
 
 interface Message {
@@ -241,7 +244,12 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
             <ArrowLeft className="w-4 h-4 text-enb-text-secondary" />
           </button>
           <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-            <PostingIcon className="w-4 h-4 text-gray-500" />
+            {channelData.posting_mode === 'admin_only'
+              ? <Megaphone className="w-4 h-4 text-gray-500" />
+              : channelData.posting_mode === 'moderated'
+                ? <Lock className="w-4 h-4 text-gray-500" />
+                : <Hash className="w-4 h-4 text-gray-500" />
+            }
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-enb-text-primary text-sm truncate">{channelData.name}</p>
@@ -344,10 +352,10 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
           onClose={() => setShowInfo(false)}
           onChannelUpdated={(updated) => {
             setChannelData(prev => ({ ...prev, ...updated }));
-            if (updated.posting_mode) setModeVal?.(updated.posting_mode);
           }}
           onChannelDeleted={onBack}
         />
       )}
     </div>
   );
+}

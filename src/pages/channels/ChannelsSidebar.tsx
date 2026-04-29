@@ -12,6 +12,7 @@ interface Channel {
   description: string | null;
   dept_id: string | null;
   region_id: string | null;
+  created_by: string;
   auto_generated: boolean;
   member_count: number;
   last_message?: string;
