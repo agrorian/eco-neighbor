@@ -2,13 +2,14 @@
 // ENB Messages — Direct Messages + Channels in one WhatsApp-style page
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Send, ArrowLeft, MessageCircle, Circle, Hash } from 'lucide-react';
+import { Search, ArrowLeft, MessageCircle, Circle, Hash } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import ChannelsSidebar from './channels/ChannelsSidebar';
 import ChannelView from './channels/ChannelView';
 import CreateChannelModal from './channels/CreateChannelModal';
 import GenerateChannelsModal from './channels/GenerateChannelsModal';
+import RichTextEditor from '@/components/RichTextEditor';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -153,7 +154,16 @@ function ChatBubble({ msg, isMine }: { msg: Message; isMine: boolean }) {
           ? 'bg-enb-green text-white rounded-br-sm'
           : 'bg-white border border-gray-100 text-enb-text-primary rounded-bl-sm shadow-sm'
         }`}>
-        <p>{msg.content}</p>
+        <div
+          className={`prose prose-sm max-w-none
+            prose-headings:font-semibold prose-headings:my-0.5
+            prose-p:my-0 prose-li:my-0 prose-ul:my-0.5 prose-ol:my-0.5
+            prose-a:no-underline hover:prose-a:underline
+            prose-code:px-1 prose-code:rounded prose-code:text-[0.8em]
+            prose-blockquote:my-1 prose-blockquote:pl-2 prose-blockquote:border-l-2
+            ${isMine ? '[&_*]:!text-white [&_a]:!text-white/80 prose-blockquote:border-white/40' : ''}`}
+          dangerouslySetInnerHTML={{ __html: msg.content }}
+        />
         <div className={`flex items-center gap-1 mt-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
           <span className={`text-[10px] ${isMine ? 'text-white/70' : 'text-enb-text-secondary'}`}>
             {formatTime(msg.created_at)}
@@ -249,8 +259,12 @@ export default function MessagesPage() {
   const [activeTab, setActiveTab] = useState<'dms' | 'channels'>('dms');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activePartner, setActivePartner] = useState<UserProfile | null>(null);
+
+  // Keep ref in sync — used inside subscriptions to avoid rebuilding on every partner change
+  useEffect(() => { activePartnerRef.current = activePartner; }, [activePartner]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMsg, setNewMsg] = useState('');
+  const [dmClearTrigger, setDmClearTrigger] = useState(0);
   const [search, setSearch] = useState('');
   const [showNewMsg, setShowNewMsg] = useState(false);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
@@ -268,7 +282,7 @@ export default function MessagesPage() {
   const isSuperAdmin = user?.role === 'admin';
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const activePartnerRef = useRef<UserProfile | null>(null);
 
   // last_seen is updated globally in Layout.tsx
 
@@ -406,12 +420,13 @@ export default function MessagesPage() {
         filter: `message_type=eq.direct`,
       }, (payload) => {
         const msg = payload.new as Message;
+        const partner = activePartnerRef.current;
         if (msg.sender_id === user.id || msg.recipient_id === user.id) {
           fetchConversations();
-          if (activePartner &&
-            (msg.sender_id === activePartner.id || msg.recipient_id === activePartner.id)) {
+          if (partner &&
+            (msg.sender_id === partner.id || msg.recipient_id === partner.id)) {
             setMessages(prev => [...prev, msg]);
-            if (msg.sender_id === activePartner.id) {
+            if (msg.sender_id === partner.id) {
               supabase.from('messages').update({ read_at: new Date().toISOString() })
                 .eq('id', msg.id).then(() => {});
             }
@@ -423,8 +438,8 @@ export default function MessagesPage() {
         schema: 'public',
         table: 'users',
       }, (payload) => {
-        // Update active partner's last_seen in real time
-        if (activePartner && payload.new.id === activePartner.id) {
+        const partner = activePartnerRef.current;
+        if (partner && payload.new.id === partner.id) {
           setActivePartner(prev => prev ? { ...prev, last_seen: payload.new.last_seen } : prev);
         }
       })
@@ -441,14 +456,13 @@ export default function MessagesPage() {
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, [fetchConversations, user, activePartner]);
+  }, [fetchConversations, fetchChannels, user]);
 
   // ── Open conversation ─────────────────────────────────────────────────────
   const openConversation = (partner: UserProfile) => {
     setActivePartner(partner);
     setShowChat(true);
     fetchMessages(partner.id);
-    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   // ── Scroll to bottom ──────────────────────────────────────────────────────
@@ -457,10 +471,9 @@ export default function MessagesPage() {
   }, [messages]);
 
   // ── Send message ──────────────────────────────────────────────────────────
-  const sendMessage = async () => {
-    if (!newMsg.trim() || !activePartner || !user || sending) return;
-    const content = newMsg.trim();
-    setNewMsg('');
+  const sendMessage = async (html?: string) => {
+    const content = html || newMsg.trim();
+    if (!content || !activePartner || !user || sending) return;
     setSending(true);
 
     const { error } = await supabase.from('messages').insert({
@@ -473,11 +486,9 @@ export default function MessagesPage() {
     });
 
     setSending(false);
+    setNewMsg('');
+    setDmClearTrigger(t => t + 1);
     if (error) console.error('Send error:', error);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
   // ── Start new DM from modal ───────────────────────────────────────────────
@@ -661,20 +672,17 @@ export default function MessagesPage() {
               )}
               <div ref={messagesEndRef} />
             </div>
-            <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0">
-              <div className="flex items-center gap-2">
-                <input ref={inputRef} value={newMsg} onChange={e => setNewMsg(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={`Message ${activePartner.full_name}...`}
-                  className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-sm outline-none
-                    text-enb-text-primary placeholder:text-gray-400 border border-gray-100
-                    focus:border-enb-green/40 focus:bg-white transition-colors" />
-                <button onClick={sendMessage} disabled={!newMsg.trim() || sending}
-                  className="w-10 h-10 rounded-xl bg-enb-green flex items-center justify-center
-                    hover:bg-enb-green/90 disabled:opacity-40 transition-all shrink-0">
-                  <Send className="w-4 h-4 text-white" />
-                </button>
-              </div>
+            <div className="px-3 py-3 bg-white border-t border-gray-100 shrink-0">
+              <RichTextEditor
+                placeholder={`Message ${activePartner.full_name}...`}
+                minHeight="44px"
+                maxHeight="160px"
+                onSubmit={sendMessage}
+                submitLabel="Send"
+                submitting={sending}
+                clearTrigger={dmClearTrigger}
+                mode="compact"
+              />
             </div>
           </>
         )}
