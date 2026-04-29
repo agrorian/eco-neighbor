@@ -3,7 +3,7 @@
 // Tiptap v3 + React 19
 
 import { useEffect, useCallback } from 'react';
-import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
@@ -258,40 +258,6 @@ function Toolbar({ editor, mode }: { editor: any; mode: 'full' | 'compact' }) {
   );
 }
 
-// ─── Bubble menu (appears on text selection) ──────────────────────────────────
-
-function FloatingToolbar({ editor }: { editor: any }) {
-  if (!editor) return null;
-  return (
-    <BubbleMenu
-      editor={editor}
-      tippyOptions={{ duration: 100, placement: 'top' }}
-      className="flex items-center gap-0.5 bg-enb-text-primary rounded-xl
-        shadow-lg shadow-black/20 px-2 py-1.5 border border-white/10"
-    >
-      {[
-        { cmd: () => editor.chain().focus().toggleBold().run(), active: editor.isActive('bold'), icon: <Bold className="w-3 h-3" />, title: 'Bold' },
-        { cmd: () => editor.chain().focus().toggleItalic().run(), active: editor.isActive('italic'), icon: <Italic className="w-3 h-3" />, title: 'Italic' },
-        { cmd: () => editor.chain().focus().toggleUnderline().run(), active: editor.isActive('underline'), icon: <UnderlineIcon className="w-3 h-3" />, title: 'Underline' },
-        { cmd: () => editor.chain().focus().toggleStrike().run(), active: editor.isActive('strike'), icon: <Strikethrough className="w-3 h-3" />, title: 'Strike' },
-        { cmd: () => editor.chain().focus().toggleHighlight().run(), active: editor.isActive('highlight'), icon: <Highlighter className="w-3 h-3" />, title: 'Highlight' },
-        { cmd: () => editor.chain().focus().toggleCode().run(), active: editor.isActive('code'), icon: <Code className="w-3 h-3" />, title: 'Code' },
-      ].map((item, i) => (
-        <button
-          key={i}
-          type="button"
-          onMouseDown={e => { e.preventDefault(); item.cmd(); }}
-          title={item.title}
-          className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors
-            ${item.active ? 'bg-enb-green text-white' : 'text-white/70 hover:bg-white/15 hover:text-white'}`}
-        >
-          {item.icon}
-        </button>
-      ))}
-    </BubbleMenu>
-  );
-}
-
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function RichTextEditor({
@@ -415,9 +381,6 @@ export default function RichTextEditor({
     >
       {/* Toolbar */}
       {!readOnly && <Toolbar editor={editor} mode={mode} />}
-
-      {/* Bubble menu on selection */}
-      {editor && !readOnly && <FloatingToolbar editor={editor} />}
 
       {/* Editor */}
       <EditorContent
