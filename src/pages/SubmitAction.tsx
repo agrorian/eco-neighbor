@@ -93,6 +93,7 @@ export default function SubmitAction() {
         after_unlocks_at: afterUnlocksAt,
         after_submitted: isTransformation ? false : null,
         report_status: isReporting ? 'open' : null,
+        reviewer_consent: formData.consentGiven === true,
       });
 
       if (error) throw error;

@@ -2,7 +2,7 @@
 // Create and configure a new channel
 
 import { useState, useEffect } from 'react';
-import { X, Hash, Megaphone, Lock, Check, Search, Minus } from 'lucide-react';
+import { X, Hash, Megaphone, Lock, Check, Search, Minus, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 

@@ -460,7 +460,9 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     });
 
   const anyUploading = photos.some(p => p.uploading);
-  const canSubmit = photos.length > 0 && !anyUploading && requiredFieldsMet && !!gpsLat;
+  const [consentGiven, setConsentGiven] = useState(false);
+
+  const canSubmit = photos.length > 0 && !anyUploading && requiredFieldsMet && !!gpsLat && consentGiven;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -515,6 +517,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       captchaScore,
       recaptchaToken,
       timestamp: new Date().toISOString(),
+      consentGiven,
     });
   };
 
@@ -666,6 +669,30 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         </div>
       )}
 
+      {/* ── Reviewer Consent ── */}
+      <button
+        type="button"
+        onClick={() => setConsentGiven(v => !v)}
+        className={`w-full flex items-start gap-3 p-3 rounded-xl border transition-all text-left
+          ${consentGiven
+            ? 'border-enb-green bg-enb-green/5'
+            : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+      >
+        <div className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors
+          ${consentGiven ? 'bg-enb-green border-enb-green' : 'border-gray-300 bg-white'}`}>
+          {consentGiven && (
+            <svg viewBox="0 0 12 12" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="2,6 5,9 10,3" />
+            </svg>
+          )}
+        </div>
+        <p className="text-xs text-enb-text-secondary leading-relaxed">
+          I consent to my verified action photos and location being shared with ENB's grant reviewers
+          and impact auditors for verification purposes. My personal identity will not be disclosed.
+        </p>
+      </button>
+
       {/* ── Submit ── */}
       <Button
         onClick={() => { handleSubmit(); }}
@@ -681,7 +708,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       {!canSubmit && photos.length > 0 && !anyUploading && (
         <p className="text-xs text-center text-gray-400">
           {!gpsLat ? '📍 GPS location required' :
-           !requiredFieldsMet ? '📋 Please fill all required fields' : ''}
+           !requiredFieldsMet ? '📋 Please fill all required fields' :
+           !consentGiven ? '☑️ Please tick the consent box above' : ''}
         </p>
       )}
     </div>
