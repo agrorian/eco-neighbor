@@ -51,6 +51,7 @@ const EscalationQueue = lazy(() => import('@/pages/admin/EscalationQueue'));
 const MyHistory = lazy(() => import('@/pages/MyHistory'));
 const SubmissionDetail = lazy(() => import('@/pages/SubmissionDetail'));
 const CommunityIssues = lazy(() => import('@/pages/community/CommunityIssues'));
+const Glossary = lazy(() => import('@/pages/Glossary'));
 
 // --- Onboarding ---
 import Welcome from '@/pages/onboarding/Welcome';
@@ -228,6 +229,7 @@ export default function App() {
                       <Route path="/history" element={<MyHistory />} />
                       <Route path="/submission/:id" element={<SubmissionDetail />} />
                       <Route path="/issues" element={<CommunityIssues />} />
+                      <Route path="/glossary" element={<Glossary />} />
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/bug-report" element={<BugReport />} />
                       <Route path="/inbox" element={<Inbox />} />
