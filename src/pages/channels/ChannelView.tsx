@@ -121,6 +121,15 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   const [memberCount, setMemberCount] = useState(channel.member_count || 0);
   const [showInfo, setShowInfo] = useState(false);
   const [channelData, setChannelData] = useState(channel);
+
+  // Sync channelData when a different channel is selected
+  useEffect(() => {
+    setChannelData(channel);
+    setMessages([]);
+    setMembership(null);
+    setMemberCount(channel.member_count || 0);
+    setShowInfo(false);
+  }, [channel.id]);
   const [clearTrigger, setClearTrigger] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

@@ -597,6 +597,7 @@ export default function MessagesPage() {
         {/* Channel view */}
         {activeTab === 'channels' && activeChannel && (
           <ChannelView
+            key={activeChannel.id}
             channel={activeChannel}
             onBack={() => { setShowChannelChat(false); setActiveChannel(null); }}
           />

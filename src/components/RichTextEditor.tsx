@@ -408,16 +408,18 @@ export default function RichTextEditor({
   }, [content]);
 
   const handleSubmit = useCallback(() => {
-    if (!editor || editor.isEmpty || submitting || disabled) return;
+    if (!editor || submitting || disabled) return;
     const html = editor.getHTML();
+    // Check for actual content — editor.isEmpty misses mention-only messages
+    const hasContent = html && html !== '<p></p>' && html.trim() !== '';
+    if (!hasContent) return;
     const plainText = editor.getText();
     onSubmit?.(html);
-    // Fire mention notifications async — don't await, non-blocking
     sendMentionNotifications(html, plainText);
   }, [editor, onSubmit, submitting, disabled, sendMentionNotifications]);
 
   // ── Listen for Ctrl+Enter trigger from editorProps ───────────────────────
-  const isEmpty = !editor || editor.isEmpty;
+  const isEmpty = !editor || editor.getHTML() === '<p></p>' || !editor.getHTML().trim();
   const charCount = editor?.storage.characterCount?.characters() ?? 0;
   const wordCount = editor?.storage.characterCount?.words() ?? 0;
 
