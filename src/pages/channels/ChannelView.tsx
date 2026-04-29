@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Hash, Users, Settings, Megaphone, Lock, ArrowLeft, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import ChannelInfoPanel from './ChannelInfoPanel';
 
 interface Channel {
   id: string;
@@ -106,6 +107,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   const [membership, setMembership] = useState<ChannelMember | null>(null);
   const [memberCount, setMemberCount] = useState(channel.member_count || 0);
   const [showInfo, setShowInfo] = useState(false);
+  const [channelData, setChannelData] = useState(channel);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -182,11 +184,11 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
 
   // ── Can user post? ─────────────────────────────────────────────────────────
   const isAdmin = membership?.role === 'admin' || user?.role === 'admin';
-  const canPost = channel.posting_mode === 'open'
+  const canPost = channelData.posting_mode === 'open'
     ? !!membership
-    : channel.posting_mode === 'admin_only'
+    : channelData.posting_mode === 'admin_only'
       ? isAdmin
-      : !!membership; // moderated — anyone can post, admin approves
+      : !!membership;
 
   const isMember = !!membership;
 
@@ -224,122 +226,128 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  const PostingIcon = channel.posting_mode === 'admin_only' ? Megaphone
-    : channel.posting_mode === 'moderated' ? Lock : Hash;
-
   if (!user) return null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full overflow-hidden">
 
-      {/* Channel header */}
-      <div className="flex items-center gap-3 px-4 py-3.5 bg-white border-b border-gray-100 shrink-0">
-        <button onClick={onBack}
-          className="md:hidden w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100">
-          <ArrowLeft className="w-4 h-4 text-enb-text-secondary" />
-        </button>
+      {/* ── Main chat area ── */}
+      <div className="flex flex-col flex-1 min-w-0">
 
-        <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-          <PostingIcon className="w-4 h-4 text-gray-500" />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-enb-text-primary text-sm truncate">{channel.name}</p>
-          <div className="flex items-center gap-2">
-            <Users className="w-3 h-3 text-enb-text-secondary" />
-            <span className="text-xs text-enb-text-secondary">{memberCount} members</span>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium
-              ${channel.posting_mode === 'admin_only' ? 'bg-blue-50 text-blue-600'
-              : channel.posting_mode === 'moderated' ? 'bg-amber-50 text-amber-600'
-              : 'bg-green-50 text-green-600'}`}>
-              {channel.posting_mode === 'admin_only' ? 'Announcement'
-                : channel.posting_mode === 'moderated' ? 'Moderated' : 'Open'}
-            </span>
-          </div>
-        </div>
-
-        <button onClick={() => setShowInfo(i => !i)}
-          className="w-8 h-8 rounded-xl hover:bg-gray-100 flex items-center justify-center">
-          <Info className="w-4 h-4 text-gray-400" />
-        </button>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 bg-enb-surface">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
-              <Hash className="w-7 h-7 text-gray-300" />
-            </div>
-            <p className="font-semibold text-enb-text-primary">No messages yet</p>
-            <p className="text-xs text-enb-text-secondary mt-1">
-              {canPost ? 'Be the first to post in this channel.' : 'Messages will appear here.'}
-            </p>
-          </div>
-        ) : (
-          messages.map((msg, i) => {
-            const prev = messages[i - 1];
-            const showDivider = i === 0 || !isSameDay(msg.created_at, prev.created_at);
-            const showAvatar = i === 0 || prev.sender_id !== msg.sender_id
-              || !isSameDay(msg.created_at, prev.created_at);
-            const isMine = msg.sender_id === user.id;
-
-            return (
-              <div key={msg.id}>
-                {showDivider && (
-                  <div className="flex items-center gap-3 my-3">
-                    <div className="flex-1 h-px bg-gray-200" />
-                    <span className="text-xs text-enb-text-secondary font-medium shrink-0 bg-enb-surface px-2">
-                      {formatDateDivider(msg.created_at)}
-                    </span>
-                    <div className="flex-1 h-px bg-gray-200" />
-                  </div>
-                )}
-                <MessageBubble msg={msg} isMine={isMine} showAvatar={showAvatar} />
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input or join prompt */}
-      <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0">
-        {!isMember ? (
-          <button onClick={joinChannel}
-            className="w-full py-2.5 bg-enb-green text-white text-sm font-semibold rounded-xl
-              hover:bg-enb-green/90 transition-colors">
-            Join Channel to participate
+        {/* Channel header */}
+        <div className="flex items-center gap-3 px-4 py-3.5 bg-white border-b border-gray-100 shrink-0">
+          <button onClick={onBack}
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100">
+            <ArrowLeft className="w-4 h-4 text-enb-text-secondary" />
           </button>
-        ) : !canPost ? (
-          <div className="text-center py-2">
-            <p className="text-xs text-enb-text-secondary">
-              Only channel admins can post in this channel.
-            </p>
+          <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+            <PostingIcon className="w-4 h-4 text-gray-500" />
           </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <input
-              ref={inputRef}
-              value={newMsg}
-              onChange={e => setNewMsg(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={`Message #${channel.name}...`}
-              className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-sm outline-none
-                text-enb-text-primary placeholder:text-gray-400 border border-gray-100
-                focus:border-enb-green/40 focus:bg-white transition-colors"
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!newMsg.trim() || sending}
-              className="w-10 h-10 rounded-xl bg-enb-green flex items-center justify-center
-                hover:bg-enb-green/90 disabled:opacity-40 transition-all shrink-0"
-            >
-              <Send className="w-4 h-4 text-white" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-enb-text-primary text-sm truncate">{channelData.name}</p>
+            <div className="flex items-center gap-2">
+              <Users className="w-3 h-3 text-enb-text-secondary" />
+              <span className="text-xs text-enb-text-secondary">{memberCount} members</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium
+                ${channelData.posting_mode === 'admin_only' ? 'bg-blue-50 text-blue-600'
+                : channelData.posting_mode === 'moderated'  ? 'bg-amber-50 text-amber-600'
+                : 'bg-green-50 text-green-600'}`}>
+                {channelData.posting_mode === 'admin_only' ? 'Announcement'
+                  : channelData.posting_mode === 'moderated' ? 'Moderated' : 'Open'}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowInfo(i => !i)}
+            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors
+              ${showInfo ? 'bg-enb-green/10 text-enb-green' : 'hover:bg-gray-100 text-gray-400'}`}>
+            <Info className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 bg-enb-surface">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
+                <Hash className="w-7 h-7 text-gray-300" />
+              </div>
+              <p className="font-semibold text-enb-text-primary">No messages yet</p>
+              <p className="text-xs text-enb-text-secondary mt-1">
+                {canPost ? 'Be the first to post in this channel.' : 'Messages will appear here.'}
+              </p>
+            </div>
+          ) : (
+            messages.map((msg, i) => {
+              const prev = messages[i - 1];
+              const showDivider = i === 0 || !isSameDay(msg.created_at, prev.created_at);
+              const showAvatar = i === 0 || prev.sender_id !== msg.sender_id
+                || !isSameDay(msg.created_at, prev.created_at);
+              const isMine = msg.sender_id === user.id;
+              return (
+                <div key={msg.id}>
+                  {showDivider && (
+                    <div className="flex items-center gap-3 my-3">
+                      <div className="flex-1 h-px bg-gray-200" />
+                      <span className="text-xs text-enb-text-secondary font-medium shrink-0 bg-enb-surface px-2">
+                        {formatDateDivider(msg.created_at)}
+                      </span>
+                      <div className="flex-1 h-px bg-gray-200" />
+                    </div>
+                  )}
+                  <MessageBubble msg={msg} isMine={isMine} showAvatar={showAvatar} />
+                </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0">
+          {!isMember ? (
+            <button onClick={joinChannel}
+              className="w-full py-2.5 bg-enb-green text-white text-sm font-semibold rounded-xl
+                hover:bg-enb-green/90 transition-colors">
+              Join Channel to participate
             </button>
-          </div>
-        )}
+          ) : !canPost ? (
+            <div className="text-center py-2">
+              <p className="text-xs text-enb-text-secondary">Only channel admins can post here.</p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                value={newMsg}
+                onChange={e => setNewMsg(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={`Message #${channelData.name}...`}
+                className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-sm outline-none
+                  text-enb-text-primary placeholder:text-gray-400 border border-gray-100
+                  focus:border-enb-green/40 focus:bg-white transition-colors"
+              />
+              <button onClick={sendMessage} disabled={!newMsg.trim() || sending}
+                className="w-10 h-10 rounded-xl bg-enb-green flex items-center justify-center
+                  hover:bg-enb-green/90 disabled:opacity-40 transition-all shrink-0">
+                <Send className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ── Info panel (slide in from right) ── */}
+      {showInfo && (
+        <ChannelInfoPanel
+          channel={channelData}
+          onClose={() => setShowInfo(false)}
+          onChannelUpdated={(updated) => {
+            setChannelData(prev => ({ ...prev, ...updated }));
+            if (updated.posting_mode) setModeVal?.(updated.posting_mode);
+          }}
+          onChannelDeleted={onBack}
+        />
+      )}
     </div>
   );
-}
