@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Zap, MoreVertical, User, Shield, AlertTriangle, Loader2, CheckCircle, Clock, XCircle, ExternalLink } from 'lucide-react';
+import { Search, Zap, MoreVertical, User, Shield, AlertTriangle, Loader2, CheckCircle, Clock, XCircle, ExternalLink, Pencil, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -10,7 +10,8 @@ import { useUserStore } from '@/store/user';
 interface DBUser {
   id: string; full_name: string; email: string; role: string;
   rep_score: number; enb_local_bal: number; tier: string;
-  whatsapp_number?: string; neighbourhood?: string; is_active: boolean;
+  whatsapp_number?: string; neighbourhood?: string; profession?: string;
+  wallet_address?: string; is_active: boolean;
   cnic_number?: string; cnic_photo_url?: string; cnic_verified?: boolean; cnic_submitted_at?: string;
 }
 
@@ -29,13 +30,62 @@ export default function UserManagement() {
   const [verifying, setVerifying] = useState(false);
   const [verifySuccess, setVerifySuccess] = useState('');
 
+  // ── Edit Profile ────────────────────────────────────────────────────────
+  const [editTarget, setEditTarget] = useState<DBUser | null>(null);
+  const [editForm, setEditForm] = useState<Partial<DBUser>>({});
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState('');
+
+  const openEdit = (u: DBUser) => {
+    setEditTarget(u);
+    setEditForm({
+      full_name:       u.full_name || '',
+      neighbourhood:   u.neighbourhood || '',
+      profession:      u.profession || '',
+      whatsapp_number: u.whatsapp_number || '',
+      wallet_address:  u.wallet_address || '',
+      role:            u.role || 'member',
+      tier:            u.tier || 'Newcomer',
+      cnic_verified:   u.cnic_verified || false,
+      is_active:       u.is_active !== false,
+    });
+    setSaveError('');
+    setSaveSuccess('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editTarget) return;
+    setSaving(true);
+    setSaveError('');
+    const { error } = await supabase
+      .from('users')
+      .update({
+        full_name:       editForm.full_name?.trim() || null,
+        neighbourhood:   editForm.neighbourhood?.trim() || null,
+        profession:      editForm.profession?.trim() || null,
+        whatsapp_number: editForm.whatsapp_number?.trim() || null,
+        wallet_address:  editForm.wallet_address?.trim() || null,
+        role:            editForm.role,
+        tier:            editForm.tier,
+        cnic_verified:   editForm.cnic_verified,
+        is_active:       editForm.is_active,
+      })
+      .eq('id', editTarget.id);
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setSaveSuccess('✅ Profile updated successfully');
+    fetchUsers();
+    setTimeout(() => { setEditTarget(null); setSaveSuccess(''); }, 1500);
+  };
+
   useEffect(() => { fetchUsers(); }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at')
+      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, profession, wallet_address, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at')
       .order('rep_score', { ascending: false });
     if (!error && data) setUsers(data);
     setLoading(false);
@@ -120,48 +170,48 @@ export default function UserManagement() {
           <Loader2 className="w-8 h-8 animate-spin text-enb-green" />
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[700px]">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="px-5 py-4 font-medium text-gray-500">User</th>
-                <th className="px-5 py-4 font-medium text-gray-500">Role</th>
-                <th className="px-5 py-4 font-medium text-gray-500">Tier</th>
-                <th className="px-5 py-4 font-medium text-gray-500 text-right">Rep</th>
-                <th className="px-5 py-4 font-medium text-gray-500 text-right">ENB Balance</th>
-                <th className="px-5 py-4 font-medium text-gray-500 text-center">Identity</th>
-                <th className="px-5 py-4 font-medium text-gray-500 text-right">Status</th>
-                <th className="px-5 py-4 font-medium text-gray-500 text-right">Actions</th>
+                <th className="px-3 py-4 font-medium text-gray-500 w-[220px]">User</th>
+                <th className="px-3 py-4 font-medium text-gray-500 w-[110px]">Role</th>
+                <th className="px-3 py-4 font-medium text-gray-500 w-[100px]">Tier</th>
+                <th className="px-3 py-4 font-medium text-gray-500 text-right w-[70px]">Rep</th>
+                <th className="px-3 py-4 font-medium text-gray-500 text-right w-[100px]">ENB Balance</th>
+                <th className="px-3 py-4 font-medium text-gray-500 text-center w-[90px]">Identity</th>
+                <th className="px-3 py-4 font-medium text-gray-500 text-right w-[80px]">Status</th>
+                <th className="px-3 py-4 font-medium text-gray-500 text-right w-[60px]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredUsers.map((u) => (
                 <tr key={u.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500">
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-xs shrink-0">
                         {(u.full_name || u.email || '?').charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <div className="font-medium text-enb-text-primary">{u.full_name || '—'}</div>
-                        <div className="text-xs text-gray-400">{u.email}</div>
-                        {u.neighbourhood && <div className="text-xs text-gray-300">{u.neighbourhood}</div>}
+                      <div className="min-w-0">
+                        <div className="font-medium text-enb-text-primary text-sm truncate">{u.full_name || '—'}</div>
+                        <div className="text-xs text-gray-400 truncate">{u.email}</div>
+                        {u.neighbourhood && <div className="text-xs text-gray-300 truncate">{u.neighbourhood}</div>}
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[u.role] || 'bg-gray-100 text-gray-700'}`}>
                       {u.role}
                     </span>
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 py-3">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       {u.tier}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right font-mono text-sm">{(u.rep_score || 0).toLocaleString()}</td>
-                  <td className="px-5 py-3 text-right font-mono text-sm">{(u.enb_local_bal || 0).toLocaleString()}</td>
-                  <td className="px-5 py-3 text-center">
+                  <td className="px-3 py-3 text-right font-mono text-sm">{(u.rep_score || 0).toLocaleString()}</td>
+                  <td className="px-3 py-3 text-right font-mono text-sm">{(u.enb_local_bal || 0).toLocaleString()}</td>
+                  <td className="px-3 py-3 text-center">
                     {u.cnic_submitted_at ? (
                       u.cnic_verified ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700">
@@ -178,12 +228,12 @@ export default function UserManagement() {
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-3 py-3 text-right">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {u.is_active !== false ? 'Active' : 'Suspended'}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-3 py-3 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger>
                         <div className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 cursor-pointer">
@@ -191,6 +241,9 @@ export default function UserManagement() {
                         </div>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => openEdit(u)} className="text-enb-green font-medium">
+                          <Pencil className="w-4 h-4 mr-2" /> Edit Profile
+                        </DropdownMenuItem>
                         {u.cnic_submitted_at && !u.cnic_verified && (
                           <DropdownMenuItem onClick={() => setVerifyTarget(u)} className="text-enb-green">
                             <CheckCircle className="w-4 h-4 mr-2" /> Verify Identity
@@ -326,6 +379,127 @@ export default function UserManagement() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Edit Profile Modal */}
+      <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+        <DialogContent className="max-w-md">
+          <div className="space-y-4 p-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-enb-green/10 rounded-full flex items-center justify-center">
+                <Pencil className="w-5 h-5 text-enb-green" />
+              </div>
+              <div>
+                <h3 className="font-bold text-enb-text-primary">Edit Profile</h3>
+                <p className="text-xs text-gray-500">{editTarget?.email}</p>
+              </div>
+            </div>
+
+            {saveSuccess ? (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-700 text-center font-medium">
+                {saveSuccess}
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+
+                {/* Personal Info */}
+                <p className="text-[10px] font-bold text-enb-text-secondary uppercase tracking-wider pt-1">Personal Info</p>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Full Name</label>
+                  <Input value={editForm.full_name || ''} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))}
+                    placeholder="Full name" className="mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Neighborhood</label>
+                  <Input value={editForm.neighbourhood || ''} onChange={e => setEditForm(f => ({ ...f, neighbourhood: e.target.value }))}
+                    placeholder="e.g. Chaklala Scheme 3" className="mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Profession</label>
+                  <Input value={editForm.profession || ''} onChange={e => setEditForm(f => ({ ...f, profession: e.target.value }))}
+                    placeholder="e.g. Street vendor, Teacher" className="mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">WhatsApp Number</label>
+                  <Input value={editForm.whatsapp_number || ''} onChange={e => setEditForm(f => ({ ...f, whatsapp_number: e.target.value }))}
+                    placeholder="e.g. 03001234567" className="mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">Solana Wallet Address</label>
+                  <Input value={editForm.wallet_address || ''} onChange={e => setEditForm(f => ({ ...f, wallet_address: e.target.value }))}
+                    placeholder="Solana public key" className="mt-1 font-mono text-xs" />
+                </div>
+
+                {/* Role & Tier */}
+                <p className="text-[10px] font-bold text-enb-text-secondary uppercase tracking-wider pt-1">Role & Tier</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500">Role</label>
+                    <select value={editForm.role || 'member'}
+                      onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
+                      className="mt-1 w-full text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white outline-none focus:border-enb-green text-enb-text-primary">
+                      <option value="member">Member</option>
+                      <option value="moderator">Moderator</option>
+                      <option value="onboarding_team">Onboarding Team</option>
+                      <option value="business">Business</option>
+                      <option value="founder">Founder</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500">Tier</label>
+                    <select value={editForm.tier || 'Newcomer'}
+                      onChange={e => setEditForm(f => ({ ...f, tier: e.target.value }))}
+                      className="mt-1 w-full text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white outline-none focus:border-enb-green text-enb-text-primary">
+                      <option value="Newcomer">Newcomer</option>
+                      <option value="Helper">Helper</option>
+                      <option value="Guardian">Guardian</option>
+                      <option value="Pillar">Pillar</option>
+                      <option value="Founder Tier">Founder Tier</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Status & Verification */}
+                <p className="text-[10px] font-bold text-enb-text-secondary uppercase tracking-wider pt-1">Status</p>
+
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={editForm.is_active !== false}
+                      onChange={e => setEditForm(f => ({ ...f, is_active: e.target.checked }))}
+                      className="w-4 h-4 accent-enb-green rounded" />
+                    <span className="text-sm text-enb-text-primary">Account Active</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={!!editForm.cnic_verified}
+                      onChange={e => setEditForm(f => ({ ...f, cnic_verified: e.target.checked }))}
+                      className="w-4 h-4 accent-enb-green rounded" />
+                    <span className="text-sm text-enb-text-primary">Identity Verified</span>
+                  </label>
+                </div>
+
+                {saveError && (
+                  <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-2">{saveError}</p>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1">
+                    <X className="w-4 h-4 mr-1" /> Cancel
+                  </Button>
+                  <Button onClick={handleSaveEdit} disabled={saving}
+                    className="flex-1 bg-enb-green hover:bg-enb-green/90 text-white">
+                    {saving
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <><Save className="w-4 h-4 mr-1" /> Save Changes</>
+                    }
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
