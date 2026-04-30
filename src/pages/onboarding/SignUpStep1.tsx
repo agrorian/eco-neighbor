@@ -66,9 +66,9 @@ export default function SignUpStep1() {
         }
         return;
       }
-      // Pass referral code in URL to Step2 so it survives navigation
-      const ref = referralCode.trim();
-      navigate(ref ? `/signup/step2?ref=${ref}` : '/signup/step2');
+      // Navigate to OTP verification — pass email so the screen can display it
+      // Referral code stays in localStorage/sessionStorage and is picked up by Step2
+      navigate('/otp-verify', { state: { email } });
     } catch (err: any) {
       setError(err.message || 'Sign up failed. Please try again.');
     } finally {

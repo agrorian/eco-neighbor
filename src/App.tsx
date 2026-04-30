@@ -66,6 +66,7 @@ import VolunteerApply from '@/pages/onboarding-team/VolunteerApply';
 import BusinessHistory from '@/pages/business/BusinessHistory';
 import SignUpStep1 from '@/pages/onboarding/SignUpStep1';
 import SignUpStep2 from '@/pages/onboarding/SignUpStep2';
+import OTPVerification from '@/pages/onboarding/OTPVerification';
 import ConnectWallet from '@/pages/onboarding/ConnectWallet';
 import Tutorial from '@/pages/onboarding/Tutorial';
 import Login from '@/pages/onboarding/Login';
@@ -183,6 +184,7 @@ export default function App() {
           {/* Signup routes — always available (even when logged in) */}
           <Route path="/signup/step1" element={<SignUpStep1 />} />
           <Route path="/signup/step2" element={<SignUpStep2 />} />
+          <Route path="/otp-verify" element={<OTPVerification />} />
           <Route path="/about" element={<About />} />
           <Route path="/dev-history" element={<VersionHistory />} />
           <Route path="/account-recovery" element={<AccountRecovery />} />
