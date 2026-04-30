@@ -325,6 +325,8 @@ export default function RichTextEditor({
     await supabase.from('messages').insert(notifications);
   }, [currentUserId, channelId, extractMentionIds]);
 
+  const [editorHtml, setEditorHtml] = useState('<p></p>');
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -375,6 +377,9 @@ export default function RichTextEditor({
     ],
     content: content || '',
     editable: !disabled && !readOnly,
+    onUpdate: ({ editor }) => {
+      setEditorHtml(editor.getHTML());
+    },
     editorProps: {
       attributes: {
         class: 'outline-none',
@@ -398,6 +403,7 @@ export default function RichTextEditor({
   useEffect(() => {
     if (clearTrigger === undefined || !editor) return;
     editor.commands.clearContent(true);
+    setEditorHtml('<p></p>');
   }, [clearTrigger]);
 
   // ── Sync external content (read-only display) ────────────────────────────
@@ -410,17 +416,16 @@ export default function RichTextEditor({
 
   const handleSubmit = useCallback(() => {
     if (!editor || submitting || disabled) return;
-    const html = editor.getHTML();
-    // Check for actual content — editor.isEmpty misses mention-only messages
+    const html = editorHtml;
     const hasContent = html && html !== '<p></p>' && html.trim() !== '';
     if (!hasContent) return;
     const plainText = editor.getText();
     onSubmit?.(html);
     sendMentionNotifications(html, plainText);
-  }, [editor, onSubmit, submitting, disabled, sendMentionNotifications]);
+  }, [editor, editorHtml, onSubmit, submitting, disabled, sendMentionNotifications]);
 
   // ── Listen for Ctrl+Enter trigger from editorProps ───────────────────────
-  const isEmpty = !editor || editor.getHTML() === '<p></p>' || !editor.getHTML().trim();
+  const isEmpty = !editor || editorHtml === '<p></p>' || editorHtml === '' || !editorHtml.trim();
   const charCount = editor?.storage.characterCount?.characters() ?? 0;
   const wordCount = editor?.storage.characterCount?.words() ?? 0;
 
