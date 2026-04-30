@@ -5,30 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, ArrowLeft, MessageCircle, Camera, Shield, AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-
-const PAKISTAN_NEIGHBOURHOODS = [
-  'Chaklala Scheme 3','Airport Housing Society','Gulrez Housing Society',
-  'Bahria Town','PWD Housing Society','Soan Garden','Koral Town',
-  'Naval Anchorage','Jinnah Garden','Morgah','Lalazar','Saddar',
-  'DHA Phase 1','DHA Phase 2','Gulistan Colony','Walayat Colony',
-  'Yusuf Colony','Ayub Colony','Dhok Choudhrian','Car Chowk Area',
-];
-
-const INTERNATIONAL_NEIGHBOURHOODS = [
-  'Other / International',
-];
-
-const NEIGHBOURHOODS = [...PAKISTAN_NEIGHBOURHOODS, ...INTERNATIONAL_NEIGHBOURHOODS];
-
-const PAKISTAN_NEIGHBOURHOODS_SET = new Set(PAKISTAN_NEIGHBOURHOODS);
-
-const PROFESSIONS = [
-  'Teacher','Doctor','Nurse','Engineer','Electrician','Plumber',
-  'Carpenter','Mechanic','Artist','Student','Business Owner','Developer',
-  'Chef','Driver','Farmer','Shopkeeper','Tailor','Contractor',
-  'Social Worker','Religious Scholar','Street Vendor','Food Runner',
-  'Community Food Guardian','Milkman','Painter / Mason','Retired','Other'
-];
+import { PROFESSIONS } from '@/lib/constants';
+import LocationPicker, { LocationValue } from '@/components/LocationPicker';
 
 // Auto-format CNIC as XXXXX-XXXXXXX-X
 function formatCNIC(value: string): string {
@@ -48,7 +26,9 @@ export default function SignUpStep2() {
 
   // Profile fields
   const [name, setName] = useState('');
-  const [neighborhood, setNeighborhood] = useState('');
+  const [location, setLocation] = useState<LocationValue>({
+    country: '', countryCode: '', province: '', city: '', neighbourhood: '',
+  });
   const [profession, setProfession] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
 
@@ -71,7 +51,7 @@ export default function SignUpStep2() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const isPakistan = PAKISTAN_NEIGHBOURHOODS_SET.has(neighborhood);
+  const isPakistan = location.countryCode === 'PK';
 
   useEffect(() => {
     return () => { streamRef.current?.getTracks().forEach(t => t.stop()); };
@@ -224,7 +204,8 @@ export default function SignUpStep2() {
   // CNIC is optional for everyone — but if entered, must be valid
   const isPkValid = !cnicNumber || (isValidCNIC(cnicNumber) && !cnicError);
 
-  const canProceed = name && neighborhood && profession && isPkValid && !loading && !checkingCnic;
+  const locationComplete = !!(location.countryCode && location.city);
+  const canProceed = name && locationComplete && profession && isPkValid && !loading && !checkingCnic;
 
   const handleNext = async () => {
     setLoading(true);
@@ -253,12 +234,21 @@ export default function SignUpStep2() {
         }
       }
 
+      // Build neighbourhood string from location picker
+      const locationParts = [
+        location.neighbourhood,
+        location.city,
+        location.province,
+        location.country,
+      ].filter(Boolean);
+      const neighbourhoodStr = locationParts.join(', ');
+
       const { error: upsertError } = await supabase
         .from('users')
         .upsert({
           id: user.id,
           full_name: name,
-          neighbourhood: neighborhood,
+          neighbourhood: neighbourhoodStr,
           profession: profession,
           email: user.email,
           ...(whatsapp ? { whatsapp_number: whatsapp.replace(/\D/g, '') } : {}),
@@ -294,7 +284,7 @@ export default function SignUpStep2() {
         body: {
           to: user.email,
           full_name: name,
-          neighbourhood: neighborhood,
+          neighbourhood: neighbourhoodStr,
           profession: profession,
           referral_code: (await supabase.from('users').select('referral_code').eq('id', user.id).single()).data?.referral_code,
         }
@@ -337,21 +327,12 @@ export default function SignUpStep2() {
             <Input type="text" placeholder="Your full name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
-          {/* Neighbourhood */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-enb-text-primary">Neighbourhood</label>
-            <Select onValueChange={setNeighborhood}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select your neighbourhood" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72 overflow-y-auto">
-                <SelectItem value="__pk_header__" disabled className="text-xs text-gray-400 font-semibold uppercase">— Pakistan —</SelectItem>
-                {PAKISTAN_NEIGHBOURHOODS.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-                <SelectItem value="__intl_header__" disabled className="text-xs text-gray-400 font-semibold uppercase">— International —</SelectItem>
-                <SelectItem value="Other / International">Other / International</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Location */}
+          <LocationPicker
+            value={location}
+            onChange={setLocation}
+            required
+          />
 
           {/* Profession */}
           <div className="space-y-2">
@@ -378,7 +359,7 @@ export default function SignUpStep2() {
           </div>
 
           {/* ── CNIC / ID Section ── */}
-          {neighborhood && (
+          {locationComplete && (
             <div className="space-y-3 pt-2 border-t border-gray-100">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-enb-green" />
@@ -551,7 +532,7 @@ export default function SignUpStep2() {
               : <>Continue <ArrowRight className="w-4 h-4 ml-2" /></>}
           </Button>
 
-          {neighborhood && (
+          {locationComplete && (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
               <p className="text-xs text-amber-700 leading-relaxed text-center">
                 ⚠️ <strong>Skipping identity verification?</strong> You can still join and submit actions, but your earned ENB will remain <strong>locked</strong> until you verify your CNIC from the dashboard.
