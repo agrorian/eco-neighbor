@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, ArrowLeft, MessageCircle, Camera, Shield, AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
+import { ArrowRight, ArrowLeft, MessageCircle, Camera, Shield, AlertCircle, CheckCircle, Loader2, X, ImagePlus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PROFESSIONS } from '@/lib/constants';
 import LocationPicker, { LocationValue } from '@/components/LocationPicker';
