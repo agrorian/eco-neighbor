@@ -20,6 +20,7 @@ export const PROFESSIONS = [
   'Electrician',
   'Electronic Appliances Shop',
   'Electronics Technician',
+  'Mobile Repairman',
   'Engineer',
   'Farmer',
   'Food Runner',
@@ -63,6 +64,7 @@ export const BUSINESS_CATEGORIES = [
   'Electrical Shop (Wires, Lights, Fittings)',
   'Electrical Supplies',
   'Electronic Appliances Shop',
+  'Mobile Repair Shop',
   'Fruit & Vegetable Shop',
   'Grocery / General Store',
   'Hardware / Plumbing Supply',
@@ -108,3 +110,26 @@ export const BUSINESS_TYPE_EMOJI: Record<string, string> = {
   'Dry Fruit Merchant': '🥜',
   'Other': '🏬',
 };
+
+// User tiers — canonical order
+export const USER_TIERS = [
+  'Newcomer',
+  'Helper',
+  'Guardian',
+  'Pillar',
+  'Founder Tier',
+] as const;
+
+export type UserTier = typeof USER_TIERS[number];
+
+// User roles
+export const USER_ROLES = [
+  'member',
+  'moderator',
+  'onboarding_team',
+  'business',
+  'founder',
+  'admin',
+] as const;
+
+export type UserRole = typeof USER_ROLES[number];

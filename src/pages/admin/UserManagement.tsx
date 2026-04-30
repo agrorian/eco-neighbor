@@ -6,6 +6,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import LocationPicker, { LocationValue } from '@/components/LocationPicker';
+import { PROFESSIONS, USER_TIERS, USER_ROLES } from '@/lib/constants';
 
 interface DBUser {
   id: string; full_name: string; email: string; role: string;
@@ -33,6 +35,9 @@ export default function UserManagement() {
   // ── Edit Profile ────────────────────────────────────────────────────────
   const [editTarget, setEditTarget] = useState<DBUser | null>(null);
   const [editForm, setEditForm] = useState<Partial<DBUser>>({});
+  const [editLocation, setEditLocation] = useState<LocationValue>({
+    country: '', countryCode: '', province: '', city: '', neighbourhood: '',
+  });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
@@ -41,7 +46,6 @@ export default function UserManagement() {
     setEditTarget(u);
     setEditForm({
       full_name:       u.full_name || '',
-      neighbourhood:   u.neighbourhood || '',
       profession:      u.profession || '',
       whatsapp_number: u.whatsapp_number || '',
       wallet_address:  u.wallet_address || '',
@@ -49,6 +53,15 @@ export default function UserManagement() {
       tier:            u.tier || 'Newcomer',
       cnic_verified:   u.cnic_verified || false,
       is_active:       u.is_active !== false,
+    });
+    // Parse neighbourhood back into location — neighbourhood field stores "Neighbourhood, City, Province, Country"
+    // For simplicity, pre-fill neighbourhood from existing data
+    setEditLocation({
+      country:      '',
+      countryCode:  '',
+      province:     '',
+      city:         '',
+      neighbourhood: u.neighbourhood || '',
     });
     setSaveError('');
     setSaveSuccess('');
@@ -58,11 +71,22 @@ export default function UserManagement() {
     if (!editTarget) return;
     setSaving(true);
     setSaveError('');
+    // Build neighbourhood string from location picker
+    const locationParts = [
+      editLocation.neighbourhood,
+      editLocation.city,
+      editLocation.province,
+      editLocation.country,
+    ].filter(Boolean);
+    const neighbourhoodStr = locationParts.length > 0
+      ? locationParts.join(', ')
+      : editTarget.neighbourhood || null;
+
     const { error } = await supabase
       .from('users')
       .update({
         full_name:       editForm.full_name?.trim() || null,
-        neighbourhood:   editForm.neighbourhood?.trim() || null,
+        neighbourhood:   neighbourhoodStr,
         profession:      editForm.profession?.trim() || null,
         whatsapp_number: editForm.whatsapp_number?.trim() || null,
         wallet_address:  editForm.wallet_address?.trim() || null,
@@ -408,15 +432,21 @@ export default function UserManagement() {
                   <Input value={editForm.full_name || ''} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))}
                     placeholder="Full name" className="mt-1" />
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500">Neighborhood</label>
-                  <Input value={editForm.neighbourhood || ''} onChange={e => setEditForm(f => ({ ...f, neighbourhood: e.target.value }))}
-                    placeholder="e.g. Chaklala Scheme 3" className="mt-1" />
-                </div>
+
+                {/* Location Picker */}
+                <LocationPicker
+                  value={editLocation}
+                  onChange={setEditLocation}
+                />
+
                 <div>
                   <label className="text-xs font-medium text-gray-500">Profession</label>
-                  <Input value={editForm.profession || ''} onChange={e => setEditForm(f => ({ ...f, profession: e.target.value }))}
-                    placeholder="e.g. Street vendor, Teacher" className="mt-1" />
+                  <select value={editForm.profession || ''}
+                    onChange={e => setEditForm(f => ({ ...f, profession: e.target.value }))}
+                    className="mt-1 w-full text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white outline-none focus:border-enb-green text-enb-text-primary">
+                    <option value="">Select profession</option>
+                    {PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500">WhatsApp Number</label>
@@ -438,12 +468,7 @@ export default function UserManagement() {
                     <select value={editForm.role || 'member'}
                       onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
                       className="mt-1 w-full text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white outline-none focus:border-enb-green text-enb-text-primary">
-                      <option value="member">Member</option>
-                      <option value="moderator">Moderator</option>
-                      <option value="onboarding_team">Onboarding Team</option>
-                      <option value="business">Business</option>
-                      <option value="founder">Founder</option>
-                      <option value="admin">Admin</option>
+                      {USER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                   <div>
@@ -451,11 +476,7 @@ export default function UserManagement() {
                     <select value={editForm.tier || 'Newcomer'}
                       onChange={e => setEditForm(f => ({ ...f, tier: e.target.value }))}
                       className="mt-1 w-full text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white outline-none focus:border-enb-green text-enb-text-primary">
-                      <option value="Newcomer">Newcomer</option>
-                      <option value="Helper">Helper</option>
-                      <option value="Guardian">Guardian</option>
-                      <option value="Pillar">Pillar</option>
-                      <option value="Founder Tier">Founder Tier</option>
+                      {USER_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
                 </div>
