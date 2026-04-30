@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Zap, MoreVertical, User, Shield, AlertTriangle, Loader2, CheckCircle, Clock, XCircle, ExternalLink, Pencil, Save, X } from 'lucide-react';
+import { Search, Zap, MoreVertical, User, Shield, AlertTriangle, Loader2, CheckCircle, Clock, XCircle, ExternalLink, Pencil, Save, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -31,6 +31,12 @@ export default function UserManagement() {
   const [verifyTarget, setVerifyTarget] = useState<DBUser | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifySuccess, setVerifySuccess] = useState('');
+
+  // ── Delete Account ───────────────────────────────────────────────────────
+  const [deleteTarget, setDeleteTarget] = useState<DBUser | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // ── Edit Profile ────────────────────────────────────────────────────────
   const [editTarget, setEditTarget] = useState<DBUser | null>(null);
@@ -164,6 +170,34 @@ export default function UserManagement() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      // Step 1: delete from public.users (cascades to all related rows)
+      const { error: dbError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', deleteTarget.id);
+      if (dbError) throw dbError;
+
+      // Step 2: delete from auth.users via SECURITY DEFINER RPC
+      const { error: authError } = await supabase.rpc('admin_delete_auth_user', {
+        p_user_id: deleteTarget.id,
+      });
+      if (authError) throw authError;
+
+      setDeleteTarget(null);
+      setDeleteConfirmText('');
+      fetchUsers();
+    } catch (err: any) {
+      setDeleteError(err.message || 'Delete failed. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const filteredUsers = users.filter(u =>
     (u.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
@@ -288,6 +322,14 @@ export default function UserManagement() {
                           <AlertTriangle className="w-4 h-4 mr-2" />
                           {u.is_active !== false ? 'Suspend Account' : 'Reactivate Account'}
                         </DropdownMenuItem>
+                        {adminUser?.role === 'super_admin' && (
+                          <DropdownMenuItem
+                            onClick={() => { setDeleteTarget(u); setDeleteConfirmText(''); setDeleteError(''); }}
+                            className="text-red-600 font-medium focus:text-red-700 focus:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Delete Account
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -517,6 +559,62 @@ export default function UserManagement() {
                 </div>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Modal */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteConfirmText(''); setDeleteError(''); } }}>
+        <DialogContent className="max-w-sm">
+          <div className="space-y-4 p-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-enb-text-primary">Delete Account</h3>
+                <p className="text-xs text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-1 text-sm">
+              <div><span className="font-medium text-gray-500">Name:</span> <span className="font-semibold text-enb-text-primary">{deleteTarget?.full_name || '—'}</span></div>
+              <div><span className="font-medium text-gray-500">Email:</span> <span className="font-mono text-red-700">{deleteTarget?.email}</span></div>
+              <div><span className="font-medium text-gray-500">ENB Balance:</span> <span>{(deleteTarget?.enb_local_bal || 0).toLocaleString()} ENB</span></div>
+            </div>
+
+            <p className="text-sm text-gray-600 leading-relaxed">
+              This will permanently delete the user's account, profile, submissions, and all associated data from the database. Their auth login will also be removed.
+            </p>
+
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type <span className="font-mono text-red-600">DELETE</span> to confirm
+              </label>
+              <Input
+                value={deleteConfirmText}
+                onChange={e => { setDeleteConfirmText(e.target.value); setDeleteError(''); }}
+                placeholder="Type DELETE"
+                className="mt-1 font-mono border-red-200 focus:border-red-400"
+              />
+            </div>
+
+            {deleteError && (
+              <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-2">{deleteError}</p>
+            )}
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteConfirmText(''); setDeleteError(''); }} className="flex-1">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDelete}
+                disabled={deleteConfirmText !== 'DELETE' || deleting}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:opacity-40"
+              >
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-4 h-4 mr-1" /> Delete Permanently</>}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
