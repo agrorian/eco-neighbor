@@ -130,6 +130,7 @@ export const USER_ROLES = [
   'business',
   'founder',
   'admin',
+  'super_admin',
 ] as const;
 
 export type UserRole = typeof USER_ROLES[number];

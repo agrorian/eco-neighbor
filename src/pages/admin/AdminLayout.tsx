@@ -33,7 +33,7 @@ export default function AdminLayout() {
         .select('role')
         .eq('id', user.id)
         .single();
-      setIsAdmin(data?.role === 'admin');
+      setIsAdmin(['admin', 'super_admin'].includes(data?.role));
     };
     checkRole();
   }, [user]);

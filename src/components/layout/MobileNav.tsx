@@ -117,7 +117,7 @@ export default function MobileNav() {
     { path: '/submit', icon: PlusCircle,     styleKey: 'submitAction', label: l('nav', 'submitAction') },
     { path: '/wallet', icon: Wallet,         styleKey: 'wallet',       label: l('nav', 'wallet') },
     { path: '/messages', icon: MessageSquare, styleKey: 'messages',    label: 'Messages' },
-    ...(user.role === 'admin'
+    ...(['admin', 'super_admin'].includes(user.role)
       ? [{ path: '/admin',            icon: ShieldCheck,    styleKey: 'admin',        label: l('nav', 'admin') },
          { path: '/more',             icon: MoreHorizontal, styleKey: 'more',         label: l('nav', 'more') }]
       : user.role === 'moderator'

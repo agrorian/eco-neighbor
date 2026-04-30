@@ -32,12 +32,12 @@ export default function DesktopSidebar() {
     { path: '/settings',      icon: Settings,      label: l('nav', 'settings') },
   ];
 
-  const volunteerNav = !['onboarding_team', 'admin', 'moderator', 'founder'].includes(user?.role || '') ? [
+  const volunteerNav = !['onboarding_team', 'admin', 'super_admin', 'moderator', 'founder'].includes(user?.role || '') ? [
     { path: '/volunteer-apply', icon: Users, label: 'Join Onboarding Team' },
   ] : [];
 
   const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
-  const modNav = ['moderator', 'admin'].includes(user?.role || '') ? [
+  const modNav = ['moderator', 'admin', 'super_admin'].includes(user?.role || '') ? [
     { path: '/mod-queue', icon: Shield, label: l('nav', 'modQueue') },
   ] : [];
   const roleBasedNav = ALLOWED_LOG_ROLES.includes(user?.role || '') ? [
@@ -71,7 +71,7 @@ export default function DesktopSidebar() {
   const isBusinessSection = location.pathname === '/business' || location.pathname.startsWith('/business/') || location.pathname === '/scan' || location.pathname === '/partner-float';
   const isBusiness = user?.role === 'business';
 
-  const partnerNav = !['business', 'admin', 'moderator', 'founder', 'onboarding_team', 'organiser'].includes(user?.role || '') ? [
+  const partnerNav = !['business', 'admin', 'super_admin', 'moderator', 'founder', 'onboarding_team', 'organiser'].includes(user?.role || '') ? [
     { path: '/partner-signup', icon: Store, label: 'Become a Partner' },
   ] : [];
 
@@ -101,7 +101,7 @@ export default function DesktopSidebar() {
       </div>
 
       {/* Admin toggle */}
-      {user.role === 'admin' && (
+      {['admin', 'super_admin'].includes(user.role) && (
         <div className="px-4 pt-4 pb-2 flex gap-2">
           <Link to="/" className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!isAdminSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Member View
