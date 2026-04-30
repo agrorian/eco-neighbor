@@ -2,7 +2,7 @@
 // Shared Tiptap rich text editor — Channels, Announcements, Governance Proposals, CFSP Reports
 // Tiptap v3 + React 19
 
-import { useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
