@@ -89,7 +89,7 @@ export default function GenerateRedemptionQR() {
   // Generate QR image whenever qrData.code changes
   useEffect(() => {
     if (!qrData?.code) { setQrImageUrl(''); return; }
-    const url = `https://eco-neighbor.vercel.app/scan?code=${qrData.code}`;
+    const url = `https://app.econeighbor.org/scan?code=${qrData.code}`;
     QRCode.toDataURL(url, {
       width: 240,
       margin: 2,
@@ -152,7 +152,7 @@ export default function GenerateRedemptionQR() {
   const handleShare = () => {
     if (!qrData) return;
     const biz = businesses.find(b => b.id === selectedBiz);
-    const url = `https://eco-neighbor.vercel.app/scan?code=${qrData.code}`;
+    const url = `https://app.econeighbor.org/scan?code=${qrData.code}`;
     const text = `ENB SWAP\nAmount: ${enbAmount} ENB\nBusiness: ${biz?.business_name}\nScan to SWAP: ${url}`;
     if (navigator.share) navigator.share({ title: 'ENB SWAP', text, url });
     else { navigator.clipboard.writeText(url); alert('SWAP link copied!'); }
@@ -289,7 +289,7 @@ export default function GenerateRedemptionQR() {
           </Button>
 
           <p className="text-xs text-center text-gray-400">
-            ENB is reserved when QR is generated. <strong>Cancel anytime to get it back.</strong>
+            ENB.LOCAL is reserved when QR is generated. <strong>Cancel anytime to get it back.</strong> The 10% Community Treasury contribution only applies on confirmed SWAP.
           </p>
         </div>
       ) : (
@@ -334,6 +334,24 @@ export default function GenerateRedemptionQR() {
             Business owner scans this QR with their phone camera. One-time use only.
           </p>
 
+          {/* v6.0 SWAP breakdown info */}
+          <div className="w-full bg-enb-green/5 border border-enb-green/15 rounded-xl px-4 py-3 space-y-1">
+            <p className="text-xs font-semibold text-enb-green text-center mb-1.5">What happens on SWAP</p>
+            <div className="flex justify-between text-xs text-gray-600">
+              <span>→ Returns to Community Rewards Pool</span>
+              <span className="font-semibold text-enb-green">90%</span>
+            </div>
+            <div className="flex justify-between text-xs text-gray-600">
+              <span>→ Business earns (ENB.GLOBAL)</span>
+              <span className="font-semibold text-enb-gold">3.3%</span>
+            </div>
+            <div className="flex justify-between text-xs text-gray-600">
+              <span>→ Community Treasury</span>
+              <span className="font-semibold text-gray-500">6.7%</span>
+            </div>
+            <p className="text-xs text-gray-400 text-center pt-0.5">No value destroyed — all recycled for the ecosystem</p>
+          </div>
+
           <div className="flex gap-3 w-full">
             <Button variant="outline" onClick={handleShare} className="flex-1">
               <Share2 className="w-4 h-4 mr-2" />Share
@@ -349,7 +367,7 @@ export default function GenerateRedemptionQR() {
           </Button>
 
           <p className="text-xs text-center text-amber-600">
-            Cancel returns {enbAmount} ENB to your wallet immediately.
+            Cancelling returns {enbAmount} ENB.LOCAL to your wallet immediately. The Community Treasury contribution only applies when a business confirms the SWAP.
           </p>
         </div>
       )}

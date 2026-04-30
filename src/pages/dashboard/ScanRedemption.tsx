@@ -17,6 +17,9 @@ interface RedemptionResult {
   enb_spent?: number;
   enb_amount?: number;
   member_name?: string;
+  enb_to_crp?: number;       // 90% returned to CRP
+  enb_global_business?: number; // 3.3% to business as ENB.GLOBAL
+  enb_to_treasury?: number;  // 6.7% to community treasury
   error?: string;
 }
 
@@ -192,8 +195,14 @@ export default function ScanRedemption() {
 
   // ── Success screen ──────────────────────────────────────────────────────────
   if (result?.success) {
+    const totalSpent = result.enb_spent ?? result.enb_amount ?? 0;
+    // Calculate v6.0 split if RPC doesn't return breakdowns yet
+    const toCRP = result.enb_to_crp ?? Math.round(totalSpent * 0.90);
+    const toBusinessGlobal = result.enb_global_business ?? +(totalSpent * 0.033).toFixed(2);
+    const toTreasury = result.enb_to_treasury ?? +(totalSpent * 0.067).toFixed(2);
+
     return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 text-center space-y-6">
+      <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 text-center space-y-5">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -201,6 +210,7 @@ export default function ScanRedemption() {
         >
           <CheckCircle className="w-12 h-12 text-enb-green" />
         </motion.div>
+
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary">SWAP Confirmed!</h1>
           {result.member_name && (
@@ -208,14 +218,57 @@ export default function ScanRedemption() {
               Member: <span className="font-bold text-enb-text-primary">{result.member_name}</span>
             </p>
           )}
-          {(result.enb_spent || result.enb_amount) && (
+          {totalSpent > 0 && (
             <p className="text-enb-text-secondary mt-1">
-              <span className="font-bold text-enb-green">
-                {(result.enb_spent ?? result.enb_amount)?.toLocaleString()} ENB
-              </span>{' '}accepted
+              <span className="font-bold text-enb-green">{totalSpent.toLocaleString()} ENB.LOCAL</span>{' '}accepted
             </p>
           )}
         </div>
+
+        {/* v6.0 SWAP breakdown */}
+        {totalSpent > 0 && (
+          <div className="w-full max-w-xs bg-enb-green/5 border border-enb-green/15 rounded-2xl px-5 py-4 space-y-2 text-left">
+            <p className="text-xs font-bold text-enb-green text-center mb-2 uppercase tracking-wider">How this SWAP was distributed</p>
+
+            <div className="flex justify-between items-center py-1 border-b border-gray-100">
+              <div>
+                <p className="text-sm font-medium text-enb-text-primary">Community Rewards Pool</p>
+                <p className="text-xs text-gray-400">Sustains future civic rewards</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-enb-green">{toCRP.toLocaleString()}</p>
+                <p className="text-xs text-gray-400">90%</p>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center py-1 border-b border-gray-100">
+              <div>
+                <p className="text-sm font-medium text-enb-text-primary">Your ENB.GLOBAL Earning</p>
+                <p className="text-xs text-gray-400">Credited to your wallet</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-amber-600">{toBusinessGlobal.toLocaleString()}</p>
+                <p className="text-xs text-gray-400">3.3%</p>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center py-1">
+              <div>
+                <p className="text-sm font-medium text-enb-text-primary">Community Treasury</p>
+                <p className="text-xs text-gray-400">Stability, liquidity & reserve funds</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-gray-500">{toTreasury.toLocaleString()}</p>
+                <p className="text-xs text-gray-400">6.7%</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-400 text-center pt-1">
+              No value destroyed — every ENB recycled for the community
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-3 w-full max-w-xs">
           <Button onClick={resetScan} className="flex-1 bg-enb-green text-white">
             <RefreshCw className="w-4 h-4 mr-2" /> Scan Another
