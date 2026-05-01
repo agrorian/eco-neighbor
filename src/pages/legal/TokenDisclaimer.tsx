@@ -141,11 +141,7 @@ export default function TokenDisclaimer() {
               info@econeighbor.org
             </a>
           </p>
-          <p className="mt-2">The Eco-Neighbor Whitepaper v6.0 is available at{' '}
-            <a href="https://www.econeighbor.org/whitepaper" className="text-enb-green font-medium underline" target="_blank" rel="noopener noreferrer">
-              www.econeighbor.org/whitepaper
-            </a>.
-          </p>
+
         </Section>
 
         {/* Footer nav */}
