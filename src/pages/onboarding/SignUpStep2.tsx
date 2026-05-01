@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -49,6 +49,7 @@ export default function SignUpStep2() {
   const streamRef = useRef<MediaStream | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState('');
 
   const isPakistan = location.countryCode === 'PK';
@@ -205,7 +206,7 @@ export default function SignUpStep2() {
   const isPkValid = !cnicNumber || (isValidCNIC(cnicNumber) && !cnicError);
 
   const locationComplete = !!(location.countryCode && location.city);
-  const canProceed = name && locationComplete && profession && isPkValid && !loading && !checkingCnic;
+  const canProceed = name && locationComplete && profession && isPkValid && agreedToTerms && !loading && !checkingCnic;
 
   const handleNext = async () => {
     setLoading(true);
@@ -521,9 +522,46 @@ export default function SignUpStep2() {
             </div>
           )}
 
+          {/* ── Legal Agreement Checkbox ─────────────────────────────────── */}
+          <label className="flex items-start gap-3 cursor-pointer group mt-4">
+            <div className="relative flex-shrink-0 mt-0.5">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                agreedToTerms
+                  ? 'bg-enb-green border-enb-green'
+                  : 'bg-white border-enb-border group-hover:border-enb-green/50'
+              }`}>
+                {agreedToTerms && (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-enb-text-secondary leading-relaxed">
+              By signing up, I agree to Eco-Neighbor's{' '}
+              <Link to="/terms" target="_blank" className="text-enb-green font-medium hover:underline" onClick={(e) => e.stopPropagation()}>
+                Terms & Conditions
+              </Link>
+              {' · '}
+              <Link to="/privacy" target="_blank" className="text-enb-green font-medium hover:underline" onClick={(e) => e.stopPropagation()}>
+                Privacy Policy
+              </Link>
+              {' · '}
+              <Link to="/token-disclaimer" target="_blank" className="text-enb-green font-medium hover:underline" onClick={(e) => e.stopPropagation()}>
+                Token Disclaimer
+              </Link>
+            </p>
+          </label>
+
           <Button
             onClick={handleNext}
-            className="w-full mt-4 bg-enb-green hover:bg-enb-green/90 text-white"
+            className={`w-full bg-enb-green hover:bg-enb-green/90 text-white transition-all ${!canProceed ? 'opacity-40 cursor-not-allowed' : ''}`}
             disabled={!canProceed}
           >
             {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>

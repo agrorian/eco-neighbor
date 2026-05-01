@@ -71,6 +71,9 @@ import ConnectWallet from '@/pages/onboarding/ConnectWallet';
 import Tutorial from '@/pages/onboarding/Tutorial';
 import Login from '@/pages/onboarding/Login';
 import ResetPassword from '@/pages/onboarding/ResetPassword';
+import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
+import TermsAndConditions from '@/pages/legal/TermsAndConditions';
+import TokenDisclaimer from '@/pages/legal/TokenDisclaimer';
 
 // Fallback spinner for lazy-loaded pages
 const PageLoader = () => (
@@ -188,6 +191,9 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/dev-history" element={<VersionHistory />} />
           <Route path="/account-recovery" element={<AccountRecovery />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/token-disclaimer" element={<TokenDisclaimer />} />
 
           {user ? (
             <>

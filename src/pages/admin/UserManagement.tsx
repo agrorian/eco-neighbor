@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, Zap, MoreVertical, User, Shield, AlertTriangle, Loader2, CheckCircle, Clock, XCircle, ExternalLink, Pencil, Save, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ interface DBUser {
   whatsapp_number?: string; neighbourhood?: string; profession?: string;
   wallet_address?: string; is_active: boolean;
   cnic_number?: string; cnic_photo_url?: string; cnic_verified?: boolean; cnic_submitted_at?: string;
+  created_at?: string;
 }
 
 export default function UserManagement() {
@@ -115,7 +116,7 @@ export default function UserManagement() {
     setLoading(true);
     const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, profession, wallet_address, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at')
+      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, profession, wallet_address, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at, created_at')
       .order('rep_score', { ascending: false });
     if (!error && data) setUsers(data);
     setLoading(false);
@@ -198,6 +199,16 @@ export default function UserManagement() {
     }
   };
 
+  // Build serial number map keyed by user ID — ordered by join date (created_at ASC)
+  const serialMap = useMemo(() => {
+    const sorted = [...users].sort((a, b) =>
+      (a.created_at || '').localeCompare(b.created_at || '')
+    );
+    const map: Record<string, number> = {};
+    sorted.forEach((u, i) => { map[u.id] = i + 1; });
+    return map;
+  }, [users]);
+
   const filteredUsers = users.filter(u =>
     (u.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
@@ -232,6 +243,7 @@ export default function UserManagement() {
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
+                <th className="px-3 py-4 font-medium text-gray-500 w-[48px] text-center">#</th>
                 <th className="px-3 py-4 font-medium text-gray-500 w-[220px]">User</th>
                 <th className="px-3 py-4 font-medium text-gray-500 w-[110px]">Role</th>
                 <th className="px-3 py-4 font-medium text-gray-500 w-[100px]">Tier</th>
@@ -245,6 +257,10 @@ export default function UserManagement() {
             <tbody className="divide-y divide-gray-100">
               {filteredUsers.map((u) => (
                 <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-3 py-3 text-center">
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-enb-green/8 text-enb-green text-xs font-bold">
+                      #{serialMap[u.id] ?? "—"}</span>
+                  </td>
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-xs shrink-0">
