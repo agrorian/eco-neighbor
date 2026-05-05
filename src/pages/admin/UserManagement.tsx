@@ -152,8 +152,20 @@ export default function UserManagement() {
   };
 
   const handleChangeRole = async (u: DBUser, newRole: string) => {
+    const oldRole = u.role;
+    // Update profile table
     const { error } = await supabase.from('users').update({ role: newRole }).eq('id', u.id);
-    if (!error) fetchUsers();
+    if (error) return;
+    // Write audit record — never lose the trail of who was changed to what and when
+    await supabase.from('role_change_audit').insert({
+      user_id:    u.id,
+      changed_by: adminUser?.id || null,
+      old_role:   oldRole,
+      new_role:   newRole,
+    }).then(({ error: auditErr }) => {
+      if (auditErr) console.warn('Audit log write failed (non-critical):', auditErr.message);
+    });
+    fetchUsers();
   };
 
   const handleVerify = async () => {
@@ -330,9 +342,9 @@ export default function UserManagement() {
                           <Shield className="w-4 h-4 mr-2" />
                           {u.role === 'moderator' ? 'Remove Moderator' : 'Make Moderator'}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleChangeRole(u, u.role === 'admin' ? 'member' : 'admin')}>
+                        <DropdownMenuItem onClick={() => handleChangeRole(u, ['admin','super_admin'].includes(u.role) ? 'member' : 'admin')}>
                           <User className="w-4 h-4 mr-2" />
-                          {u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                          {['admin','super_admin'].includes(u.role) ? 'Remove Admin' : 'Make Admin'}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleToggleActive(u)} className={u.is_active !== false ? 'text-red-600' : 'text-green-600'}>
                           <AlertTriangle className="w-4 h-4 mr-2" />

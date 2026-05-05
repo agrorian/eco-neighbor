@@ -120,27 +120,44 @@ export default function App() {
           cnic_submitted_at: data.cnic_submitted_at || undefined,
         });
       } else {
-        console.warn('No profile row, creating fallback. Error:', error?.message);
-        await supabase.from('users').upsert({
+        // Profile row missing — this is a genuine new user (no existing data).
+        // SAFE INSERT ONLY: never overwrite an existing row's balance or role.
+        // If the row already exists (RLS blocked the read), the insert is ignored.
+        console.warn('No profile row found. Attempting safe insert. RLS error:', error?.message);
+        const { data: insertedRow } = await supabase.from('users').insert({
           id: userId, email: userEmail, full_name: '',
           enb_local_bal: 0, enb_global_bal: 0, rep_score: 0,
           tier: 'Newcomer', role: 'member', is_active: true,
-        }, { onConflict: 'id' });
-        setUser({
-          id: userId, email: userEmail, full_name: '',
-          neighbourhood: '', profession: '',
-          enb_local_bal: 0, enb_global_bal: 0,
-          rep_score: 0, tier: 'Newcomer', role: 'member',
-        });
+        }).select().single();
+
+        // If insert succeeded, use the new row. If it failed (row already exists,
+        // RLS blocked), retry the read — the JWT may have refreshed.
+        if (insertedRow) {
+          setUser({
+            id: insertedRow.id, email: insertedRow.email || userEmail,
+            full_name: insertedRow.full_name || '',
+            neighbourhood: insertedRow.neighbourhood || '',
+            profession: insertedRow.profession || '',
+            enb_local_bal: Number(insertedRow.enb_local_bal) || 0,
+            enb_global_bal: Number(insertedRow.enb_global_bal) || 0,
+            rep_score: Number(insertedRow.rep_score) || 0,
+            tier: insertedRow.tier || 'Newcomer',
+            role: insertedRow.role || 'member',
+            lifetime_earned: Number(insertedRow.lifetime_earned) || 0,
+            referral_code: insertedRow.referral_code || undefined,
+          });
+        } else {
+          // Row exists but RLS blocked both the read and the insert.
+          // Do NOT set zeros — show an auth error state instead.
+          console.error('Profile load blocked by RLS. JWT role may be stale. User must re-login.');
+          setUser(null);
+        }
       }
     } catch (err) {
+      // Catch block: never set zeros on an existing user.
+      // If we cannot read the profile, the safest action is null (triggers re-login).
       console.error('Profile load exception:', err);
-      setUser({
-        id: userId, email: userEmail, full_name: '',
-        neighbourhood: '', profession: '',
-        enb_local_bal: 0, enb_global_bal: 0,
-        rep_score: 0, tier: 'Newcomer', role: 'member',
-      });
+      setUser(null);
     }
   };
 
