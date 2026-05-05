@@ -227,9 +227,10 @@ export default function UserManagement() {
   );
 
   const ROLE_COLORS: Record<string, string> = {
-    admin: 'bg-purple-100 text-purple-800', founder: 'bg-enb-gold/10 text-amber-700',
-    moderator: 'bg-blue-100 text-blue-800', organiser: 'bg-teal-100 text-teal-800',
-    business: 'bg-pink-100 text-pink-800', member: 'bg-gray-100 text-gray-700',
+    super_admin: 'bg-red-100 text-red-800', admin: 'bg-purple-100 text-purple-800',
+    founder: 'bg-enb-gold/10 text-amber-700', moderator: 'bg-blue-100 text-blue-800',
+    onboarding_team: 'bg-teal-100 text-teal-800', business: 'bg-pink-100 text-pink-800',
+    member: 'bg-gray-100 text-gray-700',
   };
 
   return (
@@ -252,18 +253,19 @@ export default function UserManagement() {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="px-3 py-4 font-medium text-gray-500 w-[48px] text-center">#</th>
-                <th className="px-3 py-4 font-medium text-gray-500 w-[220px]">User</th>
-                <th className="px-3 py-4 font-medium text-gray-500 w-[110px]">Role</th>
-                <th className="px-3 py-4 font-medium text-gray-500 w-[100px]">Tier</th>
-                <th className="px-3 py-4 font-medium text-gray-500 text-right w-[70px]">Rep</th>
-                <th className="px-3 py-4 font-medium text-gray-500 text-right w-[100px]">ENB Balance</th>
-                <th className="px-3 py-4 font-medium text-gray-500 text-center w-[90px]">Identity</th>
-                <th className="px-3 py-4 font-medium text-gray-500 text-right w-[80px]">Status</th>
-                <th className="px-3 py-4 font-medium text-gray-500 text-right w-[60px]">Actions</th>
+                <th className="px-2 py-4 font-medium text-gray-500 w-[40px] text-center">#</th>
+                <th className="px-3 py-4 font-medium text-gray-500 w-[200px]">User</th>
+                <th className="px-2 py-4 font-medium text-gray-500 w-[110px]">Role</th>
+                <th className="px-2 py-4 font-medium text-gray-500 w-[90px]">Tier</th>
+                <th className="px-2 py-4 font-medium text-gray-500 text-right w-[65px]">Rep</th>
+                <th className="px-2 py-4 font-medium text-gray-500 text-right w-[90px]">ENB Bal</th>
+                <th className="px-2 py-4 font-medium text-gray-500 text-center w-[80px]">Identity</th>
+                <th className="px-2 py-4 font-medium text-gray-500 text-center w-[70px]">Status</th>
+                <th className="px-2 py-4 font-medium text-gray-500 text-right w-[55px]">Act</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -365,6 +367,7 @@ export default function UserManagement() {
               ))}
             </tbody>
           </table>
+          </div>
           {filteredUsers.length === 0 && (
             <div className="text-center py-12 text-enb-text-secondary">No users found.</div>
           )}
