@@ -15,7 +15,7 @@ interface DBUser {
   whatsapp_number?: string; neighbourhood?: string; profession?: string;
   wallet_address?: string; is_active: boolean;
   cnic_number?: string; cnic_photo_url?: string; cnic_verified?: boolean; cnic_submitted_at?: string;
-  created_at?: string;
+  joined_at?: string; updated_at?: string;
 }
 
 export default function UserManagement() {
@@ -116,7 +116,7 @@ export default function UserManagement() {
     setLoading(true);
     const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, profession, wallet_address, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at, created_at')
+      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, profession, wallet_address, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at, joined_at, updated_at')
       .order('rep_score', { ascending: false });
     if (!error && data) setUsers(data);
     setLoading(false);
@@ -211,10 +211,10 @@ export default function UserManagement() {
     }
   };
 
-  // Build serial number map keyed by user ID — ordered by join date (created_at ASC)
+  // Build serial number map keyed by user ID — ordered by join date (joined_at ASC)
   const serialMap = useMemo(() => {
     const sorted = [...users].sort((a, b) =>
-      (a.created_at || '').localeCompare(b.created_at || '')
+      (a.joined_at || '').localeCompare(b.joined_at || '')
     );
     const map: Record<string, number> = {};
     sorted.forEach((u, i) => { map[u.id] = i + 1; });
