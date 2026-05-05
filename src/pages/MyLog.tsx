@@ -9,7 +9,7 @@ import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 import { Navigate } from 'react-router-dom';
 
-const ALLOWED_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
+const ALLOWED_ROLES = ['founder', 'moderator', 'admin', 'super_admin', 'onboarding_team'];
 const MAX_CHARS = 3000;
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -688,26 +688,22 @@ export default function MyLog() {
                       {l('log', 'summary')} <span className="text-red-500">*</span>
                       <span className="text-gray-400 font-normal ml-1">({l('log', 'summaryHint')})</span>
                     </label>
-                    <RichTextarea placeholder={l('log', 'summaryPlaceholder')} height="h-24"
-                      value={summary} onChange={setSummary} />
+                    <Textarea placeholder={l('log', 'summaryPlaceholder')} value={summary} onChange={e => setSummary(e.target.value)} className="h-24 resize-none" />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'tasksCompleted')}</label>
-                    <RichTextarea placeholder={l('log', 'tasksPlaceholder')} height="h-24"
-                      value={completed} onChange={setCompleted} />
+                    <Textarea placeholder={l('log', 'tasksPlaceholder')} value={completed} onChange={e => setCompleted(e.target.value)} className="h-24 resize-none" />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'blockers')}</label>
-                    <RichTextarea placeholder={l('log', 'blockersPlaceholder')} height="h-20"
-                      value={blockers} onChange={setBlockers} />
+                    <Textarea placeholder={l('log', 'blockersPlaceholder')} value={blockers} onChange={e => setBlockers(e.target.value)} className="h-20 resize-none" />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-enb-text-primary">{l('log', 'nextSteps')}</label>
-                    <RichTextarea placeholder={l('log', 'nextStepsPlaceholder')} height="h-20"
-                      value={nextSteps} onChange={setNextSteps} />
+                    <Textarea placeholder={l('log', 'nextStepsPlaceholder')} value={nextSteps} onChange={e => setNextSteps(e.target.value)} className="h-20 resize-none" />
                   </div>
 
                   <div className="space-y-2">

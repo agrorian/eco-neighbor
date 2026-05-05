@@ -5,7 +5,7 @@ import LanguageToggle from '@/components/LanguageToggle';
 import { useLang } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
-const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'organiser'];
+const ALLOWED_LOG_ROLES = ['founder', 'moderator', 'admin', 'super_admin', 'onboarding_team'];
 
 // Roles that are staff/special — should NOT see member-only CTAs
 const STAFF_ROLES = ['admin', 'moderator', 'founder', 'organiser', 'onboarding_team', 'business'];
