@@ -289,7 +289,7 @@ export default function GenerateRedemptionQR() {
           </Button>
 
           <p className="text-xs text-center text-gray-400">
-            ENB.LOCAL is reserved when QR is generated. <strong>Cancel anytime to get it back.</strong> The 10% Community Treasury contribution only applies on confirmed SWAP.
+            ENB.LOCAL is reserved when QR is generated. <strong>Cancel anytime to get it back.</strong> The 20% Community Treasury contribution only applies on confirmed SWAP.
           </p>
         </div>
       ) : (
@@ -334,12 +334,12 @@ export default function GenerateRedemptionQR() {
             Business owner scans this QR with their phone camera. One-time use only.
           </p>
 
-          {/* v6.0 SWAP breakdown info */}
+          {/* v6.2 SWAP breakdown info */}
           <div className="w-full bg-enb-green/5 border border-enb-green/15 rounded-xl px-4 py-3 space-y-1">
             <p className="text-xs font-semibold text-enb-green text-center mb-1.5">What happens on SWAP</p>
             <div className="flex justify-between text-xs text-gray-600">
               <span>→ Returns to Community Rewards Pool</span>
-              <span className="font-semibold text-enb-green">90%</span>
+              <span className="font-semibold text-enb-green">80%</span>
             </div>
             <div className="flex justify-between text-xs text-gray-600">
               <span>→ Business earns (ENB.GLOBAL)</span>
@@ -348,6 +348,10 @@ export default function GenerateRedemptionQR() {
             <div className="flex justify-between text-xs text-gray-600">
               <span>→ Community Treasury</span>
               <span className="font-semibold text-gray-500">6.7%</span>
+            </div>
+            <div className="flex justify-between text-xs text-gray-600">
+              <span>→ ENB Operations Fund</span>
+              <span className="font-semibold text-amber-600">10%</span>
             </div>
             <p className="text-xs text-gray-400 text-center pt-0.5">No value destroyed — all recycled for the ecosystem</p>
           </div>
@@ -367,7 +371,7 @@ export default function GenerateRedemptionQR() {
           </Button>
 
           <p className="text-xs text-center text-amber-600">
-            Cancelling returns {enbAmount} ENB.LOCAL to your wallet immediately. The Community Treasury contribution only applies when a business confirms the SWAP.
+            Cancelling returns {enbAmount} ENB.LOCAL to your wallet immediately. The 20% contribution only applies when a business confirms the SWAP.
           </p>
         </div>
       )}

@@ -17,7 +17,7 @@ interface RedemptionResult {
   enb_spent?: number;
   enb_amount?: number;
   member_name?: string;
-  enb_to_crp?: number;       // 90% returned to CRP
+  enb_to_crp?: number;       // 80% returned to CRP
   enb_global_business?: number; // 3.3% to business as ENB.GLOBAL
   enb_to_treasury?: number;  // 6.7% to community treasury
   error?: string;
@@ -196,10 +196,11 @@ export default function ScanRedemption() {
   // ── Success screen ──────────────────────────────────────────────────────────
   if (result?.success) {
     const totalSpent = result.enb_spent ?? result.enb_amount ?? 0;
-    // Calculate v6.0 split if RPC doesn't return breakdowns yet
-    const toCRP = result.enb_to_crp ?? Math.round(totalSpent * 0.90);
+    // Calculate v6.2 split if RPC doesn't return breakdowns yet
+    const toCRP = result.enb_to_crp ?? Math.round(totalSpent * 0.80);
     const toBusinessGlobal = result.enb_global_business ?? +(totalSpent * 0.033).toFixed(2);
     const toTreasury = result.enb_to_treasury ?? +(totalSpent * 0.067).toFixed(2);
+    const toOpsFund = +(totalSpent * 0.10).toFixed(2);
 
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 text-center space-y-5">
@@ -225,7 +226,7 @@ export default function ScanRedemption() {
           )}
         </div>
 
-        {/* v6.0 SWAP breakdown */}
+        {/* v6.2 SWAP breakdown */}
         {totalSpent > 0 && (
           <div className="w-full max-w-xs bg-enb-green/5 border border-enb-green/15 rounded-2xl px-5 py-4 space-y-2 text-left">
             <p className="text-xs font-bold text-enb-green text-center mb-2 uppercase tracking-wider">How this SWAP was distributed</p>
@@ -237,7 +238,7 @@ export default function ScanRedemption() {
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-enb-green">{toCRP.toLocaleString()}</p>
-                <p className="text-xs text-gray-400">90%</p>
+                <p className="text-xs text-gray-400">80%</p>
               </div>
             </div>
 
@@ -260,6 +261,11 @@ export default function ScanRedemption() {
               <div className="text-right">
                 <p className="text-sm font-bold text-gray-500">{toTreasury.toLocaleString()}</p>
                 <p className="text-xs text-gray-400">6.7%</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-enb-text-primary">ENB Operations Fund</p>
+                <p className="text-sm font-bold text-amber-600">{toOpsFund.toLocaleString()}</p>
+                <p className="text-xs text-gray-400">10%</p>
               </div>
             </div>
 
