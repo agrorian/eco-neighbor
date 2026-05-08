@@ -109,7 +109,7 @@ export default function AdminDashboard() {
       setActivity(acts);
 
       // Fetch pool stats — super_admin only
-      if (user?.role === 'super_admin') {
+      if (user?.role === 'super_admin' || user?.role === 'admin') {
         const [swapAgg, opsSummary] = await Promise.all([
           supabase
             .from('redemptions')
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── ECOSYSTEM POOL CARDS (super_admin only) ── */}
-      {user?.role === 'super_admin' && (
+      {(user?.role === 'super_admin' || user?.role === 'admin') && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-enb-text-primary text-lg">Ecosystem Treasury</h3>

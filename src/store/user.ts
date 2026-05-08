@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type UserRole = 'member' | 'business' | 'admin' | 'moderator' | 'organiser' | 'founder';
+export type UserRole = 'member' | 'business' | 'admin' | 'moderator' | 'organiser' | 'founder' | 'super_admin';
 export type UserTier = 'Newcomer' | 'Helper' | 'Guardian' | 'Pillar' | 'Founder';
 
 export function getTier(repScore: number): UserTier {
