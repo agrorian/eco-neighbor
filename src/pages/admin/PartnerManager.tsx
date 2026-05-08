@@ -112,38 +112,35 @@ export default function PartnerManager() {
   };
 
   const handleApproveReplenishment = async (req: ReplenishmentRequest) => {
-    // 1. Add top-up to business float
-    await supabase
-      .from('business_partners')
-      .update({
-        enb_float: supabase.rpc('increment_float', { p_id: req.business_id, p_amount: req.top_up_amount }),
-        last_replenishment_date: new Date().toISOString(),
-        float_alert_status: 'OK',
-      })
-      .eq('id', req.business_id);
-
-    // Simple direct update instead of RPC
+    // Step 1: Read current float
     const { data: bp } = await supabase
       .from('business_partners')
       .select('enb_float')
       .eq('id', req.business_id)
       .single();
 
-    if (bp) {
-      await supabase
-        .from('business_partners')
-        .update({
-          enb_float: bp.enb_float + req.top_up_amount,
-          last_replenishment_date: new Date().toISOString(),
-          float_alert_status: 'OK',
-        })
-        .eq('id', req.business_id);
-    }
+    if (!bp) return;
 
-    // 2. Mark request as approved
+    // Step 2: Add top-up amount to current float
+    const { error } = await supabase
+      .from('business_partners')
+      .update({
+        enb_float: bp.enb_float + req.top_up_amount,
+        last_replenishment_date: new Date().toISOString(),
+        float_alert_status: 'OK',
+      })
+      .eq('id', req.business_id);
+
+    if (error) { console.error('Float update error:', error); return; }
+
+    // Step 3: Mark request as approved
     await supabase
       .from('replenishment_requests')
-      .update({ status: 'approved', reviewed_at: new Date().toISOString(), admin_note: replenishNote || null })
+      .update({
+        status: 'approved',
+        reviewed_at: new Date().toISOString(),
+        admin_note: replenishNote || null,
+      })
       .eq('id', req.id);
 
     setReplenishNote('');
