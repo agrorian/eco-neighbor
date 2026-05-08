@@ -62,7 +62,7 @@ export default function DesktopSidebar() {
     { path: '/business',         icon: Home,          label: l('nav', 'dashboard') },
     { path: '/scan',             icon: Store,         label: 'Scan QR' },
     { path: '/business/offers',  icon: Megaphone,     label: 'My Offers' },
-    { path: '/business/history', icon: BarChart2,     label: 'Redemption History' },
+    { path: '/business/history', icon: BarChart2,     label: 'SWAP History' },
     { path: '/partner-float',    icon: ArrowRightLeft,label: 'Float Monitor' },
     { path: '/settings',         icon: Settings,      label: l('nav', 'settings') },
   ];

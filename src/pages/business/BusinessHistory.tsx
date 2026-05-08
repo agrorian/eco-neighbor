@@ -17,7 +17,7 @@ export default function BusinessHistory() {
   const { user } = useUserStore();
   if (!user || user.role !== 'business') return <Navigate to="/" replace />;
 
-  const [redemptions, setRedemptions] = useState<Redemption[]>([]);
+  const [SWAPs, setSWAPs] = useState<Redemption[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchHistory(); }, []);
@@ -28,22 +28,22 @@ export default function BusinessHistory() {
       p_user_id: user!.id,
       p_limit: 100,
     });
-    if (data?.success) setRedemptions(data.redemptions || []);
+    if (data?.success) setSWAPs(data.SWAPs || []);
     setLoading(false);
   };
 
-  const totalEnb = redemptions.reduce((sum, r) => sum + r.enb_spent, 0);
+  const totalEnb = SWAPs.reduce((sum, r) => sum + r.enb_spent, 0);
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const todayRedemptions = redemptions.filter(r => new Date(r.confirmed_at) >= todayStart);
-  const todayEnb = todayRedemptions.reduce((sum, r) => sum + r.enb_spent, 0);
+  const todaySWAPs = SWAPs.filter(r => new Date(r.confirmed_at) >= todayStart);
+  const todayEnb = todaySWAPs.reduce((sum, r) => sum + r.enb_spent, 0);
 
   return (
     <div className="space-y-5 pb-24 max-w-lg mx-auto">
       <header>
         <h1 className="text-xl font-bold text-enb-text-primary flex items-center gap-2">
-          <History className="w-5 h-5 text-enb-teal" /> Redemption History
+          <History className="w-5 h-5 text-enb-teal" /> SWAP History
         </h1>
-        <p className="text-sm text-enb-text-secondary">All confirmed ENB redemptions at your business</p>
+        <p className="text-sm text-enb-text-secondary">All confirmed ENB SWAPs at your business</p>
       </header>
 
       {/* Summary cards */}
@@ -52,31 +52,31 @@ export default function BusinessHistory() {
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-enb-green">{todayEnb.toLocaleString()}</div>
             <div className="text-xs text-enb-text-secondary uppercase tracking-wider mt-1">ENB Today</div>
-            <div className="text-xs text-gray-400 mt-0.5">{todayRedemptions.length} redemptions</div>
+            <div className="text-xs text-gray-400 mt-0.5">{todaySWAPs.length} SWAPs</div>
           </CardContent>
         </Card>
         <Card className="border-blue-100 bg-blue-50/50">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-700">{totalEnb.toLocaleString()}</div>
             <div className="text-xs text-enb-text-secondary uppercase tracking-wider mt-1">All Time ENB</div>
-            <div className="text-xs text-gray-400 mt-0.5">{redemptions.length} redemptions</div>
+            <div className="text-xs text-gray-400 mt-0.5">{SWAPs.length} SWAPs</div>
           </CardContent>
         </Card>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-enb-green" /></div>
-      ) : redemptions.length === 0 ? (
+      ) : SWAPs.length === 0 ? (
         <Card className="border-gray-100">
           <CardContent className="p-8 text-center space-y-2">
             <History className="w-10 h-10 mx-auto text-gray-200" />
-            <p className="font-medium text-enb-text-secondary">No redemptions yet</p>
-            <p className="text-sm text-gray-400">Confirmed redemptions will appear here</p>
+            <p className="font-medium text-enb-text-secondary">No SWAPs yet</p>
+            <p className="text-sm text-gray-400">Confirmed SWAPs will appear here</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2">
-          {redemptions.map((r) => (
+          {SWAPs.map((r) => (
             <div key={r.id} className="flex items-center justify-between bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-enb-teal/10 flex items-center justify-center text-enb-teal font-bold text-sm flex-shrink-0">

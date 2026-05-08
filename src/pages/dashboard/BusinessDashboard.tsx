@@ -129,8 +129,9 @@ export default function BusinessDashboard() {
   const floatColor = floatPct <= 30 ? 'bg-red-500' : floatPct <= 50 ? 'bg-orange-400' : 'bg-enb-green';
   const globalBal = partner?.enb_global_bal ?? 0;
   const totalReceived = partner?.total_enb_local_received ?? 0;
-  const estimatedCrp = Math.round(totalReceived * 0.90);
-  const estimatedTreasury = Math.round(totalReceived * 0.10);
+  const estimatedCrp = Math.round(totalReceived * 0.80);
+  const estimatedTreasury = Math.round(totalReceived * 0.067);
+  const estimatedOpsFund = Math.round(totalReceived * 0.10);
 
   return (
     <div className="space-y-4 pb-24">
@@ -217,7 +218,7 @@ export default function BusinessDashboard() {
             <div className="bg-amber-50 rounded-xl p-3 text-xs text-amber-700 mt-1">
               <Zap className="w-3.5 h-3.5 inline mr-1" />
               Accept SWAPs from members to start earning ENB.GLOBAL.
-              Each SWAP gives you <strong>1/3 of the 10% treasury share</strong>.
+              Each SWAP gives you <strong>3.3%</strong> as ENB.GLOBAL. 80% returns to CRP, 6.7% to treasury pools, 10% to ENB Operations Fund.
             </div>
           )}
         </CardContent>
@@ -294,15 +295,22 @@ export default function BusinessDashboard() {
                   label: 'Returned to CRP',
                   value: estimatedCrp,
                   color: 'bg-enb-green',
-                  pct: 90,
+                  pct: 80,
                   textColor: 'text-enb-green',
                 },
                 {
-                  label: 'Treasury (ENB.GLOBAL)',
-                  value: estimatedTreasury - globalBal,
+                  label: 'Community Treasury',
+                  value: estimatedTreasury,
                   color: 'bg-enb-teal',
-                  pct: Math.round(((estimatedTreasury - globalBal) / totalReceived) * 100),
+                  pct: 7,
                   textColor: 'text-enb-teal',
+                },
+                {
+                  label: 'ENB Operations Fund',
+                  value: estimatedOpsFund,
+                  color: 'bg-amber-400',
+                  pct: 10,
+                  textColor: 'text-amber-600',
                 },
               ].map(row => (
                 <div key={row.label}>
