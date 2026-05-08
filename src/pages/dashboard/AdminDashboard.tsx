@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Users, Leaf, Clock, CheckCircle, XCircle, Store, Loader2, RefreshCw, MessageCircle, Coins, TrendingUp, Shield, Landmark, ArrowUpRight } from 'lucide-react';
+import { Users, Leaf, Clock, CheckCircle, XCircle, Store, Loader2, RefreshCw, MessageCircle, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
@@ -12,16 +12,6 @@ interface Stats {
   totalEnbDistributed: number;
   pendingQueue: number;
   totalApproved: number;
-}
-
-interface PoolStats {
-  totalConfirmedSwaps: number;
-  totalEnbSwapped: number;
-  totalCrpCredited: number;
-  totalBusinessGlobal: number;
-  totalTreasury: number;
-  totalOpsFund: number;
-  opsFundLastSwapAt: string | null;
 }
 
 interface RecentActivity {
@@ -37,20 +27,10 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalEnbDistributed: 0, pendingQueue: 0, totalApproved: 0 });
   const [activity, setActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [poolStats, setPoolStats] = useState<PoolStats>({
-    totalConfirmedSwaps: 0,
-    totalEnbSwapped: 0,
-    totalCrpCredited: 0,
-    totalBusinessGlobal: 0,
-    totalTreasury: 0,
-    totalOpsFund: 0,
-    opsFundLastSwapAt: null,
-  });
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Get all submission IDs already assigned to mods — exclude from admin queue count
       const { data: assignedData } = await supabase
         .from('moderator_assignments')
         .select('submission_id');
@@ -84,14 +64,12 @@ export default function AdminDashboard() {
         totalApproved: 0,
       });
 
-      // Fetch user names separately to avoid join issues
       const userIds = [...new Set((recentSubsRes.data || []).map((s: any) => s.user_id))];
       const { data: usersData } = userIds.length > 0
         ? await supabase.from('users').select('id, full_name').in('id', userIds)
         : { data: [] };
       const userMap = new Map((usersData || []).map((u: any) => [u.id, u.full_name]));
 
-      // Build activity feed
       const acts: RecentActivity[] = (recentSubsRes.data || []).map((s: any) => {
         const name = userMap.get(s.user_id) || 'A member';
         const action = s.action_type?.replace(/_/g, ' ') || 'action';
@@ -107,32 +85,6 @@ export default function AdminDashboard() {
       });
 
       setActivity(acts);
-
-      // Fetch pool stats — super_admin only
-      if (user?.role === 'super_admin' || user?.role === 'admin') {
-        const [swapAgg, opsSummary] = await Promise.all([
-          supabase
-            .from('redemptions')
-            .select('enb_spent, crp_credit, business_global_credit, treasury_credit, ops_fund_credit')
-            .eq('status', 'confirmed'),
-          supabase.from('ops_fund_summary').select('*').single(),
-        ]);
-
-        const rows = swapAgg.data || [];
-        const agg = rows.reduce((acc: any, r: any) => ({
-          totalEnbSwapped: acc.totalEnbSwapped + (Number(r.enb_spent) || 0),
-          totalCrpCredited: acc.totalCrpCredited + (Number(r.crp_credit) || 0),
-          totalBusinessGlobal: acc.totalBusinessGlobal + (Number(r.business_global_credit) || 0),
-          totalTreasury: acc.totalTreasury + (Number(r.treasury_credit) || 0),
-          totalOpsFund: acc.totalOpsFund + (Number(r.ops_fund_credit) || 0),
-        }), { totalEnbSwapped: 0, totalCrpCredited: 0, totalBusinessGlobal: 0, totalTreasury: 0, totalOpsFund: 0 });
-
-        setPoolStats({
-          totalConfirmedSwaps: rows.length,
-          ...agg,
-          opsFundLastSwapAt: opsSummary.data?.last_swap_at || null,
-        });
-      }
     } catch (err) {
       console.error('Admin stats error:', err);
     } finally {
@@ -170,7 +122,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {KPI.map((k) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -189,7 +140,6 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link to="/admin/queue">
           <Button className="w-full h-auto py-4 flex flex-col gap-2 bg-enb-green hover:bg-enb-green/90 text-white shadow-md shadow-enb-green/20">
@@ -211,147 +161,6 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      {/* ── ECOSYSTEM POOL CARDS (super_admin only) ── */}
-      {(user?.role === 'super_admin' || user?.role === 'admin') && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-enb-text-primary text-lg">Ecosystem Treasury</h3>
-            <span className="text-xs text-enb-text-secondary bg-gray-100 px-2 py-1 rounded-full">
-              {poolStats.totalConfirmedSwaps} confirmed SWAPs · {poolStats.totalEnbSwapped.toLocaleString()} ENB total
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-
-            {/* CRP Pool */}
-            <div className="bg-white rounded-2xl border border-enb-green/20 shadow-sm p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-enb-green/10 flex items-center justify-center">
-                    <Leaf className="w-4 h-4 text-enb-green" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-enb-text-secondary uppercase tracking-wide">Community Rewards Pool</p>
-                    <p className="text-xs text-gray-400">80% of every SWAP</p>
-                  </div>
-                </div>
-                <span className="text-xs bg-enb-green/10 text-enb-green px-2 py-0.5 rounded-full font-medium">CRP</span>
-              </div>
-              <p className="text-2xl font-bold text-enb-green">{loading ? '—' : poolStats.totalCrpCredited.toLocaleString()}</p>
-              <p className="text-xs text-gray-400 mt-0.5">ENB.LOCAL credited back to ecosystem</p>
-              <div className="mt-3 pt-3 border-t border-gray-50">
-                <p className="text-xs text-enb-text-secondary">Pre-mainnet: tracked on-chain at Solana deployment. Used exclusively for verified civic action rewards.</p>
-              </div>
-            </div>
-
-            {/* ENB Operations Fund */}
-            <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <Landmark className="w-4 h-4 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-enb-text-secondary uppercase tracking-wide">ENB Operations Fund</p>
-                    <p className="text-xs text-gray-400">10% of every SWAP</p>
-                  </div>
-                </div>
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">OPS</span>
-              </div>
-              <p className="text-2xl font-bold text-amber-600">{loading ? '—' : poolStats.totalOpsFund.toLocaleString()}</p>
-              <p className="text-xs text-gray-400 mt-0.5">ENB accrued · Solana wallet pending Phase 2</p>
-              {poolStats.opsFundLastSwapAt && (
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Last contribution: {new Date(poolStats.opsFundLastSwapAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </p>
-              )}
-              <div className="mt-3 pt-3 border-t border-gray-50">
-                <p className="text-xs text-enb-text-secondary">Expenditure tiers: Routine ≤50K (VF alone) · Significant 50K–500K (VF + 1 seat) · Major &gt;500K (all seats + Type 2 vote)</p>
-              </div>
-            </div>
-
-            {/* Community Treasury */}
-            <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-enb-text-secondary uppercase tracking-wide">Community Treasury</p>
-                    <p className="text-xs text-gray-400">6.7% of every SWAP</p>
-                  </div>
-                </div>
-                <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">TREASURY</span>
-              </div>
-              <p className="text-2xl font-bold text-blue-600">{loading ? '—' : poolStats.totalTreasury.toLocaleString()}</p>
-              <p className="text-xs text-gray-400 mt-0.5">ENB across 4 sub-pools</p>
-              <div className="mt-3 pt-3 border-t border-gray-50 space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">BSF (2%)</span>
-                  <span className="font-medium text-enb-text-primary">{Math.round(poolStats.totalEnbSwapped * 0.02).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Market Making (1.3%)</span>
-                  <span className="font-medium text-enb-text-primary">{Math.round(poolStats.totalEnbSwapped * 0.013).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Insurance (1.3%)</span>
-                  <span className="font-medium text-enb-text-primary">{Math.round(poolStats.totalEnbSwapped * 0.013).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Reserve Buffer (2%)</span>
-                  <span className="font-medium text-enb-text-primary">{Math.round(poolStats.totalEnbSwapped * 0.02).toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Business ENB.GLOBAL Earned */}
-            <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-enb-text-secondary uppercase tracking-wide">Business ENB.GLOBAL</p>
-                    <p className="text-xs text-gray-400">3.3% of every SWAP</p>
-                  </div>
-                </div>
-                <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-medium">GLOBAL</span>
-              </div>
-              <p className="text-2xl font-bold text-amber-500">{loading ? '—' : poolStats.totalBusinessGlobal.toLocaleString()}</p>
-              <p className="text-xs text-gray-400 mt-0.5">ENB.GLOBAL earned by all partner businesses</p>
-              <div className="mt-3 pt-3 border-t border-gray-50">
-                <div className="flex items-center gap-1 text-xs text-gray-400">
-                  <ArrowUpRight className="w-3 h-3" />
-                  <span>Locked pre-TGE · Released via Maturation Bridge at mainnet</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Verification check */}
-          <div className="bg-gray-50 rounded-xl p-3 flex items-center justify-between">
-            <p className="text-xs text-enb-text-secondary font-medium">Pool Verification</p>
-            <div className="flex items-center gap-3 text-xs">
-              {(() => {
-                const total = poolStats.totalCrpCredited + poolStats.totalBusinessGlobal + poolStats.totalTreasury + poolStats.totalOpsFund;
-                const match = total === poolStats.totalEnbSwapped;
-                return (
-                  <span className={`font-semibold ${match ? 'text-enb-green' : 'text-red-500'}`}>
-                    {match ? '✅ All pools balance' : `⚠️ Gap: ${poolStats.totalEnbSwapped - total} ENB`}
-                  </span>
-                );
-              })()}
-              <span className="text-gray-400">{poolStats.totalEnbSwapped.toLocaleString()} ENB total</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Activity Feed */}
       <div className="space-y-3">
         <h3 className="font-bold text-enb-text-primary text-lg">Recent Activity</h3>
         {loading ? (
