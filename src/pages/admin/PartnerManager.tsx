@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, XCircle, MoreVertical, FileText, Plus, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Store, XCircle, MoreVertical, FileText, Plus, Loader2, AlertCircle, CheckCircle, TrendingDown, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,21 @@ interface Partner {
   created_at: string;
   gps_lat: number | null;
   gps_lng: number | null;
+}
+
+interface ReplenishmentRequest {
+  id: string;
+  business_id: string;
+  requested_at: string;
+  float_at_request: number;
+  float_allocated: number;
+  float_pct: number;
+  recent_swaps: number;
+  top_up_amount: number;
+  status: string;
+  is_fraud_flag: boolean;
+  admin_note: string | null;
+  business_name?: string;
 }
 
 interface NewPartnerForm {
@@ -63,10 +78,13 @@ export default function PartnerManager() {
   const [editSuccess, setEditSuccess] = useState('');
   const [editGpsLat, setEditGpsLat] = useState('');
   const [editGpsLng, setEditGpsLng] = useState('');
+  const [replenishments, setReplenishments] = useState<ReplenishmentRequest[]>([]);
+  const [replenishLoading, setReplenishLoading] = useState(false);
+  const [replenishNote, setReplenishNote] = useState('');
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  useEffect(() => { fetchPartners(); }, []);
+  useEffect(() => { fetchPartners(); fetchReplenishments(); }, []);
 
   const fetchPartners = async () => {
     setLoading(true);
@@ -76,6 +94,70 @@ export default function PartnerManager() {
       .order('created_at', { ascending: false });
     if (data) setPartners(data);
     setLoading(false);
+  };
+
+  const fetchReplenishments = async () => {
+    setReplenishLoading(true);
+    const { data } = await supabase
+      .from('replenishment_requests')
+      .select('*, business_partners(business_name)')
+      .eq('status', 'pending')
+      .order('requested_at', { ascending: true });
+    const mapped = (data || []).map((r: any) => ({
+      ...r,
+      business_name: r.business_partners?.business_name || '—',
+    }));
+    setReplenishments(mapped);
+    setReplenishLoading(false);
+  };
+
+  const handleApproveReplenishment = async (req: ReplenishmentRequest) => {
+    // 1. Add top-up to business float
+    await supabase
+      .from('business_partners')
+      .update({
+        enb_float: supabase.rpc('increment_float', { p_id: req.business_id, p_amount: req.top_up_amount }),
+        last_replenishment_date: new Date().toISOString(),
+        float_alert_status: 'OK',
+      })
+      .eq('id', req.business_id);
+
+    // Simple direct update instead of RPC
+    const { data: bp } = await supabase
+      .from('business_partners')
+      .select('enb_float')
+      .eq('id', req.business_id)
+      .single();
+
+    if (bp) {
+      await supabase
+        .from('business_partners')
+        .update({
+          enb_float: bp.enb_float + req.top_up_amount,
+          last_replenishment_date: new Date().toISOString(),
+          float_alert_status: 'OK',
+        })
+        .eq('id', req.business_id);
+    }
+
+    // 2. Mark request as approved
+    await supabase
+      .from('replenishment_requests')
+      .update({ status: 'approved', reviewed_at: new Date().toISOString(), admin_note: replenishNote || null })
+      .eq('id', req.id);
+
+    setReplenishNote('');
+    fetchReplenishments();
+    fetchPartners();
+  };
+
+  const handleRejectReplenishment = async (req: ReplenishmentRequest) => {
+    await supabase
+      .from('replenishment_requests')
+      .update({ status: 'rejected', reviewed_at: new Date().toISOString(), admin_note: replenishNote || 'Rejected by admin.' })
+      .eq('id', req.id);
+    setReplenishNote('');
+    fetchReplenishments();
   };
 
   const handleApprove = async (id: string) => {
@@ -101,11 +183,13 @@ export default function PartnerManager() {
     setEditSaving(true);
     setEditSuccess('');
 
-    // Update float
+    // Update float — write to both enb_float and enb_float_allocated
+    const newFloat = parseInt(editFloat) || selectedPartner.enb_float;
     const { error: floatError } = await supabase
       .from('business_partners')
       .update({
-        enb_float: parseInt(editFloat) || selectedPartner.enb_float,
+        enb_float: newFloat,
+        enb_float_allocated: newFloat,
         gps_lat: editGpsLat ? parseFloat(editGpsLat) : selectedPartner.gps_lat,
         gps_lng: editGpsLng ? parseFloat(editGpsLng) : selectedPartner.gps_lng,
       })
@@ -213,6 +297,7 @@ export default function PartnerManager() {
         whatsapp: form.whatsapp.trim() || null,
         discount_offer: form.discount_offer.trim() || null,
         enb_float: parseInt(form.enb_float) || 5000,
+        enb_float_allocated: parseInt(form.enb_float) || 5000,
         is_active: true,
         is_verified: false,
       });
@@ -337,6 +422,56 @@ export default function PartnerManager() {
                 </div>
               </CardContent>
             </Card>
+          ))}
+        </div>
+      )}
+
+      {/* ── REPLENISHMENT REQUESTS QUEUE ── */}
+      {replenishments.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <TrendingDown className="w-4 h-4 text-red-500" />
+            <h2 className="font-bold text-enb-text-primary">Float Replenishment Requests</h2>
+            <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">{replenishments.length}</span>
+          </div>
+          {replenishments.map(req => (
+            <div key={req.id} className={`bg-white rounded-2xl border p-4 space-y-3 ${req.is_fraud_flag ? 'border-orange-300' : 'border-red-200'}`}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-semibold text-enb-text-primary">{req.business_name}</p>
+                  <p className="text-xs text-gray-400">{new Date(req.requested_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                {req.is_fraud_flag && (
+                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-semibold">🔍 Fraud Flag — No SWAPs in 30 days</span>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs bg-gray-50 rounded-xl p-3">
+                <div><p className="text-gray-400">Float at trigger</p><p className="font-semibold text-red-600">{req.float_pct}%</p></div>
+                <div><p className="text-gray-400">Recent SWAPs</p><p className="font-semibold">{req.recent_swaps}</p></div>
+                <div><p className="text-gray-400">Top-up amount</p><p className="font-semibold text-enb-green">{req.top_up_amount.toLocaleString()} ENB</p></div>
+              </div>
+              <input
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-enb-green"
+                placeholder="Admin note (optional)"
+                value={replenishNote}
+                onChange={e => setReplenishNote(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleApproveReplenishment(req)}
+                  disabled={req.is_fraud_flag}
+                  className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${req.is_fraud_flag ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-enb-green text-white hover:bg-enb-green/90'}`}
+                >
+                  {req.is_fraud_flag ? 'Manual Review Required' : `✅ Approve +${req.top_up_amount.toLocaleString()} ENB`}
+                </button>
+                <button
+                  onClick={() => handleRejectReplenishment(req)}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  ❌ Reject
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
