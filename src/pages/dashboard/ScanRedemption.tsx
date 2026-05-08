@@ -17,9 +17,10 @@ interface RedemptionResult {
   enb_spent?: number;
   enb_amount?: number;
   member_name?: string;
-  enb_to_crp?: number;       // 80% returned to CRP
-  enb_global_business?: number; // 3.3% to business as ENB.GLOBAL
-  enb_to_treasury?: number;  // 6.7% to community treasury
+  enb_to_crp?: number;            // 80% returned to CRP
+  enb_global_business?: number;   // 3.3% to business as ENB.GLOBAL
+  enb_to_treasury?: number;       // 6.7% to community treasury
+  enb_ops_fund?: number;          // 10% to ENB Operations Fund
   error?: string;
 }
 
@@ -196,11 +197,11 @@ export default function ScanRedemption() {
   // ── Success screen ──────────────────────────────────────────────────────────
   if (result?.success) {
     const totalSpent = result.enb_spent ?? result.enb_amount ?? 0;
-    // Calculate v6.2 split if RPC doesn't return breakdowns yet
+    // Calculate v6.2 split — use RPC values if returned, else compute
     const toCRP = result.enb_to_crp ?? Math.round(totalSpent * 0.80);
-    const toBusinessGlobal = result.enb_global_business ?? +(totalSpent * 0.033).toFixed(2);
-    const toTreasury = result.enb_to_treasury ?? +(totalSpent * 0.067).toFixed(2);
-    const toOpsFund = +(totalSpent * 0.10).toFixed(2);
+    const toBusinessGlobal = result.enb_global_business ?? Math.round(totalSpent * 0.033);
+    const toOpsFund = result.enb_ops_fund ?? Math.round(totalSpent * 0.10);
+    const toTreasury = result.enb_to_treasury ?? (totalSpent - toCRP - toBusinessGlobal - toOpsFund);
 
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 text-center space-y-5">
@@ -231,7 +232,7 @@ export default function ScanRedemption() {
           <div className="w-full max-w-xs bg-enb-green/5 border border-enb-green/15 rounded-2xl px-5 py-4 space-y-2 text-left">
             <p className="text-xs font-bold text-enb-green text-center mb-2 uppercase tracking-wider">How this SWAP was distributed</p>
 
-            <div className="flex justify-between items-center py-1 border-b border-gray-100">
+            <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
               <div>
                 <p className="text-sm font-medium text-enb-text-primary">Community Rewards Pool</p>
                 <p className="text-xs text-gray-400">Sustains future civic rewards</p>
@@ -242,7 +243,7 @@ export default function ScanRedemption() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center py-1 border-b border-gray-100">
+            <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
               <div>
                 <p className="text-sm font-medium text-enb-text-primary">Your ENB.GLOBAL Earning</p>
                 <p className="text-xs text-gray-400">Credited to your wallet</p>
@@ -253,18 +254,24 @@ export default function ScanRedemption() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center py-1">
+            <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
               <div>
                 <p className="text-sm font-medium text-enb-text-primary">Community Treasury</p>
-                <p className="text-xs text-gray-400">Stability, liquidity & reserve funds</p>
+                <p className="text-xs text-gray-400">Stability, liquidity & reserves</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-gray-500">{toTreasury.toLocaleString()}</p>
                 <p className="text-xs text-gray-400">6.7%</p>
               </div>
-              <div className="text-center">
+            </div>
+
+            <div className="flex justify-between items-center py-1.5">
+              <div>
                 <p className="text-sm font-medium text-enb-text-primary">ENB Operations Fund</p>
-                <p className="text-sm font-bold text-amber-600">{toOpsFund.toLocaleString()}</p>
+                <p className="text-xs text-gray-400">Sustains the organisation</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-orange-500">{toOpsFund.toLocaleString()}</p>
                 <p className="text-xs text-gray-400">10%</p>
               </div>
             </div>
