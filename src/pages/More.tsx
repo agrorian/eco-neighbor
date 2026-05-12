@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug, Apple, Flag, Bell, MessageSquare, BookOpen } from 'lucide-react';
-import { useUserStore } from '@/store/user';
+import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLang } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
@@ -36,9 +36,9 @@ export default function More() {
     { icon: Users, label: 'Referral Hub', path: '/wallet/referrals', color: 'text-enb-green', show: true },
     { icon: History, label: 'My History', path: '/history', color: 'text-enb-teal', show: true },
     { icon: ClipboardList, label: 'Daily Log', path: '/my-log', color: 'text-enb-gold', show: ALLOWED_LOG_ROLES.includes(user?.role || '') },
-    { icon: TrendingUp, label: 'Founder Sale Gate', path: '/founder-sale', color: 'text-enb-gold', show: user?.role === 'admin' || user?.role === 'founder' },
-    { icon: TrendingDown, label: 'Float Monitor', path: '/partner-float', color: 'text-enb-teal', show: user?.role === 'business' || user?.role === 'admin' },
-    { icon: LayoutDashboard, label: 'Admin Panel', path: '/admin', color: 'text-purple-600', show: user?.role === 'admin' || user?.role === 'founder' },
+    { icon: TrendingUp, label: 'Founder Sale Gate', path: '/founder-sale', color: 'text-enb-gold', show: checkSuperAdmin(user?.role) || user?.role === 'founder' },
+    { icon: TrendingDown, label: 'Float Monitor', path: '/partner-float', color: 'text-enb-teal', show: user?.role === 'business' || checkSuperAdmin(user?.role) },
+    { icon: LayoutDashboard, label: 'Admin Panel', path: '/admin', color: 'text-purple-600', show: checkSuperAdmin(user?.role) || user?.role === 'founder' },
     // Only show "Become a Partner" to regular members — not to any staff/role users
     { icon: Store, label: 'Become a Partner', path: '/partner-signup', color: 'text-enb-teal', show: isMemberOnly },
     // Only show "Join Onboarding Team" to regular members — not staff who already have roles
