@@ -23,21 +23,21 @@ interface MonthlyData {
   enb: number;
 }
 
-// Canonical v4.9 Tokenomics — 10,000,000,000 total supply
+// T1 Tokenomics — 10,000,000,000 initial tranche (Auto-Tranche system)
 const TOKEN_ALLOCATION = [
   { label: 'Community Rewards Pool',   amount: '5,000,000,000', pct: 50, color: 'bg-enb-green',  note: 'Earned via verified civic actions only' },
-  { label: 'Business Partner Reserve', amount: '1,500,000,000', pct: 15, color: 'bg-enb-teal',   note: '50 Founding Partners + ongoing onboarding' },
+  { label: 'Business Partner Reserve', amount: '1,500,000,000', pct: 15, color: 'bg-enb-teal',   note: 'Working capital for registered Business Partners' },
   { label: 'ENB.GLOBAL Liquidity Pool',amount: '1,000,000,000', pct: 10, color: 'bg-blue-500',   note: 'Raydium DEX · locked 12 months via Streamflow' },
-  { label: 'Impact Grants & Marketing',amount: '1,000,000,000', pct: 10, color: 'bg-enb-gold',   note: 'Gitcoin, Celo, municipal grants, events' },
+  { label: 'Impact Grants & Marketing',amount: '1,000,000,000', pct: 10, color: 'bg-enb-gold',   note: 'Celo, municipal grants, events' },
   { label: 'Founding Contributors',    amount: '500,000,000',   pct: 5,  color: 'bg-purple-500', note: '12-month cliff · 36-month vest' },
   { label: 'Development Fund',         amount: '500,000,000',   pct: 5,  color: 'bg-orange-400', note: 'Platform infrastructure · 12-month cliff' },
   { label: 'Emergency Reserve',        amount: '500,000,000',   pct: 5,  color: 'bg-red-400',    note: '5-of-7 multi-sig governance controlled' },
 ];
 
-// CFSP v4.9 Priority Waterfall — canonical with ENB rewards
+// CFSP Priority Waterfall — canonical with $ENB rewards
 const CFSP_TIERS = [
-  { tier: 1, name: 'Direct Human Consumption', desc: 'Daily-wage workers, elderly, food-insecure households, homeless — (b) Schools & Orphanages (Paediatric Safety Standard)', color: 'bg-enb-green', textColor: 'text-enb-green', note: 'T1a: +500 ENB Priority bonus · T1b: +800 ENB Paediatric bonus', reward: '1,000 ENB/batch' },
-  { tier: 2, name: 'Community Kitchen',         desc: 'Hot meals at Community Food Hubs — mosques, community kitchens, seasonal events', color: 'bg-enb-teal',  textColor: 'text-enb-teal',  note: '', reward: '800 ENB/batch + carbon credit' },
+  { tier: 1, name: 'Direct Human Consumption', desc: 'Daily-wage workers, elderly, food-insecure households, homeless — (b) Residential Child Welfare Institutions (Paediatric Safety Standard)', color: 'bg-enb-green', textColor: 'text-enb-green', note: 'T1a: +500 ENB Priority bonus · T1b: +800 ENB Paediatric bonus', reward: '1,000 ENB/batch' },
+  { tier: 2, name: 'Community Kitchen',         desc: 'Hot meals at Community Food Hubs — community kitchens, seasonal events', color: 'bg-enb-teal',  textColor: 'text-enb-teal',  note: '', reward: '800 ENB/batch + carbon credit' },
   { tier: 3, name: 'Processed / Value-Added',   desc: 'Pickling, preservation, cooking classes — extends shelf life, reduces waste', color: 'bg-blue-400',  textColor: 'text-blue-600',  note: '+ 300 ENB bonus if product listed on ENB app', reward: '600 ENB/batch' },
   { tier: 4, name: 'Animal Feed',               desc: 'Past human safety window but not spoiled — livestock owners, animal shelters', color: 'bg-enb-gold',  textColor: 'text-yellow-700', note: '', reward: '300 ENB/batch' },
   { tier: 5, name: 'Composting / Biogas',       desc: 'Genuinely spoiled items — community compost or Phase 2 biogas conversion', color: 'bg-gray-400',  textColor: 'text-gray-600',  note: '', reward: '200 ENB/kg' },
@@ -119,9 +119,9 @@ export default function ImpactDashboard() {
   }, []);
 
   const handleShare = () => {
-    const text = `Our Rawalpindi community has verified ${stats.totalActions} civic actions and distributed ${stats.totalEnbDistributed.toLocaleString()} ENB to informal workers. Join Eco-Neighbor ($ENB) — your neighborhood work has value! 🌿`;
+    const text = `Our community has verified ${stats.totalActions} civic actions and distributed ${stats.totalEnbDistributed.toLocaleString()} $ENB to informal workers. Join Eco-Neighbor ($ENB) — your neighborhood work has value! 🌿`;
     if (navigator.share) {
-      navigator.share({ title: 'Eco-Neighbor Community Impact', text, url: 'https://eco-neighbor.vercel.app' });
+      navigator.share({ title: 'Eco-Neighbor Community Impact', text, url: 'https://www.econeighbor.org' });
     } else {
       navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
     }
@@ -141,7 +141,7 @@ export default function ImpactDashboard() {
       <header className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-enb-text-primary">{l('impact', 'title')}</h1>
-          <p className="text-sm text-enb-text-secondary mt-1">{l('impact', 'subtitle')} · Rawalpindi Pilot</p>
+          <p className="text-sm text-enb-text-secondary mt-1">{l('impact', 'subtitle')}</p>
         </div>
         <Button variant="outline" size="sm" onClick={handleShare}>
           <Share2 className="w-4 h-4 mr-1" /> Share
@@ -196,7 +196,7 @@ export default function ImpactDashboard() {
               </BarChart>
             </ResponsiveContainer>
           )}
-          <p className="text-xs text-gray-400 text-center mt-2">Verified civic actions per month — Chaklala Scheme 3 pilot</p>
+          <p className="text-xs text-gray-400 text-center mt-2">Verified civic actions per month</p>
         </CardContent>
       </Card>
 
@@ -206,7 +206,7 @@ export default function ImpactDashboard() {
           <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
             <Apple className="w-4 h-4 text-orange-500" /> Community Food Sharing Programme
           </CardTitle>
-          <p className="text-xs text-enb-text-secondary">v4.9 Priority Waterfall — food is never wasted · ENB rewards per tier shown</p>
+          <p className="text-xs text-enb-text-secondary">Priority Waterfall — food is never wasted · $ENB rewards per tier shown</p>
         </CardHeader>
         <CardContent className="space-y-2">
           {CFSP_TIERS.map((t) => (
@@ -239,7 +239,7 @@ export default function ImpactDashboard() {
           <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-enb-green" /> {l('impact', 'tokenDist')}
           </CardTitle>
-          <p className="text-xs text-enb-text-secondary">10,000,000,000 ENB fixed supply · v4.9</p>
+          <p className="text-xs text-enb-text-secondary">10,000,000,000 $ENB — Auto-Tranche supply mechanism</p>
         </CardHeader>
         <CardContent className="space-y-3">
           {TOKEN_ALLOCATION.map((item) => (
