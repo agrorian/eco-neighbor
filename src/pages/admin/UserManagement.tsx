@@ -204,9 +204,9 @@ export default function UserManagement() {
     if (error) return;
     // ── ENB DOCTRINE: Sync store if admin changed their own role ─────────────
     // Note: JWT app_metadata does not update until re-login (Phase 2 fix).
-    // This at least keeps the UI consistent for the current session.
+    // Functional update — never spread stale adminUser closure.
     if (adminUser && u.id === adminUser.id) {
-      setUser({ ...adminUser, role: newRole as any });
+      setUser((prev: any) => prev ? { ...prev, role: newRole as any } : prev);
     }
     // Write audit record — never lose the trail of who was changed to what and when
     await supabase.from('role_change_audit').insert({
