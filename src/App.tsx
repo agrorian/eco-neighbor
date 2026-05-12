@@ -91,6 +91,8 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
 
   const loadUserProfile = async (userId: string, userEmail: string) => {
+    // ── ENB DOCTRINE: Hard guard — never load with undefined/empty userId ─
+    if (!userId || userId === 'undefined') return;
     try {
       const { data, error } = await supabase
         .from('users')
@@ -197,7 +199,28 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') setUser(null);
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        return;
+      }
+      // Handle token refresh and sign-in events
+      // ── ENB DOCTRINE: Always verify the refreshed session matches current user ─
+      if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session?.user) {
+        const refreshedId = session.user.id;
+        if (!refreshedId) return;
+        // Only reload profile if the refreshed token belongs to the current store user
+        // or if there is no current user (fresh login)
+        const currentUserId = useUserStore.getState().user?.id;
+        if (!currentUserId || currentUserId === refreshedId) {
+          loadUserProfile(refreshedId, session.user.email ?? '');
+        } else {
+          // Token refreshed for a DIFFERENT user than what's in the store
+          // This is the phantom account bug — ignore it, force sign out
+          console.warn('Token refresh for mismatched user. Signing out to prevent phantom account.');
+          await supabase.auth.signOut();
+          setUser(null);
+        }
+      }
     });
 
     const authTimeout = setTimeout(() => setAuthChecked(true), 4000);
