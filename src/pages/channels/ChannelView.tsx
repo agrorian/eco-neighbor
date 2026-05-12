@@ -7,7 +7,7 @@ import {
   Pin, SmilePlus, X, Bell, BellOff,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useUserStore } from '@/store/user';
+import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import ChannelInfoPanel from './ChannelInfoPanel';
 import RichTextEditor from '@/components/RichTextEditor';
 
@@ -311,7 +311,8 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   }, [channel.id]);
 
   // ── Role helpers ─────────────────────────────────────────────────────────
-  const isSuperAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  // ── ENB DOCTRINE: Always use shared isSuperAdmin() from store ────────────
+  const isSuperAdmin = checkSuperAdmin(user?.role);
   const isChannelAdmin = membership?.role === 'admin' || isSuperAdmin;
   const canPin = isChannelAdmin;
   const canPost = channelData.posting_mode === 'open'
