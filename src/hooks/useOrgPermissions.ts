@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useUserStore } from '@/store/user';
+import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,10 +81,6 @@ interface UseOrgPermissionsReturn {
   refresh: () => void;
 }
 
-// ─── Super Admin ID ───────────────────────────────────────────────────────────
-
-const SUPER_ADMIN_ID = '3b2d64ca-2579-43dd-9f6c-a63fe5508422';
-
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useOrgPermissions(): UseOrgPermissionsReturn {
@@ -92,7 +88,9 @@ export function useOrgPermissions(): UseOrgPermissionsReturn {
   const [memberships, setMemberships] = useState<OrgMembership[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isSuperAdmin = user?.id === SUPER_ADMIN_ID || user?.role === 'admin';
+  // ── ENB DOCTRINE: Always use shared isSuperAdmin() from store ────────────
+  // Never check role strings inline. Never hardcode user IDs.
+  const isSuperAdmin = checkSuperAdmin(user?.role);
 
   const fetchMemberships = useCallback(async () => {
     if (!user) { setLoading(false); return; }
