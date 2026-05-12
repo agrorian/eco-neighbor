@@ -250,6 +250,7 @@ export default function SignUpStep2() {
           id: user.id,
           full_name: name,
           neighbourhood: neighbourhoodStr,
+          city: location.city || null,
           profession: profession,
           email: user.email,
           ...(whatsapp ? { whatsapp_number: whatsapp.replace(/\D/g, '') } : {}),
