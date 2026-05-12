@@ -89,16 +89,18 @@ export default function Settings() {
     if (error) { setProfileError(l('settings', 'saveError')); setSaving(false); return; }
 
     // ── ENB DOCTRINE: Always sync store immediately after any DB write ────────
-    setUser({
-      ...user,
+    // Use functional update — never spread stale closure user directly.
+    // This preserves all fields not touched by Settings (cnic_verified, lifetime_earned, etc.)
+    setUser((prev: any) => prev ? {
+      ...prev,
       full_name:       fullName.trim(),
       whatsapp_number: whatsapp.trim() || undefined,
       neighbourhood:   updatedNeighbourhood || '',
       city:            updatedCity || undefined,
       profession:      profession || undefined,
       profile_pic_url: profilePic || undefined,
-      cnic_number:     cnic ? cnic.replace(/\D/g, '') : user.cnic_number,
-    } as any);
+      cnic_number:     cnic ? cnic.replace(/\D/g, '') : prev.cnic_number,
+    } : prev);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     setSaving(false);
