@@ -210,28 +210,27 @@ export default function App() {
         if (!refreshedId) return;
         const currentUserId = useUserStore.getState().user?.id;
 
-        if (event === 'TOKEN_REFRESHED' && currentUserId && currentUserId === refreshedId) {
-          // ── ENB DOCTRINE: Token refresh for same user — do NOT reload profile ──
-          // Reloading profile on every token refresh risks RLS-blocked reads when
-          // the new JWT hasn't propagated yet, causing setUser(null) infinite loops.
-          // The existing store data is correct — just let the JWT refresh silently.
+        // ── ENB DOCTRINE: Never reload profile on token events for same user ──
+        // TOKEN_REFRESHED and SIGNED_IN both fire on Supabase internal refresh.
+        // If the refreshed ID matches current user (or current user not yet loaded
+        // but refreshed ID matches the session) — skip loadUserProfile entirely.
+        // loadUserProfile is only safe to call on genuine fresh logins.
+        if (currentUserId && currentUserId === refreshedId) {
+          // Same user — token refreshed silently, store is correct, do nothing
           return;
         }
 
-        if (event === 'SIGNED_IN' && currentUserId && currentUserId === refreshedId) {
-          // Already loaded — no action needed
-          return;
-        }
-
-        if (!currentUserId || currentUserId === refreshedId) {
-          // Fresh login or no user yet — load profile normally
+        if (!currentUserId) {
+          // No user in store yet — this is a genuine page load after session restore
+          // Safe to load profile
           loadUserProfile(refreshedId, session.user.email ?? '');
-        } else {
-          // Token refreshed for a DIFFERENT user — phantom account prevention
-          console.warn('Token refresh for mismatched user. Signing out.');
-          await supabase.auth.signOut();
-          setUser(null);
+          return;
         }
+
+        // Different user in store vs refreshed token — phantom account prevention
+        console.warn('Session mismatch detected. Signing out to prevent phantom account.');
+        await supabase.auth.signOut();
+        setUser(null);
       }
     });
 
