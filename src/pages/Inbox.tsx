@@ -159,7 +159,7 @@ export default function Inbox() {
     if (error) { console.error(error); return; }
     setMessages(data || []);
     setLoading(false);
-  }, [user]);
+  }, [user?.id, user?.role]);
 
   // ── Realtime ────────────────────────────────────────────────────────────────
   useEffect(() => {

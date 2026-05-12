@@ -333,7 +333,7 @@ export default function MessagesPage() {
     }).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
 
     setConversations(convos);
-  }, [user]);
+  }, [user?.id]);
 
   // ── Fetch messages for active conversation ────────────────────────────────
   const fetchMessages = useCallback(async (partnerId: string) => {
@@ -364,7 +364,7 @@ export default function MessagesPage() {
         ? { ...m, read_at: now }
         : m
     ));
-  }, [user]);
+  }, [user?.id]);
 
   // ── Fetch channels ────────────────────────────────────────────────────────
   const fetchChannels = useCallback(async () => {

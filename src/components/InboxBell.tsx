@@ -46,7 +46,7 @@ export default function InboxBell() {
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, [user]);
+  }, [user?.id, user?.role]);
 
   return (
     <Link to="/inbox" className="relative flex items-center justify-center w-10 h-10">

@@ -352,7 +352,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
         reacted: r.users.includes(user.id),
       })),
     }));
-  }, [user]);
+  }, [user?.id]);
 
   // ── Fetch messages ────────────────────────────────────────────────────────
   const fetchMessages = useCallback(async () => {
