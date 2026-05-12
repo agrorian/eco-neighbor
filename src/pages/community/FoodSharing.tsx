@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
-// ── CFSP v4.9 Priority Waterfall — Canonical ─────────────────────────────────
-// T1 has two sub-categories (a) and (b) per whitepaper v5.0/v6.0
+// ── CFSP Priority Waterfall — Canonical ──────────────────────────────────────
+// T1 has two sub-categories (a) and (b) per whitepaper v6.2
 const WATERFALL = [
   {
     tier: '1a', tierNum: 1,
@@ -26,9 +26,9 @@ const WATERFALL = [
   {
     tier: '1b', tierNum: 1,
     label: 'Direct Human Consumption',
-    subLabel: '(b) Schools & Orphanages',
+    subLabel: '(b) Residential Child Welfare Institutions',
     color: 'bg-enb-green', textColor: 'text-enb-green',
-    recipients: 'Schools & orphanages registered within neighborhood perimeter — Paediatric Safety Standard applies',
+    recipients: 'Residential Child Welfare Institutions registered within neighborhood perimeter — Paediatric Safety Standard applies',
     reward: '1,000 ENB/batch + 800 ENB Paediatric Delivery Bonus',
     note: 'Cooked within 2hrs · insulated covered container · allergen log maintained · nutritionally complete meal only',
     urgent: true,
@@ -38,7 +38,7 @@ const WATERFALL = [
     label: 'Community Kitchen',
     subLabel: '',
     color: 'bg-enb-teal', textColor: 'text-enb-teal',
-    recipients: 'Volunteer cooks transform surplus into bulk meals at the mosque/school kitchen — served at Community Day events, weekly community lunches, Seasonal Bonus Campaigns',
+    recipients: 'Volunteer cooks transform surplus into bulk meals — served at Community Day events, weekly community lunches, Seasonal Bonus Campaigns',
     reward: '800 ENB/batch + carbon credit record generated',
     note: '',
     urgent: false,
@@ -330,7 +330,7 @@ export default function FoodSharing() {
       {/* Header */}
       <header>
         <h1 className="text-2xl font-bold text-enb-text-primary">Food Sharing Programme</h1>
-        <p className="text-sm text-enb-text-secondary mt-1">Community Food Sharing Programme · v4.9</p>
+        <p className="text-sm text-enb-text-secondary mt-1">Community Food Sharing Programme</p>
       </header>
 
       {/* Hero card */}
@@ -341,7 +341,7 @@ export default function FoodSharing() {
               <Apple className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="font-bold text-lg leading-tight">Every night, restaurants in Rawalpindi discard 8–15 kg of food.</h2>
+              <h2 className="font-bold text-lg leading-tight">Every night, restaurants discard 8–15 kg of food.</h2>
               <p className="text-white/80 text-sm mt-2">A hungry rickshaw driver finishes his shift 400 metres away. The Community Food Sharing Programme connects them — with every transaction verified on Solana and every participant rewarded in ENB.</p>
             </div>
           </div>
@@ -525,11 +525,11 @@ export default function FoodSharing() {
         </CardContent>
       </Card>
 
-      {/* v4.9 Priority Waterfall */}
+      {/* Priority Waterfall */}
       <Card className="border-gray-100 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold text-enb-text-primary flex items-center gap-2">
-            <Flame className="w-4 h-4 text-orange-500" /> Priority Waterfall · v4.9
+            <Flame className="w-4 h-4 text-orange-500" /> Priority Waterfall
           </CardTitle>
           <p className="text-xs text-enb-text-secondary">Food moves through this hierarchy in strict priority order. No edible food goes to landfill while any lower-tier use remains available.</p>
         </CardHeader>
