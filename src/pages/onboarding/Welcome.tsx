@@ -117,7 +117,7 @@ export default function Welcome() {
           </Link>
         </div>
         <p className="text-[10px] text-enb-text-muted mt-4">
-          Eco-Neighbor ($ENB) · Rawalpindi, Pakistan · v1.5.0
+          Eco-Neighbor ($ENB) · Karachi, Pakistan · v1.5.0
         </p>
       </div>
     </div>
