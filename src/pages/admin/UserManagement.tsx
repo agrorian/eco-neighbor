@@ -102,10 +102,22 @@ export default function UserManagement() {
       is_active:       editForm.is_active,
     };
 
-    const { error } = await supabase
-      .from('users')
-      .update(updatedFields)
-      .eq('id', editTarget.id);
+    // ── ENB DOCTRINE: Admin updates to other users' rows MUST use a SECURITY DEFINER RPC.
+    // Direct .update() is blocked by RLS (anon key — each user can only update their own row).
+    // The RPC runs with elevated privileges, bypassing RLS safely with an internal auth check.
+    const { error } = await supabase.rpc('admin_update_user_profile', {
+      p_target_id:    editTarget.id,
+      p_full_name:    updatedFields.full_name    ?? null,
+      p_neighbourhood: updatedFields.neighbourhood ?? null,
+      p_city:         updatedFields.city          ?? null,
+      p_profession:   updatedFields.profession    ?? null,
+      p_whatsapp:     updatedFields.whatsapp_number ?? null,
+      p_wallet:       updatedFields.wallet_address  ?? null,
+      p_role:         updatedFields.role          ?? 'member',
+      p_tier:         updatedFields.tier          ?? 'Newcomer',
+      p_cnic_verified: updatedFields.cnic_verified ?? false,
+      p_is_active:    updatedFields.is_active     ?? true,
+    });
     setSaving(false);
     if (error) { setSaveError(error.message); return; }
 
@@ -156,14 +168,39 @@ export default function UserManagement() {
   };
 
   const handleToggleActive = async (u: DBUser) => {
-    const { error } = await supabase.from('users').update({ is_active: !u.is_active }).eq('id', u.id);
+    // RLS blocks direct update on other users — must use RPC
+    const { error } = await supabase.rpc('admin_update_user_profile', {
+      p_target_id:     u.id,
+      p_full_name:     u.full_name ?? null,
+      p_neighbourhood: u.neighbourhood ?? null,
+      p_city:          (u as any).city ?? null,
+      p_profession:    u.profession ?? null,
+      p_whatsapp:      u.whatsapp_number ?? null,
+      p_wallet:        u.wallet_address ?? null,
+      p_role:          u.role ?? 'member',
+      p_tier:          u.tier ?? 'Newcomer',
+      p_cnic_verified: u.cnic_verified ?? false,
+      p_is_active:     !u.is_active,
+    });
     if (!error) fetchUsers();
   };
 
   const handleChangeRole = async (u: DBUser, newRole: string) => {
     const oldRole = u.role;
-    // Update profile table
-    const { error } = await supabase.from('users').update({ role: newRole }).eq('id', u.id);
+    // RLS blocks direct update on other users — must use RPC
+    const { error } = await supabase.rpc('admin_update_user_profile', {
+      p_target_id:     u.id,
+      p_full_name:     u.full_name ?? null,
+      p_neighbourhood: u.neighbourhood ?? null,
+      p_city:          (u as any).city ?? null,
+      p_profession:    u.profession ?? null,
+      p_whatsapp:      u.whatsapp_number ?? null,
+      p_wallet:        u.wallet_address ?? null,
+      p_role:          newRole,
+      p_tier:          u.tier ?? 'Newcomer',
+      p_cnic_verified: u.cnic_verified ?? false,
+      p_is_active:     u.is_active ?? true,
+    });
     if (error) return;
     // ── ENB DOCTRINE: Sync store if admin changed their own role ─────────────
     // Note: JWT app_metadata does not update until re-login (Phase 2 fix).
