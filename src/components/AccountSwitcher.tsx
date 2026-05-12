@@ -123,23 +123,32 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
         .single();
 
       if (profile) {
+        // ── ENB DOCTRINE: Never set undefined into the store ─────────────────
+        // Guard every field — a null full_name causes id=eq.undefined cascade errors
+        const userId = data.session.user.id;
+        if (!userId) { setSwitching(null); return; } // hard guard
         setUser({
-          id: data.session.user.id,
-          email: data.session.user.email || '',
-          full_name: profile.full_name,
-          neighbourhood: profile.neighbourhood,
-          profession: profile.profession,
+          id: userId,
+          email: data.session.user.email || account.email || '',
+          full_name: profile.full_name || account.email || 'Member',
+          neighbourhood: profile.neighbourhood || '',
+          city: profile.city || undefined,
+          country_code: profile.country_code || undefined,
+          profession: profile.profession || '',
           enb_local_bal: profile.enb_local_bal || 0,
           enb_global_bal: profile.enb_global_bal || 0,
           rep_score: profile.rep_score || 0,
           tier: profile.tier || 'Newcomer',
           role: profile.role || 'member',
-          wallet_address: profile.wallet_address,
-          whatsapp_number: profile.whatsapp_number,
+          wallet_address: profile.wallet_address || undefined,
+          whatsapp_number: profile.whatsapp_number || undefined,
+          profile_pic_url: profile.profile_pic_url || undefined,
           lifetime_earned: profile.lifetime_earned || 0,
-          referral_code: profile.referral_code,
+          referral_code: profile.referral_code || undefined,
           consecutive_absences: profile.consecutive_absences || 0,
-          is_active: profile.is_active,
+          cnic_verified: profile.cnic_verified === true,
+          cnic_number: profile.cnic_number || undefined,
+          is_active: profile.is_active ?? true,
         });
         // Update saved account with fresh tokens
         saveAccount({

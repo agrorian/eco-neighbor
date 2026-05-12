@@ -128,17 +128,20 @@ export default function App() {
         // ── ENB DOCTRINE: Global realtime sync ────────────────────────────────
         // One subscription here keeps the entire app in sync.
         // Every component reads from the store — none need their own user subscriptions.
-        supabase
-          .channel(`global-user-sync-${data.id}`)
-          .on('postgres_changes', {
-            event: 'UPDATE', schema: 'public', table: 'users',
-            filter: `id=eq.${data.id}`,
-          }, (payload) => {
-            if (payload.new) {
-              setUser((prev: any) => prev ? { ...prev, ...payload.new } : prev);
-            }
-          })
-          .subscribe();
+        // Guard: never subscribe with undefined id — causes cascade 400 errors
+        if (data.id) {
+          supabase
+            .channel(`global-user-sync-${data.id}`)
+            .on('postgres_changes', {
+              event: 'UPDATE', schema: 'public', table: 'users',
+              filter: `id=eq.${data.id}`,
+            }, (payload) => {
+              if (payload.new && payload.new.id) {
+                setUser((prev: any) => prev ? { ...prev, ...payload.new } : prev);
+              }
+            })
+            .subscribe();
+        }
       } else {
         // Profile row missing — this is a genuine new user (no existing data).
         // SAFE INSERT ONLY: never overwrite an existing row's balance or role.
