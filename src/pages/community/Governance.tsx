@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { useUserStore } from '@/store/user';
+import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
@@ -48,7 +48,7 @@ export default function Governance() {
   const userTierIndex = TIER_ORDER.indexOf(user.tier);
   const { l } = useT();
   const isPillarOrAbove = userTierIndex >= TIER_ORDER.indexOf('Pillar');
-  const isAdminOrFounder = user.role === 'admin' || user.role === 'founder';
+  const isAdminOrFounder = checkSuperAdmin(user.role) || user.role === 'founder';
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProposal, setNewProposal] = useState({
     title: '', description: '', proposal_type: 'general',
