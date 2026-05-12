@@ -1,8 +1,8 @@
-import { Shield, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { AlertTriangle, LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList, Bug, Radio, GitBranch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUserStore } from '@/store/user';
+import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import { supabase } from '@/lib/supabase';
 
 const NAV_ITEMS = [
@@ -26,18 +26,13 @@ export default function AdminLayout() {
   const { user } = useUserStore();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
+  // ── ENB DOCTRINE: Role comes from the store — never re-query DB for role on each render ──
+  // [user?.id] dep: only re-evaluate when the user identity changes, not on every balance update.
+  // checkSuperAdmin covers both 'admin' and 'super_admin' roles.
   useEffect(() => {
-    const checkRole = async () => {
-      if (!user) { setIsAdmin(false); return; }
-      const { data } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-      setIsAdmin(['admin', 'super_admin'].includes(data?.role));
-    };
-    checkRole();
-  }, [user]);
+    if (!user?.id) { setIsAdmin(false); return; }
+    setIsAdmin(checkSuperAdmin(user.role));
+  }, [user?.id, user?.role]);
 
   if (isAdmin === null) {
     return (
