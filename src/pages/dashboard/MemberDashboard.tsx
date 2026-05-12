@@ -318,12 +318,10 @@ export default function MemberDashboard() {
 
   React.useEffect(() => {
     if (!user?.id) return;
-    const channel = supabase
-      .channel(`dashboard-user-${user.id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
-        (payload) => { if (payload.new) setUser({ ...user, ...payload.new }); }
-      ).subscribe();
-    return () => { supabase.removeChannel(channel); };
+    // ── ENB DOCTRINE: Use functional update to avoid stale closure ────────
+    // Never spread stale `user` from closure — use prev from store directly
+    // Also: App.tsx already has the global subscription — this one is redundant.
+    // Removing to prevent double-subscription and stale closure overwrites.
   }, [user?.id]);
 
   if (!user) return null;
