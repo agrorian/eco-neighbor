@@ -15,12 +15,15 @@ export default function Layout({ children }: LayoutProps) {
 
   // ── Global last_seen updater — runs app-wide ──────────────────────────────
   useEffect(() => {
-    if (!user) return;
+    // ── ENB DOCTRINE: Guard user.id — never update with undefined ────────────
+    // Depend on user?.id not user — prevents re-running on every store update
+    if (!user?.id) return;
+    const userId = user.id; // capture in closure so it never goes undefined mid-interval
     const updateSeen = () => {
       supabase
         .from('users')
         .update({ last_seen: new Date().toISOString() })
-        .eq('id', user.id)
+        .eq('id', userId)
         .then(() => {});
     };
     updateSeen();
@@ -30,7 +33,7 @@ export default function Layout({ children }: LayoutProps) {
       clearInterval(interval);
       window.removeEventListener('focus', updateSeen);
     };
-  }, [user]);
+  }, [user?.id]);
 
   if (!user) return <>{children}</>;
   return (
