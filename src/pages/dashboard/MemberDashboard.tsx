@@ -313,16 +313,8 @@ const getTierIcon = (repScore: number) => {
 };
 
 export default function MemberDashboard() {
-  const { user, setUser } = useUserStore();
+  const { user } = useUserStore();
   const { l, isUrdu } = useT();
-
-  React.useEffect(() => {
-    if (!user?.id) return;
-    // ── ENB DOCTRINE: Use functional update to avoid stale closure ────────
-    // Never spread stale `user` from closure — use prev from store directly
-    // Also: App.tsx already has the global subscription — this one is redundant.
-    // Removing to prevent double-subscription and stale closure overwrites.
-  }, [user?.id]);
 
   if (!user) return null;
   const tier = getTier(user.rep_score);
