@@ -175,7 +175,7 @@ export default function CnicPrompt() {
 
       if (updateError) throw updateError;
 
-      setUser({ ...user, cnic_number: digits || undefined } as any);
+      setUser((prev: any) => prev ? { ...prev, cnic_number: digits || undefined } : prev); // ENB DOCTRINE: functional update
       setSaved(true);
     } catch (err: any) {
       setError(err.message || 'Failed to save. Please try again.');

@@ -80,7 +80,7 @@ export default function GenerateRedemptionQR() {
         setQrData(null);
         setQrImageUrl('');
         supabase.from('users').select('enb_local_bal').eq('id', user!.id).single()
-          .then(({ data }) => { if (data) setUser({ ...user!, enb_local_bal: data.enb_local_bal }); });
+          .then(({ data }) => { if (data) setUser((prev: any) => prev ? { ...prev, enb_local_bal: data.enb_local_bal } : prev); }); // ENB DOCTRINE: functional update
       }
     }, 1000);
     return () => clearInterval(interval);
@@ -114,7 +114,7 @@ export default function GenerateRedemptionQR() {
       if (rpcError) throw rpcError;
       if (!data?.success) throw new Error(data?.error || 'Failed to generate QR');
 
-      setUser({ ...user, enb_local_bal: (user.enb_local_bal || 0) - amount });
+      setUser((prev: any) => prev ? { ...prev, enb_local_bal: (prev.enb_local_bal || 0) - amount } : prev); // ENB DOCTRINE: functional update
       setQrData({ code: data.qr_code, expiresAt: new Date(data.expires_at) });
       setSecondsLeft(600);
     } catch (err: any) {
@@ -134,7 +134,7 @@ export default function GenerateRedemptionQR() {
         p_user_id: user.id,
       });
       if (data?.success) {
-        setUser({ ...user, enb_local_bal: (user.enb_local_bal || 0) + parseInt(enbAmount) });
+        setUser((prev: any) => prev ? { ...prev, enb_local_bal: (prev.enb_local_bal || 0) + parseInt(enbAmount) } : prev); // ENB DOCTRINE: functional update
         setQrData(null);
         setQrImageUrl('');
         setEnbAmount('');

@@ -45,7 +45,7 @@ export default function ReferralHub() {
 
         if (!error) {
           setReferralCode(generated);
-          setUser({ ...user, referral_code: generated });
+          setUser((prev: any) => prev ? { ...prev, referral_code: generated } : prev); // ENB DOCTRINE: functional update
           console.log('✅ Referral code generated and saved to DB:', generated);
         } else {
           console.error('❌ Failed to save referral code:', error.message);

@@ -140,29 +140,14 @@ export default function Wallet() {
         .select('enb_local_bal, enb_global_bal, rep_score, tier, lifetime_earned')
         .eq('id', user.id)
         .single();
-      if (data) setUser({ ...user, ...data });
+      // ── ENB DOCTRINE: Functional update — never spread stale closure user ──
+      if (data) setUser((prev: any) => prev ? { ...prev, ...data } : prev);
     };
     refreshBalance();
 
-    const channel = supabase
-      .channel(`wallet-user-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'users',
-          filter: `id=eq.${user.id}`,
-        },
-        (payload) => {
-          if (payload.new) setUser({ ...user, ...payload.new });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // ── ENB DOCTRINE: Global realtime subscription in App.tsx covers users table ──
+    // Removed local users subscription — stale closure caused phantom account bug.
+    // Balance updates flow through App.tsx global subscription automatically.
   }, [user?.id]);
 
   // Fetch business partner ENB.GLOBAL balance
