@@ -12,7 +12,7 @@ import { PROFESSIONS, USER_TIERS, USER_ROLES } from '@/lib/constants';
 interface DBUser {
   id: string; full_name: string; email: string; role: string;
   rep_score: number; enb_local_bal: number; tier: string;
-  whatsapp_number?: string; neighbourhood?: string; profession?: string;
+  whatsapp_number?: string; neighbourhood?: string; city?: string; profession?: string;
   wallet_address?: string; is_active: boolean;
   cnic_number?: string; cnic_photo_url?: string; cnic_verified?: boolean; cnic_submitted_at?: string;
   joined_at?: string; updated_at?: string;
@@ -89,24 +89,33 @@ export default function UserManagement() {
       ? locationParts.join(', ')
       : editTarget.neighbourhood || null;
 
+    const updatedFields = {
+      full_name:       editForm.full_name?.trim() || null,
+      neighbourhood:   neighbourhoodStr,
+      city:            editLocation.city || editTarget.city || null,
+      profession:      editForm.profession?.trim() || null,
+      whatsapp_number: editForm.whatsapp_number?.trim() || null,
+      wallet_address:  editForm.wallet_address?.trim() || null,
+      role:            editForm.role,
+      tier:            editForm.tier,
+      cnic_verified:   editForm.cnic_verified,
+      is_active:       editForm.is_active,
+    };
+
     const { error } = await supabase
       .from('users')
-      .update({
-        full_name:       editForm.full_name?.trim() || null,
-        neighbourhood:   neighbourhoodStr,
-        profession:      editForm.profession?.trim() || null,
-        whatsapp_number: editForm.whatsapp_number?.trim() || null,
-        wallet_address:  editForm.wallet_address?.trim() || null,
-        role:            editForm.role,
-        tier:            editForm.tier,
-        cnic_verified:   editForm.cnic_verified,
-        is_active:       editForm.is_active,
-      })
+      .update(updatedFields)
       .eq('id', editTarget.id);
     setSaving(false);
     if (error) { setSaveError(error.message); return; }
+
+    // Optimistically update local state immediately so list reflects change without waiting for refetch
+    setUsers(prev => prev.map(u =>
+      u.id === editTarget.id ? { ...u, ...updatedFields } : u
+    ));
+
     setSaveSuccess('✅ Profile updated successfully');
-    fetchUsers();
+    await fetchUsers();
     setTimeout(() => { setEditTarget(null); setSaveSuccess(''); }, 1500);
   };
 
@@ -116,7 +125,7 @@ export default function UserManagement() {
     setLoading(true);
     const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, profession, wallet_address, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at, joined_at, updated_at')
+      .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, city, profession, wallet_address, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at, joined_at, updated_at')
       .order('rep_score', { ascending: false });
     if (!error && data) setUsers(data);
     setLoading(false);
