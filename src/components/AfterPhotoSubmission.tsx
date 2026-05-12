@@ -79,7 +79,7 @@ async function runGeminiReview(
   if (!apiKey) return { verdict: 'uncertain', reason: 'AI review not configured — routed to human moderator', confidence: 0 };
 
   const label = actionType.replace(/_/g, ' ');
-  const prompt = `You are a civic action verifier for Eco-Neighbor, a community token system in Rawalpindi, Pakistan.
+  const prompt = `You are a civic action verifier for Eco-Neighbor, a community token system starting in Karachi, Pakistan.
 A user claims to have completed a "${label}".
 
 IMAGE ORDER: First image = BEFORE. Remaining = AFTER (taken 4+ hours later at the same location).
