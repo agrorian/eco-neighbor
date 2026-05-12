@@ -13,7 +13,7 @@ type Step = 'select' | 'form' | 'review' | 'success';
 const ACTION_REWARDS: Record<string, { enb: number; rep: number }> = {
   neighbourhood_cleanup: { enb: 1000, rep: 500 },
   recycling_dropoff:     { enb: 500,  rep: 200 },
-  carpool:               { enb: 300,  rep: 100 },
+  carpool:               { enb: 0,    rep: 150 }, // ENB calculated dynamically from ride session
   food_sharing:          { enb: 800,  rep: 300 },
   skill_workshop:        { enb: 1500, rep: 1000 },
   infrastructure_report: { enb: 300,  rep: 100 },
@@ -73,9 +73,30 @@ export default function SubmitAction() {
         ? new Date(now.getTime() + AFTER_UNLOCK_MS).toISOString()
         : null;
 
+      // ── Dynamic ENB for carpool ──────────────────────────────────────────────
+      let enbAwarded = rewards.enb;
+      const isCarpool = actionKey === 'carpool';
+      const rideSession = formData.rideSession;
+      if (isCarpool && rideSession) {
+        // Import calcRideEnb inline — matches canonical formula
+        const BASE_RATE: Record<string, number> = {
+          'Bike': 100, 'Rickshaw': 120, 'Auto-rickshaw': 120,
+          'Car': 150, 'Van/Minivan': 200, 'Bus/Coaster': 300,
+        };
+        const ENB_CAP: Record<string, number> = {
+          'Bike': 3000, 'Rickshaw': 4000, 'Auto-rickshaw': 4000,
+          'Car': 5000, 'Van/Minivan': 10000, 'Bus/Coaster': 20000,
+        };
+        const PASSENGER_MULT = [0, 1.0, 1.3, 1.6, 2.0, 2.5];
+        const base = BASE_RATE[rideSession.vehicleType] || 150;
+        const pMult = PASSENGER_MULT[Math.min(rideSession.passengers, 5)] || 2.5;
+        const cap = ENB_CAP[rideSession.vehicleType] || 5000;
+        enbAwarded = Math.min(Math.round(base * rideSession.calculatedDistanceKm * pMult), cap);
+      }
+
       const { error } = await supabase.from('submissions').insert({
         user_id: user.id,
-        action_type: actionKey,                    // ← fixed: was selectedAction
+        action_type: actionKey,
         description: formData.description,
         photo_urls: formData.photoUrls?.length > 0
           ? formData.photoUrls
@@ -84,7 +105,7 @@ export default function SubmitAction() {
         gps_lng: lng,
         gps_address: formData.gpsAddress || formData.location || null,
         status: 'pending',
-        enb_awarded: rewards.enb,
+        enb_awarded: enbAwarded,
         rep_awarded: rewards.rep,
         image_source: formData.imageSource || 'CAMERA',
         captcha_score: formData.captchaScore || null,
@@ -94,6 +115,26 @@ export default function SubmitAction() {
         after_submitted: isTransformation ? false : null,
         report_status: isReporting ? 'open' : null,
         reviewer_consent: formData.consentGiven === true,
+        // ── Carpool session fields ──────────────────────────────────────────
+        ...(isCarpool && rideSession ? {
+          origin_lat:              rideSession.originLat,
+          origin_lng:              rideSession.originLng,
+          origin_timestamp:        rideSession.originTimestamp,
+          origin_accuracy_m:       rideSession.originAccuracyM,
+          destination_lat:         rideSession.destinationLat,
+          destination_lng:         rideSession.destinationLng,
+          destination_timestamp:   rideSession.destinationTimestamp,
+          calculated_distance_km:  rideSession.calculatedDistanceKm,
+          calculated_duration_min: rideSession.calculatedDurationMin,
+          avg_speed_kmh:           rideSession.avgSpeedKmh,
+          speed_flagged:           rideSession.speedFlagged,
+          gps_waypoints:           rideSession.waypoints,
+          ride_token:              rideSession.rideToken,
+          ride_enb_base:           enbAwarded,
+          ride_enb_topup:          0,
+          vehicle_type:            rideSession.vehicleType,
+          confirmed_passengers:    0,
+        } : {}),
       });
 
       if (error) throw error;

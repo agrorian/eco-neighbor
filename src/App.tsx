@@ -5,6 +5,9 @@ import { useUserStore } from '@/store/user';
 import Layout from '@/components/layout/Layout';
 import SplashScreen from '@/components/SplashScreen';
 import { supabase } from '@/lib/supabase';
+import ConfirmRide from '@/pages/submit/ConfirmRide';
+import RiderProfile from '@/pages/submit/RiderProfile';
+import AdminCaptains from '@/pages/submit/AdminCaptains';
 
 // --- Eagerly loaded (core pages, always needed) ---
 import Dashboard from '@/pages/Dashboard';
@@ -225,6 +228,7 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/dev-history" element={<VersionHistory />} />
           <Route path="/account-recovery" element={<AccountRecovery />} />
+          <Route path="/confirm-ride/:token" element={<ConfirmRide />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/token-disclaimer" element={<TokenDisclaimer />} />
@@ -244,6 +248,7 @@ export default function App() {
                 <Route path="onboarding" element={<AdminOnboarding />} />
                 <Route path="announcements" element={<AnnouncementsPage />} />
                 <Route path="org-structure" element={<OrgStructurePage />} />
+                <Route path="captains" element={<AdminCaptains />} />
               </Route>
               <Route path="/*" element={
                 <Layout>
@@ -271,6 +276,7 @@ export default function App() {
                       <Route path="/history" element={<MyHistory />} />
                       <Route path="/submission/:id" element={<SubmissionDetail />} />
                       <Route path="/issues" element={<CommunityIssues />} />
+                      <Route path="/rider/:userId" element={<RiderProfile />} />
                       <Route path="/glossary" element={<Glossary />} />
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/bug-report" element={<BugReport />} />

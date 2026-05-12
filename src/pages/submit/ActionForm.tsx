@@ -37,6 +37,9 @@ async function getRecaptchaToken(action: string): Promise<string> {
   });
 }
 
+import CarpoolSession, { RideSession } from '@/pages/submit/CarpoolSession';
+import CaptainOnboarding from '@/pages/submit/CaptainOnboarding';
+
 interface ActionFormProps {
   actionType: string;
   onSubmit: (data: any) => void;
@@ -55,9 +58,10 @@ interface PhotoItem {
 // ─── Per-action config ──────────────────────────────────────────────────────
 const ACTION_CONFIG: Record<string, {
   title: string;
-  hint: string;             // what photos to take
+  hint: string;
   photoLabel: string;
   fields: FieldDef[];
+  isCarpoolSession?: boolean;
 }> = {
   neighbourhood_cleanup: {
     title: 'Neighbourhood Cleanup',
@@ -86,15 +90,10 @@ const ACTION_CONFIG: Record<string, {
 
   carpool: {
     title: 'Carpool',
-    hint: 'Photo inside the vehicle showing multiple passengers. Faces can be blurred if preferred.',
-    photoLabel: 'Photo with Passengers',
-    fields: [
-      { id: 'passengers', label: 'Number of passengers (excluding driver)', type: 'number', placeholder: 'e.g. 3', required: true },
-      { id: 'route', label: 'Route / destination', type: 'text', placeholder: 'e.g. Chaklala Scheme 3 to Blue Area', required: true },
-      { id: 'vehicle_type', label: 'Vehicle type', type: 'select', required: true,
-        options: ['Car', 'Van/Minivan', 'Rickshaw', 'Auto-rickshaw', 'Bus/Coaster'] },
-      { id: 'distance_km', label: 'Approximate distance (km)', type: 'number', placeholder: 'e.g. 12', required: false },
-    ],
+    hint: 'Start a verified ride session. GPS tracks your route automatically — no photos or manual distance entry required.',
+    photoLabel: '',
+    fields: [],  // Carpool uses CarpoolSession component — not the standard field renderer
+    isCarpoolSession: true,
   },
 
   food_sharing: {
@@ -462,6 +461,14 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   const anyUploading = photos.some(p => p.uploading);
   const [consentGiven, setConsentGiven] = useState(false);
 
+  // ── Carpool session state ─────────────────────────────────────────────────
+  const [carpoolVehicle, setCarpoolVehicle] = useState('Car');
+  const [carpoolPassengers, setCarpoolPassengers] = useState(1);
+  const [carpoolSessionActive, setCarpoolSessionActive] = useState(false);
+  const [carpoolSession, setCarpoolSession] = useState<RideSession | null>(null);
+  const [approvedVehicles, setApprovedVehicles] = useState<string[]>([]);
+  const [captainApproved, setCaptainApproved] = useState(false);
+
   const canSubmit = photos.length > 0 && !anyUploading && requiredFieldsMet && !!gpsLat && consentGiven;
 
   const handleSubmit = async () => {
@@ -520,6 +527,175 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       consentGiven,
     });
   };
+
+  // ── Carpool session rendering ────────────────────────────────────────────
+  if (config.isCarpoolSession) {
+    if (carpoolSessionActive) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-enb-text-primary">Carpool</h2>
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Ride in progress</span>
+          </div>
+          <CarpoolSession
+            vehicleType={carpoolVehicle}
+            passengers={carpoolPassengers}
+            onRideComplete={(session) => {
+              setCarpoolSession(session);
+              setCarpoolSessionActive(false);
+              // Build submission payload and pass to parent
+              onSubmit({
+                actionType: 'carpool',
+                description: [
+                  `Vehicle: ${session.vehicleType}`,
+                  `Passengers: ${session.passengers}`,
+                  `Distance: ${session.calculatedDistanceKm} km`,
+                  `Duration: ${session.calculatedDurationMin} min`,
+                  `Speed: ${session.avgSpeedKmh} km/h${session.speedFlagged ? ' ⚠️ flagged' : ''}`,
+                  `Ride token: ${session.rideToken}`,
+                ].join('\n'),
+                customFields: {
+                  vehicle_type: session.vehicleType,
+                  passengers: session.passengers,
+                  distance_km: session.calculatedDistanceKm,
+                  duration_min: session.calculatedDurationMin,
+                  avg_speed_kmh: session.avgSpeedKmh,
+                  speed_flagged: session.speedFlagged,
+                  ride_token: session.rideToken,
+                  waypoints: session.waypoints,
+                },
+                photo: null,
+                photoUrls: [],
+                photoCount: 0,
+                gpsLat: session.originLat,
+                gpsLng: session.originLng,
+                gpsAddress: `${session.originLat.toFixed(5)}, ${session.originLng.toFixed(5)}`,
+                imageSource: 'GPS_SESSION',
+                captchaScore: 0.9,
+                recaptchaToken: '',
+                timestamp: session.originTimestamp,
+                consentGiven: true,
+                rideSession: session,
+              });
+            }}
+            onCancel={() => setCarpoolSessionActive(false)}
+          />
+        </div>
+      );
+    }
+
+    // Pre-ride setup screen — only shown after Captain approval sets approvedVehicles
+    const VEHICLES = approvedVehicles.length > 0 ? approvedVehicles : [];
+    const maxPassengers = carpoolVehicle === 'Bike' ? 1 : 8;
+    const canStartRide = carpoolPassengers >= 1 && VEHICLES.length > 0;
+
+    // Show CaptainOnboarding if not yet approved
+    if (!captainApproved) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <button onClick={onBack} className="text-enb-text-secondary text-sm">← Back</button>
+            <h2 className="text-xl font-bold text-enb-text-primary">Carpool</h2>
+            <div className="w-16" />
+          </div>
+          <CaptainOnboarding
+            onApproved={(vehicleTypes) => {
+              setApprovedVehicles(vehicleTypes);
+              setCaptainApproved(true);
+              if (vehicleTypes.length > 0) setCarpoolVehicle(vehicleTypes[0]);
+            }}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <button onClick={onBack} className="text-enb-text-secondary text-sm">← Back</button>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-enb-text-primary">Carpool</h2>
+            <span className="text-xs bg-enb-gold/20 text-enb-gold font-bold px-2 py-0.5 rounded-full">🚗 Captain</span>
+          </div>
+          <div className="w-16" />
+        </div>
+
+        <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-4 text-sm text-enb-text-secondary">
+          {config.hint}
+        </div>
+
+        {/* Vehicle type */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-enb-text-primary">Vehicle Type <span className="text-red-500">*</span></label>
+          <div className="grid grid-cols-2 gap-2">
+            {VEHICLES.map(v => (
+              <button
+                key={v}
+                onClick={() => {
+                  setCarpoolVehicle(v);
+                  if (v === 'Bike') setCarpoolPassengers(1);
+                }}
+                className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-all text-left ${
+                  carpoolVehicle === v
+                    ? 'bg-enb-green text-white border-enb-green'
+                    : 'bg-white border-gray-200 text-enb-text-primary'
+                }`}
+              >
+                {v === 'Bike' && '🌿 '}
+                {v}
+                {v === 'Bike' && <span className="block text-xs opacity-70 font-normal">Most eco-friendly</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Passenger count */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-enb-text-primary">
+            Passengers (excluding you) <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setCarpoolPassengers(p => Math.max(1, p - 1))}
+              className="w-10 h-10 rounded-full border border-gray-200 text-lg font-bold text-enb-text-primary"
+            >−</button>
+            <span className="text-2xl font-bold text-enb-green w-8 text-center">{carpoolPassengers}</span>
+            <button
+              onClick={() => setCarpoolPassengers(p => Math.min(maxPassengers, p + 1))}
+              className="w-10 h-10 rounded-full border border-gray-200 text-lg font-bold text-enb-text-primary"
+            >+</button>
+          </div>
+          {carpoolVehicle === 'Bike' && (
+            <p className="text-xs text-gray-400">Bike allows max 1 pillion passenger</p>
+          )}
+        </div>
+
+        {/* Estimated ENB preview */}
+        <div className="bg-enb-gold/10 border border-enb-gold/20 rounded-xl p-4 text-center">
+          <p className="text-xs text-gray-500 mb-1">Estimated reward per km</p>
+          <p className="text-xl font-bold text-enb-gold">
+            {Math.round(({
+              'Bike': 100, 'Rickshaw': 120, 'Auto-rickshaw': 120,
+              'Car': 150, 'Van/Minivan': 200, 'Bus/Coaster': 300
+            }[carpoolVehicle] || 150) * ([1.0,1.0,1.3,1.6,2.0,2.5][Math.min(carpoolPassengers,5)]))} $ENB/km
+          </p>
+          <p className="text-xs text-gray-400 mt-1">+ bonuses when passengers confirm the ride</p>
+        </div>
+
+        <button
+          onClick={() => setCarpoolSessionActive(true)}
+          disabled={!canStartRide}
+          className={`w-full h-14 rounded-xl text-lg font-bold transition-all shadow-lg ${
+            canStartRide
+              ? 'bg-enb-green text-white shadow-enb-green/20 hover:bg-enb-green/90'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          🚗 Start Ride
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
