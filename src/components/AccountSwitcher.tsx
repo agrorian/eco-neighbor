@@ -83,16 +83,21 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
 
   // Save current session whenever it changes — always use fresh DB data, never stale store snapshot
   useEffect(() => {
-    if (!user) return;
+    // ── ENB DOCTRINE: Never save incomplete sessions ──────────────────────
+    // Guard every field — saving undefined state corrupts the saved accounts list
+    if (!user || !user.id || !user.email) return;
     supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) return;
-      // ── ENB DOCTRINE: Refresh from DB before saving snapshot ─────────────
+      if (!data.session || !data.session.user?.id) return;
+      // Verify session user matches store user — prevent cross-account contamination
+      if (data.session.user.id !== user.id) return;
       const { data: freshProfile } = await supabase
         .from('users')
         .select('full_name, role, profile_pic_url')
         .eq('id', user.id)
         .single();
-      const merged = { ...user, ...(freshProfile || {}) };
+      // Only save if we got a valid profile back
+      if (!freshProfile) return;
+      const merged = { ...user, ...freshProfile };
       saveCurrentSession(merged, data.session);
     });
   }, [user?.id, user?.full_name, user?.role]);
