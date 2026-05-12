@@ -64,7 +64,7 @@ export default function ModQueue() {
   };
 
   const fetchAssignments = async () => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     setLoading(true);
 
     const { data: assgn } = await supabase
@@ -133,7 +133,7 @@ export default function ModQueue() {
   };
 
   const submitDecision = async (assignment: Assignment) => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     const dec = decisions[assignment.id];
     if (!dec?.decision || !dec?.reason || dec.reason.length < 10) return;
 

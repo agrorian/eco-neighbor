@@ -22,7 +22,7 @@ export default function TransactionHistory() {
   const [loading, setLoading] = useState(true);
 
   const fetchTransactions = async () => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     setLoading(true);
     const { data } = await supabase
       .from('transactions')
@@ -34,7 +34,7 @@ export default function TransactionHistory() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     fetchTransactions();
 
     // Real-time subscription — new transactions appear instantly

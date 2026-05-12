@@ -12,7 +12,7 @@ export default function InboxBell() {
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
 
     const calcUnread = async () => {
       const { data } = await supabase

@@ -102,7 +102,7 @@ export default function SubmissionQueue() {
   useEffect(() => { fetchQueue(); }, []);
 
   const handleApprove = async (item: Submission) => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     setProcessing(item.id);
     try {
       const { data, error } = await supabase.rpc('approve_submission', {

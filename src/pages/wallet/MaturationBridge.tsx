@@ -29,7 +29,7 @@ export default function MaturationBridge() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     const fetchEligibility = async () => {
       setLoading(true);
       try {

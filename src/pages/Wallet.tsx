@@ -132,7 +132,7 @@ export default function Wallet() {
 
   // Fetch & subscribe to user balances
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id specifically, not just user
 
     const refreshBalance = async () => {
       const { data } = await supabase
@@ -152,7 +152,7 @@ export default function Wallet() {
 
   // Fetch business partner ENB.GLOBAL balance
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id specifically
 
     const fetchBusinessBal = async () => {
       const { data } = await supabase

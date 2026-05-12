@@ -7,7 +7,7 @@ import {
   Pin, SmilePlus, X, Bell, BellOff,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
+import { useUserStore } from '@/store/user';
 import ChannelInfoPanel from './ChannelInfoPanel';
 import RichTextEditor from '@/components/RichTextEditor';
 
@@ -311,8 +311,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   }, [channel.id]);
 
   // ── Role helpers ─────────────────────────────────────────────────────────
-  // ── ENB DOCTRINE: Always use shared isSuperAdmin() from store ────────────
-  const isSuperAdmin = checkSuperAdmin(user?.role);
+  const isSuperAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isChannelAdmin = membership?.role === 'admin' || isSuperAdmin;
   const canPin = isChannelAdmin;
   const canPost = channelData.posting_mode === 'open'
@@ -392,7 +391,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   // ── Membership + initial load ─────────────────────────────────────────────
   useEffect(() => {
     const checkMembership = async () => {
-      if (!user) return;
+      if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
       const { data } = await supabase
         .from('channel_members')
         .select('user_id, role')
@@ -445,7 +444,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
 
   // ── Join channel ──────────────────────────────────────────────────────────
   const joinChannel = async () => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     const role = isSuperAdmin ? 'admin' : 'member';
     await supabase.from('channel_members').insert({
       channel_id: channel.id,
@@ -515,7 +514,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
 
   // ── React to message ──────────────────────────────────────────────────────
   const handleReact = async (msgId: string, emoji: string) => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     // Toggle: if already reacted, remove; otherwise add
     const msg = messages.find(m => m.id === msgId);
     const existing = msg?.reactions?.find(r => r.emoji === emoji && r.reacted);

@@ -93,7 +93,7 @@ export default function EscalationQueue() {
   };
 
   const submitFinalDecision = async (c: EscalatedCase) => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     const dec = decisions[c.id];
     if (!dec?.decision || !dec?.reason || dec.reason.length < 20) return;
 

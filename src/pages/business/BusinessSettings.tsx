@@ -38,7 +38,7 @@ export default function BusinessSettings() {
   const [coverUploading, setCoverUploading] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     supabase.from('business_partners').select('*').eq('owner_user_id', user.id).single()
       .then(({ data }) => {
         if (data) {
