@@ -371,7 +371,7 @@ function ReportTab({ userId }: { userId: string }) {
       doc.setFillColor(...GREEN);
       doc.rect(0, 287, pageW, 10, 'F');
       setFont('normal', 7, WHITE);
-      doc.text('Eco-Neighbor Token · ENB Responsibility Dashboard · eco-neighbor.vercel.app', margin, 293);
+      doc.text('Eco-Neighbor Token · ENB Responsibility Dashboard · app.econeighbor.org', margin, 293);
       doc.text(`Page ${i} of ${pageCount}`, pageW - margin, 293, { align: 'right' });
     }
 
