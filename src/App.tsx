@@ -208,15 +208,27 @@ export default function App() {
       if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session?.user) {
         const refreshedId = session.user.id;
         if (!refreshedId) return;
-        // Only reload profile if the refreshed token belongs to the current store user
-        // or if there is no current user (fresh login)
         const currentUserId = useUserStore.getState().user?.id;
+
+        if (event === 'TOKEN_REFRESHED' && currentUserId && currentUserId === refreshedId) {
+          // ── ENB DOCTRINE: Token refresh for same user — do NOT reload profile ──
+          // Reloading profile on every token refresh risks RLS-blocked reads when
+          // the new JWT hasn't propagated yet, causing setUser(null) infinite loops.
+          // The existing store data is correct — just let the JWT refresh silently.
+          return;
+        }
+
+        if (event === 'SIGNED_IN' && currentUserId && currentUserId === refreshedId) {
+          // Already loaded — no action needed
+          return;
+        }
+
         if (!currentUserId || currentUserId === refreshedId) {
+          // Fresh login or no user yet — load profile normally
           loadUserProfile(refreshedId, session.user.email ?? '');
         } else {
-          // Token refreshed for a DIFFERENT user than what's in the store
-          // This is the phantom account bug — ignore it, force sign out
-          console.warn('Token refresh for mismatched user. Signing out to prevent phantom account.');
+          // Token refreshed for a DIFFERENT user — phantom account prevention
+          console.warn('Token refresh for mismatched user. Signing out.');
           await supabase.auth.signOut();
           setUser(null);
         }
