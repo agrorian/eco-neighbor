@@ -111,26 +111,27 @@ export const BUSINESS_TYPE_EMOJI: Record<string, string> = {
   'Other': '🏬',
 };
 
-// User tiers — canonical order
+// ── ENB DOCTRINE: Single source of truth ─────────────────────────────────────
+// UserTier and UserRole TYPE definitions live exclusively in store/user.ts.
+// Import types from there — never from this file.
+// These arrays are for UI dropdowns only (option rendering). They must match
+// the canonical values in store/user.ts exactly.
+
+// User tiers — for admin dropdown display only. Values must match store/user.ts UserTier.
 export const USER_TIERS = [
   'Newcomer',
   'Helper',
   'Guardian',
   'Pillar',
-  'Founder Tier',
+  'Founder',       // ← canonical string from store/user.ts (NOT 'Founder Tier')
 ] as const;
 
-export type UserTier = typeof USER_TIERS[number];
-
-// User roles
+// User roles — for admin dropdown display only. Values must match store/user.ts UserRole.
 export const USER_ROLES = [
   'member',
   'moderator',
-  'onboarding_team',
   'business',
   'founder',
   'admin',
   'super_admin',
 ] as const;
-
-export type UserRole = typeof USER_ROLES[number];
