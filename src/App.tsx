@@ -101,6 +101,8 @@ export default function App() {
           email: data.email || userEmail,
           full_name: data.full_name || '',
           neighbourhood: data.neighbourhood || '',
+          city: data.city || undefined,
+          country_code: data.country_code || undefined,
           profession: data.profession || '',
           enb_local_bal: Number(data.enb_local_bal) || 0,
           enb_global_bal: Number(data.enb_global_bal) || 0,
@@ -119,6 +121,21 @@ export default function App() {
           cnic_verified: data.cnic_verified === true,
           cnic_submitted_at: data.cnic_submitted_at || undefined,
         });
+
+        // ── ENB DOCTRINE: Global realtime sync ────────────────────────────────
+        // One subscription here keeps the entire app in sync.
+        // Every component reads from the store — none need their own user subscriptions.
+        supabase
+          .channel(`global-user-sync-${data.id}`)
+          .on('postgres_changes', {
+            event: 'UPDATE', schema: 'public', table: 'users',
+            filter: `id=eq.${data.id}`,
+          }, (payload) => {
+            if (payload.new) {
+              setUser((prev: any) => prev ? { ...prev, ...payload.new } : prev);
+            }
+          })
+          .subscribe();
       } else {
         // Profile row missing — this is a genuine new user (no existing data).
         // SAFE INSERT ONLY: never overwrite an existing row's balance or role.

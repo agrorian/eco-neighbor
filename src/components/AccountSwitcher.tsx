@@ -81,13 +81,21 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Save current session whenever it changes
+  // Save current session whenever it changes — always use fresh DB data, never stale store snapshot
   useEffect(() => {
     if (!user) return;
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) saveCurrentSession(user, data.session);
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      // ── ENB DOCTRINE: Refresh from DB before saving snapshot ─────────────
+      const { data: freshProfile } = await supabase
+        .from('users')
+        .select('full_name, role, profile_pic_url')
+        .eq('id', user.id)
+        .single();
+      const merged = { ...user, ...(freshProfile || {}) };
+      saveCurrentSession(merged, data.session);
     });
-  }, [user?.id]);
+  }, [user?.id, user?.full_name, user?.role]);
 
   const handleSwitch = async (account: SavedAccount) => {
     if (account.email === user?.email) { setOpen(false); return; }

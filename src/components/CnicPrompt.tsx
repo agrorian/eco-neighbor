@@ -16,13 +16,9 @@ function isValidCNIC(value: string): boolean {
   return value.replace(/\D/g, '').length === 13;
 }
 
-const PAKISTAN_NEIGHBOURHOODS = new Set([
-  'Chaklala Scheme 3','Airport Housing Society','Gulrez Housing Society',
-  'Bahria Town','PWD Housing Society','Soan Garden','Koral Town',
-  'Naval Anchorage','Jinnah Garden','Morgah','Lalazar','Saddar',
-  'DHA Phase 1','DHA Phase 2','Gulistan Colony','Walayat Colony',
-  'Yusuf Colony','Ayub Colony','Dhok Choudhrian','Car Chowk Area',
-]);
+// ── ENB DOCTRINE: Pakistan detection uses country_code from store ────────────
+// Never use a hardcoded neighbourhood list — it breaks with any city beyond Rawalpindi.
+// country_code is stored at signup from LocationPicker and loaded into the Zustand store.
 
 export default function CnicPrompt() {
   const { user, setUser } = useUserStore();
@@ -50,7 +46,9 @@ export default function CnicPrompt() {
   const needsCnic = !user.cnic_number;
   if (!needsCnic) return null;
 
-  const isPakistan = PAKISTAN_NEIGHBOURHOODS.has(user.neighbourhood || '');
+  // Reliable Pakistan detection: country_code stored at signup, or fallback to neighbourhood string
+  const isPakistan = (user as any).country_code === 'PK'
+    || (user.neighbourhood || '').toLowerCase().includes('pakistan');
 
   const checkCnicUnique = async (formatted: string) => {
     if (!isValidCNIC(formatted)) return;

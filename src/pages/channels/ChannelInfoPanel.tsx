@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Hash, Megaphone, Lock, Users, Search, Plus,
   Pencil, Check, Shield, Trash2, LogOut, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useUserStore } from '@/store/user';
+import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -129,7 +129,8 @@ export default function ChannelInfoPanel({
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [addingMember, setAddingMember] = useState(false);
 
-  const isSuperAdmin = user?.role === 'admin';
+  // ── ENB DOCTRINE: Always use shared isSuperAdmin() from store ────────────
+  const isSuperAdmin = checkSuperAdmin(user?.role);
 
   // ── Fetch members ──────────────────────────────────────────────────────────
   const fetchMembers = useCallback(async () => {

@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Settings, LogOut, Edit2, MapPin, Briefcase, Award, Star } from 'lucide-react';
-import { useUserStore, getTier } from '@/store/user';
+import { useUserStore, getTier, TIER_NEXT_THRESHOLD } from '@/store/user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,13 +13,7 @@ const BADGES = [
   { id: 4, name: 'Community Pillar', icon: '🏛️', description: 'Reached Pillar tier' },
 ];
 
-const TIER_THRESHOLDS: Record<string, number> = {
-  Newcomer: 5000,
-  Helper: 20000,
-  Guardian: 50000,
-  Pillar: 100000,
-  Founder: 100000,
-};
+// Tier thresholds imported from @/store/user — single source of truth per ENB Doctrine
 
 function Crown(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -43,7 +37,7 @@ export default function Profile() {
   };
 
   const tier = getTier(user.rep_score);
-  const nextTierThreshold = TIER_THRESHOLDS[tier] || 5000;
+  const nextTierThreshold = TIER_NEXT_THRESHOLD[tier] ?? 5000;
   const progress = Math.min((user.rep_score / nextTierThreshold) * 100, 100);
   const displayName = user.full_name || user.email || 'Member';
 

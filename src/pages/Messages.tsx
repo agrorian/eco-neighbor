@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, ArrowLeft, MessageCircle, Circle, Hash } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useUserStore } from '@/store/user';
+import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import ChannelsSidebar from './channels/ChannelsSidebar';
 import ChannelView from './channels/ChannelView';
 import CreateChannelModal from './channels/CreateChannelModal';
@@ -279,7 +279,8 @@ export default function MessagesPage() {
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [showGenerateChannels, setShowGenerateChannels] = useState(false);
 
-  const isSuperAdmin = user?.role === 'admin';
+  // ── ENB DOCTRINE: Always use shared isSuperAdmin() from store ────────────
+  const isSuperAdmin = checkSuperAdmin(user?.role);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activePartnerRef = useRef<UserProfile | null>(null);

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/lib/supabase';
-import { useUserStore } from '@/store/user';
+import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import LocationPicker, { LocationValue } from '@/components/LocationPicker';
 import { PROFESSIONS, USER_TIERS, USER_ROLES } from '@/lib/constants';
 
@@ -19,7 +19,7 @@ interface DBUser {
 }
 
 export default function UserManagement() {
-  const { user: adminUser } = useUserStore();
+  const { user: adminUser, setUser } = useUserStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<DBUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,6 +165,12 @@ export default function UserManagement() {
     // Update profile table
     const { error } = await supabase.from('users').update({ role: newRole }).eq('id', u.id);
     if (error) return;
+    // ── ENB DOCTRINE: Sync store if admin changed their own role ─────────────
+    // Note: JWT app_metadata does not update until re-login (Phase 2 fix).
+    // This at least keeps the UI consistent for the current session.
+    if (adminUser && u.id === adminUser.id) {
+      setUser({ ...adminUser, role: newRole as any });
+    }
     // Write audit record — never lose the trail of who was changed to what and when
     await supabase.from('role_change_audit').insert({
       user_id:    u.id,

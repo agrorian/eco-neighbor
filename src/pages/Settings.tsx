@@ -9,14 +9,9 @@ import { supabase } from '@/lib/supabase';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLang, useT } from '@/contexts/LanguageContext';
 import { PROFESSIONS } from '@/lib/constants';
+import LocationPicker, { LocationValue } from '@/components/LocationPicker';
 
-const NEIGHBOURHOODS = [
-  'Chaklala Scheme 3','Airport Housing Society','Gulrez Housing Society',
-  'Bahria Town','PWD Housing Society','Soan Garden','Koral Town',
-  'Naval Anchorage','Jinnah Garden','Morgah','Lalazar','Saddar',
-  'DHA Phase 1','DHA Phase 2','Gulistan Colony','Walayat Colony',
-  'Yusuf Colony','Ayub Colony','Dhok Choudhrian','Car Chowk Area','Other'
-];
+// Neighbourhood editing uses LocationPicker — no hardcoded list needed
 
 function formatCnic(val: string) {
   const digits = val.replace(/\D/g, '').slice(0, 13);
@@ -34,6 +29,9 @@ export default function Settings() {
   const [whatsapp, setWhatsapp] = useState(user?.whatsapp_number || '');
   const [neighbourhood, setNeighbourhood] = useState(user?.neighbourhood || '');
   const [profession, setProfession] = useState(user?.profession || '');
+  const [location, setLocation] = useState<LocationValue>({
+    country: '', countryCode: user?.country_code || '', province: '', city: user?.city || '', neighbourhood: '',
+  });
   const [dob, setDob] = useState((user as any)?.dob || '');
   const [cnic, setCnic] = useState((user as any)?.cnic_number || '');
   const [profilePic, setProfilePic] = useState((user as any)?.profile_pic_url || '');
@@ -66,18 +64,41 @@ export default function Settings() {
   const handleSaveProfile = async () => {
     if (!user) return;
     setSaving(true); setProfileError(''); setSaved(false);
-    const { error } = await supabase.from('users').update({
-      full_name: fullName.trim(),
+    // Build neighbourhood string from LocationPicker if user changed location
+    const locationParts = [
+      location.neighbourhood, location.city, location.province, location.country,
+    ].filter(Boolean);
+    const updatedNeighbourhood = locationParts.length > 0
+      ? locationParts.join(', ')
+      : neighbourhood || null;
+    const updatedCity = location.city || user.city || null;
+
+    const updates = {
+      full_name:       fullName.trim(),
       whatsapp_number: whatsapp.trim() || null,
-      neighbourhood: neighbourhood || null,
-      profession: profession || null,
-      dob: dob || null,
-      cnic_number: cnic ? cnic.replace(/\D/g, '') : null,
+      neighbourhood:   updatedNeighbourhood,
+      city:            updatedCity,
+      profession:      profession || null,
+      dob:             dob || null,
+      cnic_number:     cnic ? cnic.replace(/\D/g, '') : null,
       profile_pic_url: profilePic || null,
-    }).eq('id', user.id);
+    };
+
+    const { error } = await supabase.from('users').update(updates).eq('id', user.id);
 
     if (error) { setProfileError(l('settings', 'saveError')); setSaving(false); return; }
-    setUser({ ...user, full_name: fullName.trim(), whatsapp_number: whatsapp.trim() || undefined, profile_pic_url: profilePic || undefined } as any);
+
+    // ── ENB DOCTRINE: Always sync store immediately after any DB write ────────
+    setUser({
+      ...user,
+      full_name:       fullName.trim(),
+      whatsapp_number: whatsapp.trim() || undefined,
+      neighbourhood:   updatedNeighbourhood || '',
+      city:            updatedCity || undefined,
+      profession:      profession || undefined,
+      profile_pic_url: profilePic || undefined,
+      cnic_number:     cnic ? cnic.replace(/\D/g, '') : user.cnic_number,
+    } as any);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     setSaving(false);
@@ -183,13 +204,9 @@ export default function Settings() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-enb-text-primary mb-1 block">{l('settings', 'neighbourhood')}</label>
-            <Select value={neighbourhood} onValueChange={setNeighbourhood}>
-              <SelectTrigger><SelectValue placeholder={l('settings', 'selectNeighbourhood')} /></SelectTrigger>
-              <SelectContent className="max-h-60 overflow-y-auto">
-                {NEIGHBOURHOODS.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium text-enb-text-primary mb-1 block">Location</label>
+            <p className="text-xs text-gray-400 mb-2">Current: {user.neighbourhood || 'Not set'}</p>
+            <LocationPicker value={location} onChange={setLocation} />
           </div>
 
           <div>
@@ -254,7 +271,7 @@ export default function Settings() {
         <LogOut className="w-4 h-4 mr-2" /> {l('settings', 'logOut')}
       </Button>
 
-      <p className="text-center text-xs text-gray-400">Eco-Neighbor · ENB Token · App v1.3.0</p>
+      <p className="text-center text-xs text-gray-400">Eco-Neighbor · ENB Token · App v1.5.0</p>
     </div>
   );
 }
