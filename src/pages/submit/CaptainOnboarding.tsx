@@ -53,17 +53,17 @@ export default function CaptainOnboarding({ onApproved }: Props) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchApplication();
+    if (user?.id) fetchApplication();
   }, [user?.id]);
 
   const fetchApplication = async () => {
-    if (!user) return;
+    if (!user || !user.id) return;  // guard: never query with undefined id
     setLoading(true);
     const { data } = await supabase
       .from('captain_applications')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();  // use maybeSingle — returns null instead of error when no row exists
     if (data) {
       setApp(data);
       if (data.status === 'approved') {
@@ -106,7 +106,7 @@ export default function CaptainOnboarding({ onApproved }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user || !user.id) return;
     if (licenseCategories.length === 0) { setError('Please select at least one license category.'); return; }
     if (!licenseFrontUrl) { setError('Please upload your driving license.'); return; }
     if (!cnicFrontUrl) { setError('Please upload your CNIC front.'); return; }
