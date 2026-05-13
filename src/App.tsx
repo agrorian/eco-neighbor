@@ -174,19 +174,27 @@ export default function App() {
       //   (c) returns the real authenticated user or an error.
       // This guarantees the JWT is fresh before we hit the DB.
       // Cost: one extra network call on page load. Worth it — eliminates the race.
-      const { data: authData, error: authError } = await supabase.auth.getUser();
+      // getUser() validates the JWT server-side and refreshes it if expired.
+      // If it returns 403/error, attempt one token refresh before giving up.
+      let { data: authData, error: authError } = await supabase.auth.getUser();
 
       if (authError || !authData?.user) {
-        // Not authenticated — clear any stale store state and stop.
-        // This is a legitimate logged-out state, not a phantom.
-        console.warn('getUser failed — user not authenticated:', authError?.message);
-        // Do NOT setUser(null) here — let the SIGNED_OUT flow handle it.
-        return;
+        // Token may be expired — try refreshing it once
+        console.warn('[ENB] getUser failed, attempting refresh:', authError?.message);
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshed?.user) {
+          // Genuinely not authenticated — redirect to login
+          console.warn('[ENB] Refresh also failed — not authenticated:', refreshError?.message);
+          // Clear sessionExists by redirecting. Use window.location to force clean state.
+          window.location.href = '/login';
+          return;
+        }
+        authData = { user: refreshed.user };
       }
 
       // Use the verified userId from the auth server (authoritative)
-      const verifiedUserId = authData.user.id;
-      const verifiedEmail  = authData.user.email || userEmail;
+      const verifiedUserId = authData!.user!.id;
+      const verifiedEmail  = authData!.user!.email || userEmail;
 
       // Fetch the public profile row — JWT is now guaranteed valid
       const { data, error } = await supabase
