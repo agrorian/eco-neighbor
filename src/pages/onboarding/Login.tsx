@@ -25,17 +25,26 @@ export default function Login() {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      // Save session for account switcher
+      // Save session for account switcher — use only clean profile fields,
+      // NEVER spread data.user (auth object) which has blank user_metadata
       if (data.session && data.user) {
         const { data: profile } = await supabase
           .from('users')
-          .select('full_name, role')
+          .select('full_name, role, profile_pic_url')
           .eq('id', data.user.id)
           .single();
-        saveCurrentSession(
-          { ...data.user, full_name: profile?.full_name, role: profile?.role },
-          data.session
-        );
+        if (profile?.full_name) {
+          saveCurrentSession(
+            {
+              id: data.user.id,
+              email: data.user.email || '',
+              full_name: profile.full_name,
+              role: profile.role || 'member',
+              profile_pic_url: profile.profile_pic_url || undefined,
+            },
+            data.session
+          );
+        }
       }
       window.location.href = '/';
     } catch (err: any) {
