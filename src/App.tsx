@@ -90,15 +90,32 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
 
+  // ── ENB DOCTRINE: Race guard — prevent double loadUserProfile calls ───────
+  // getSession() and onAuthStateChange(SIGNED_IN) both fire on hard refresh.
+  // Without this guard the second call hits the DB before the store is populated,
+  // sees user=null in store, passes the guard, and triggers the phantom INSERT.
+  // useRef keeps the flag stable across re-renders without causing re-renders.
+  const isLoadingProfile = useState({ current: false })[0];
+
   const loadUserProfile = async (userId: string, userEmail: string) => {
     // ── ENB DOCTRINE: Hard guard — never load with undefined/empty userId ─
     if (!userId || userId === 'undefined') return;
+    // ── Race guard — only one profile load in flight at a time ──────────────
+    if (isLoadingProfile.current) return;
+    isLoadingProfile.current = true;
     try {
+      // ── maybeSingle() not single() ────────────────────────────────────────
+      // .single() treats 0 rows as PGRST116 error — identical to an RLS block.
+      // .maybeSingle() returns {data:null, error:null} for genuine 0 rows, and
+      // {data:null, error:<msg>} for RLS/network failures.
+      // CRITICAL RULE: never INSERT when error is set — that means RLS blocked
+      // the read, NOT that the row is missing. Inserting on RLS block creates
+      // the phantom blank account seen in AccountSwitcher.
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (data) {
         setUser({
@@ -145,10 +162,18 @@ export default function App() {
             .subscribe();
         }
       } else {
-        // Profile row missing — this is a genuine new user (no existing data).
-        // SAFE INSERT ONLY: never overwrite an existing row's balance or role.
-        // If the row already exists (RLS blocked the read), the insert is ignored.
-        console.warn('No profile row found. Attempting safe insert. RLS error:', error?.message);
+        // ── NEVER INSERT on error — that means RLS blocked the read ──────────
+        // Only insert when data===null AND error===null (genuine 0 rows = new user).
+        // If error is set, the row exists but JWT/RLS blocked the read.
+        // Inserting here is what creates the phantom blank account.
+        if (error) {
+          console.error('Profile read blocked — RLS or network error. JWT may be stale. User must re-login.', error.message);
+          setUser(null);
+          return;
+        }
+
+        // data===null, error===null: genuine new user — safe to insert
+        console.warn('No profile row found for userId:', userId, '— inserting new row.');
         const { data: insertedRow } = await supabase.from('users').insert({
           id: userId, email: userEmail, full_name: '',
           enb_local_bal: 0, enb_global_bal: 0, rep_score: 0,
@@ -183,6 +208,9 @@ export default function App() {
       // If we cannot read the profile, the safest action is null (triggers re-login).
       console.error('Profile load exception:', err);
       setUser(null);
+    } finally {
+      // ── Always release the race guard so future genuine re-logins work ────
+      isLoadingProfile.current = false;
     }
   };
 
