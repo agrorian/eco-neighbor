@@ -246,29 +246,29 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
-        // ── Guard against Supabase internal session rotation ─────────────
-        // USER_UPDATED (from last_seen PATCH) causes Supabase to rotate the
-        // session internally, briefly firing SIGNED_OUT then SIGNED_IN.
-        // Only wipe the store if there is genuinely no session recoverable.
-        // Wait 1 second to see if a SIGNED_IN follows immediately.
+        console.warn('[ENB AUTH] SIGNED_OUT fired — checking if genuine');
         setTimeout(() => {
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (!session) {
-              // Genuinely signed out — no session recoverable
+              console.warn('[ENB AUTH] SIGNED_OUT confirmed genuine — wiping store');
               setUser(null);
+            } else {
+              console.warn('[ENB AUTH] SIGNED_OUT was internal rotation — session preserved, store kept');
             }
-            // If session exists, Supabase rotated internally — keep store intact
           });
         }, 1000);
         return;
       }
       // Handle token refresh and sign-in events
       // ── ENB DOCTRINE: Always verify the refreshed session matches current user ─
+      // Log every auth event for debugging
+      console.log('[ENB AUTH EVENT]', event, 'userId:', session?.user?.id?.substring(0, 8));
+
       // ── USER_UPDATED fires every time sync_user_role_to_auth trigger runs ──
-      // That trigger fires on EVERY users table UPDATE (including last_seen).
-      // Supabase JS auto-updates the local session with auth user data on this event.
-      // We must ignore it — the store is already correct from loadUserProfile.
-      if (event === 'USER_UPDATED') return;
+      if (event === 'USER_UPDATED') {
+        console.log('[ENB AUTH] USER_UPDATED ignored');
+        return;
+      }
 
       if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session?.user) {
         const refreshedId = session.user.id;
