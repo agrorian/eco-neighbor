@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import { useState, useEffect, Suspense, lazy } from 'react';
+import { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { useUserStore } from '@/store/user';
 import Layout from '@/components/layout/Layout';
 import SplashScreen from '@/components/SplashScreen';
@@ -95,7 +95,7 @@ export default function App() {
   // Without this guard the second call hits the DB before the store is populated,
   // sees user=null in store, passes the guard, and triggers the phantom INSERT.
   // useRef keeps the flag stable across re-renders without causing re-renders.
-  const isLoadingProfile = useState({ current: false })[0];
+  const isLoadingProfile = useRef(false);
 
   // ── Helper: map a DB row to the store shape ────────────────────────────────
   const rowToUser = (row: any, fallbackEmail: string) => ({
@@ -154,11 +154,6 @@ export default function App() {
             }, (payload) => {
               // functional update preserves all store fields not in payload
               if (payload.new && payload.new.id) {
-                // DIAGNOSTIC: log if full_name looks wrong
-                if (payload.new.full_name && payload.new.full_name.includes('-') && payload.new.full_name.length === 36) {
-                  console.error('[ENB REALTIME] payload.new.full_name is a UUID — payload corrupted:', JSON.stringify(payload.new).substring(0, 300));
-                }
-                console.log('[ENB REALTIME] payload.new.full_name:', payload.new.full_name, 'id:', payload.new.id);
                 setUser((prev: any) => prev ? { ...prev, ...payload.new } : prev);
               }
             })
