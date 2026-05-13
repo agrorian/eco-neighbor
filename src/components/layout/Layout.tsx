@@ -15,24 +15,19 @@ export default function Layout({ children }: LayoutProps) {
 
   // ── Global last_seen updater — runs app-wide ──────────────────────────────
   useEffect(() => {
-    // ── ENB DOCTRINE: Guard user.id — never update with undefined ────────────
-    // Depend on user?.id not user — prevents re-running on every store update
     if (!user?.id) return;
-    const userId = user.id; // capture in closure so it never goes undefined mid-interval
+    const userId = user.id;
+    // ── Use RPC to bypass triggers that cause USER_UPDATED auth events ────────
+    // Direct table UPDATE fires on_users_updated trigger → Supabase fires
+    // USER_UPDATED → repeated SIGNED_IN events → phantom account appears.
+    // RPC with SECURITY DEFINER bypasses the trigger chain entirely.
+    // Interval: 5 minutes. No window.focus listener — that fired too frequently.
     const updateSeen = () => {
-      supabase
-        .from('users')
-        .update({ last_seen: new Date().toISOString() })
-        .eq('id', userId)
-        .then(() => {});
+      supabase.rpc('update_last_seen', { uid: userId }).then(() => {});
     };
     updateSeen();
-    const interval = setInterval(updateSeen, 30000);
-    window.addEventListener('focus', updateSeen);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', updateSeen);
-    };
+    const interval = setInterval(updateSeen, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [user?.id]);
 
   if (!user) return <>{children}</>;
