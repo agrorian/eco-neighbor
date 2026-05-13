@@ -273,10 +273,13 @@ export default function App() {
           return;
         }
 
-        // Different user in store vs refreshed token — phantom account prevention
-        console.warn('Session mismatch detected. Signing out to prevent phantom account.');
-        await supabase.auth.signOut();
-        setUser(null);
+        // Different user in store vs refreshed token.
+        // This is a LEGITIMATE account switch via AccountSwitcher.handleSwitch,
+        // which calls supabase.auth.setSession() — that fires SIGNED_IN with the
+        // new user's ID. We must load the new profile, not sign out.
+        // The old "sign out on mismatch" logic was too aggressive — it treated
+        // every legitimate account switch as a phantom account attack.
+        loadUserProfile(refreshedId, session.user.email ?? '');
       }
     });
 
