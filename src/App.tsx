@@ -262,7 +262,11 @@ export default function App() {
       // Handle token refresh and sign-in events
       // ── ENB DOCTRINE: Always verify the refreshed session matches current user ─
       // Log every auth event for debugging
-      console.log('[ENB AUTH EVENT]', event, 'userId:', session?.user?.id?.substring(0, 8));
+      console.log('[ENB AUTH EVENT]', event, 
+        'sessionId:', session?.user?.id?.substring(0, 8),
+        'storeId:', useUserStore.getState().user?.id?.substring(0, 8) || 'NULL',
+        'match:', session?.user?.id === useUserStore.getState().user?.id
+      );
 
       // ── USER_UPDATED fires every time sync_user_role_to_auth trigger runs ──
       if (event === 'USER_UPDATED') {
