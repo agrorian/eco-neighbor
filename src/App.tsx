@@ -1,10 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import { useState, useEffect, Suspense, lazy } from 'react';
+import { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { useUserStore } from '@/store/user';
 import Layout from '@/components/layout/Layout';
 import SplashScreen from '@/components/SplashScreen';
 import { supabase } from '@/lib/supabase';
+import ConfirmRide from '@/pages/submit/ConfirmRide';
+import RiderProfile from '@/pages/submit/RiderProfile';
+import AdminCaptains from '@/pages/submit/AdminCaptains';
 
 // --- Eagerly loaded (core pages, always needed) ---
 import Dashboard from '@/pages/Dashboard';
@@ -42,7 +45,7 @@ import OrgStructurePage from '@/pages/admin/org/OrgStructurePage';
 import Inbox from '@/pages/Inbox';
 import MessagesPage from '@/pages/Messages';
 
-// --- Lazily loaded (newer pages, role-gated) ---
+// --- Lazily loaded ---
 const FounderSale = lazy(() => import('@/pages/FounderSale'));
 const FounderHardship = lazy(() => import('@/pages/FounderHardship'));
 const PartnerFloat = lazy(() => import('@/pages/PartnerFloat'));
@@ -75,7 +78,6 @@ import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
 import TermsAndConditions from '@/pages/legal/TermsAndConditions';
 import TokenDisclaimer from '@/pages/legal/TokenDisclaimer';
 
-// Fallback spinner for lazy-loaded pages
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
     <div className="w-8 h-8 border-4 border-enb-green border-t-transparent rounded-full animate-spin" />
@@ -86,78 +88,108 @@ export default function App() {
   const { user, setUser } = useUserStore();
   const [showSplash, setShowSplash] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  // Race guard: prevents getSession() and onAuthStateChange from both
+  // calling loadUserProfile simultaneously on hard refresh.
+  const isLoadingProfile = useRef(false);
+
+  const rowToUser = (data: any, fallbackEmail: string) => ({
+    id: data.id,
+    email: data.email || fallbackEmail,
+    full_name: data.full_name || '',
+    neighbourhood: data.neighbourhood || '',
+    city: data.city || undefined,
+    country_code: data.country_code || undefined,
+    profession: data.profession || '',
+    enb_local_bal: Number(data.enb_local_bal) || 0,
+    enb_global_bal: Number(data.enb_global_bal) || 0,
+    rep_score: Number(data.rep_score) || 0,
+    tier: data.tier || 'Newcomer',
+    role: data.role || 'member',
+    wallet_address: data.wallet_address || undefined,
+    whatsapp_number: data.whatsapp_number || undefined,
+    profile_pic_url: data.profile_pic_url || undefined,
+    lifetime_earned: Number(data.lifetime_earned) || 0,
+    referred_by: data.referred_by || undefined,
+    referral_code: data.referral_code || undefined,
+    consecutive_absences: Number(data.consecutive_absences) || 0,
+    cnic_number: data.cnic_number || undefined,
+    cnic_photo_url: data.cnic_photo_url || undefined,
+    cnic_verified: data.cnic_verified === true,
+    cnic_submitted_at: data.cnic_submitted_at || undefined,
+  });
+
+  const subscribeRealtime = (userId: string) => {
+    supabase
+      .channel(`global-user-sync-${userId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'users',
+        filter: `id=eq.${userId}`,
+      }, (payload) => {
+        if (payload.new?.id) {
+          setUser((prev: any) => prev ? { ...prev, ...payload.new } : prev);
+        }
+      })
+      .subscribe();
+  };
 
   const loadUserProfile = async (userId: string, userEmail: string) => {
+    if (!userId || userId === 'undefined') return;
+    if (isLoadingProfile.current) return;
+    isLoadingProfile.current = true;
     try {
+      // FIX 1: Use maybeSingle() not single().
+      // .single() throws PGRST116 on 0 rows, which the original code treated as
+      // "new user" and ran INSERT with full_name:''. That created the blank row
+      // that showed as phantom U.
+      // .maybeSingle() returns {data:null, error:null} on 0 rows — distinguishable
+      // from a real error {data:null, error:non-null}.
       const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
+        .from('users').select('*').eq('id', userId).maybeSingle();
 
       if (data) {
-        setUser({
-          id: data.id,
-          email: data.email || userEmail,
-          full_name: data.full_name || '',
-          neighbourhood: data.neighbourhood || '',
-          profession: data.profession || '',
-          enb_local_bal: Number(data.enb_local_bal) || 0,
-          enb_global_bal: Number(data.enb_global_bal) || 0,
-          rep_score: Number(data.rep_score) || 0,
-          tier: data.tier || 'Newcomer',
-          role: data.role || 'member',
-          wallet_address: data.wallet_address || undefined,
-          whatsapp_number: data.whatsapp_number || undefined,
-          profile_pic_url: data.profile_pic_url || undefined,
-          lifetime_earned: Number(data.lifetime_earned) || 0,
-          referred_by: data.referred_by || undefined,
-          referral_code: data.referral_code || undefined,
-          consecutive_absences: Number(data.consecutive_absences) || 0,
-          cnic_number: data.cnic_number || undefined,
-          cnic_photo_url: data.cnic_photo_url || undefined,
-          cnic_verified: data.cnic_verified === true,
-          cnic_submitted_at: data.cnic_submitted_at || undefined,
-        });
-      } else {
-        // Profile row missing — this is a genuine new user (no existing data).
-        // SAFE INSERT ONLY: never overwrite an existing row's balance or role.
-        // If the row already exists (RLS blocked the read), the insert is ignored.
-        console.warn('No profile row found. Attempting safe insert. RLS error:', error?.message);
-        const { data: insertedRow } = await supabase.from('users').insert({
-          id: userId, email: userEmail, full_name: '',
-          enb_local_bal: 0, enb_global_bal: 0, rep_score: 0,
-          tier: 'Newcomer', role: 'member', is_active: true,
-        }).select().single();
+        setUser(rowToUser(data, userEmail));
+        subscribeRealtime(data.id);
+        return;
+      }
 
-        // If insert succeeded, use the new row. If it failed (row already exists,
-        // RLS blocked), retry the read — the JWT may have refreshed.
-        if (insertedRow) {
-          setUser({
-            id: insertedRow.id, email: insertedRow.email || userEmail,
-            full_name: insertedRow.full_name || '',
-            neighbourhood: insertedRow.neighbourhood || '',
-            profession: insertedRow.profession || '',
-            enb_local_bal: Number(insertedRow.enb_local_bal) || 0,
-            enb_global_bal: Number(insertedRow.enb_global_bal) || 0,
-            rep_score: Number(insertedRow.rep_score) || 0,
-            tier: insertedRow.tier || 'Newcomer',
-            role: insertedRow.role || 'member',
-            lifetime_earned: Number(insertedRow.lifetime_earned) || 0,
-            referral_code: insertedRow.referral_code || undefined,
-          });
-        } else {
-          // Row exists but RLS blocked both the read and the insert.
-          // Do NOT set zeros — show an auth error state instead.
-          console.error('Profile load blocked by RLS. JWT role may be stale. User must re-login.');
-          setUser(null);
+      if (error) {
+        // RLS or network error — JWT may not be attached yet.
+        // FIX 2: NEVER setUser(null) on error. Leave store untouched and retry.
+        console.warn('[ENB] Profile read error, retrying in 800ms:', error.message);
+        await new Promise(r => setTimeout(r, 800));
+        const { data: retryData } = await supabase
+          .from('users').select('*').eq('id', userId).maybeSingle();
+        if (retryData) {
+          setUser(rowToUser(retryData, userEmail));
+          subscribeRealtime(retryData.id);
+        }
+        // Retry failed: leave store untouched. Next TOKEN_REFRESHED will retry.
+        return;
+      }
+
+      // data===null AND error===null: JWT race — request fired before auth headers
+      // attached, RLS saw anonymous user, returned 0 rows silently.
+      // FIX 3: NEVER INSERT here. The row exists — we just can't read it yet.
+      // Retry with backoff until JWT settles.
+      console.warn('[ENB] 0 rows — JWT race. Retrying with backoff...');
+      for (const delay of [500, 1500, 3000]) {
+        await new Promise(r => setTimeout(r, delay));
+        const { data: retryData } = await supabase
+          .from('users').select('*').eq('id', userId).maybeSingle();
+        if (retryData) {
+          setUser(rowToUser(retryData, userEmail));
+          subscribeRealtime(retryData.id);
+          return;
         }
       }
+      // All retries failed. Store left untouched. Never INSERT, never setUser(null).
+      console.error('[ENB] All retries failed. Store unchanged.');
+
     } catch (err) {
-      // Catch block: never set zeros on an existing user.
-      // If we cannot read the profile, the safest action is null (triggers re-login).
-      console.error('Profile load exception:', err);
-      setUser(null);
+      // FIX 4: NEVER setUser(null) in catch. Leave store untouched.
+      console.error('[ENB] Profile load exception — store unchanged:', err);
+    } finally {
+      isLoadingProfile.current = false;
     }
   };
 
@@ -174,7 +206,25 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') setUser(null);
+      // FIX 5: Handle SIGNED_IN and TOKEN_REFRESHED — not just SIGNED_OUT.
+      // Original code only handled SIGNED_OUT, so token refreshes and account
+      // switches never recovered a blank store.
+
+      // SIGNED_OUT: ignore Supabase-fired events (tab switch, rotation).
+      // Explicit logout is handled by AccountSwitcher/More.tsx via logout() directly.
+      if (event === 'SIGNED_OUT') return;
+      // USER_UPDATED fires on every users table UPDATE — ignore to prevent loops.
+      if (event === 'USER_UPDATED') return;
+
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        const refreshedId = session.user.id;
+        if (!refreshedId) return;
+        const currentUserId = useUserStore.getState().user?.id;
+        // Same user, token silently refreshed — store is correct, do nothing.
+        if (currentUserId && currentUserId === refreshedId) return;
+        // No user in store, or different user (account switch) — load profile.
+        loadUserProfile(refreshedId, session.user.email ?? '');
+      }
     });
 
     const authTimeout = setTimeout(() => setAuthChecked(true), 4000);
@@ -201,13 +251,13 @@ export default function App() {
     <Router>
       <div className="font-sans text-enb-text-primary selection:bg-enb-green/20">
         <Routes>
-          {/* Signup routes — always available (even when logged in) */}
           <Route path="/signup/step1" element={<SignUpStep1 />} />
           <Route path="/signup/step2" element={<SignUpStep2 />} />
           <Route path="/otp-verify" element={<OTPVerification />} />
           <Route path="/about" element={<About />} />
           <Route path="/dev-history" element={<VersionHistory />} />
           <Route path="/account-recovery" element={<AccountRecovery />} />
+          <Route path="/confirm-ride/:token" element={<ConfirmRide />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/token-disclaimer" element={<TokenDisclaimer />} />
@@ -227,6 +277,7 @@ export default function App() {
                 <Route path="onboarding" element={<AdminOnboarding />} />
                 <Route path="announcements" element={<AnnouncementsPage />} />
                 <Route path="org-structure" element={<OrgStructurePage />} />
+                <Route path="captains" element={<AdminCaptains />} />
               </Route>
               <Route path="/*" element={
                 <Layout>
@@ -254,6 +305,7 @@ export default function App() {
                       <Route path="/history" element={<MyHistory />} />
                       <Route path="/submission/:id" element={<SubmissionDetail />} />
                       <Route path="/issues" element={<CommunityIssues />} />
+                      <Route path="/rider/:userId" element={<RiderProfile />} />
                       <Route path="/glossary" element={<Glossary />} />
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/bug-report" element={<BugReport />} />
