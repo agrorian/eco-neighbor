@@ -140,6 +140,13 @@ export default function App() {
       const { data, error } = await supabase
         .from('users').select('*').eq('id', userId).maybeSingle();
 
+      // ── DIAGNOSTIC ────────────────────────────────────────────────────────
+      console.log('[ENB] loadUserProfile userId:', userId);
+      console.log('[ENB] loadUserProfile full_name:', data?.full_name ?? 'NO DATA');
+      console.log('[ENB] loadUserProfile error:', error?.message ?? 'none');
+      console.log('[ENB] loadUserProfile path:', data ? 'HAPPY' : error ? 'ERROR-RETRY' : 'INSERT');
+      // ─────────────────────────────────────────────────────────────────────
+
       if (data) {
         // ── Happy path: row found, populate store ─────────────────────────
         setUser(rowToUser(data, userEmail));
