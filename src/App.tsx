@@ -126,7 +126,14 @@ export default function App() {
         filter: `id=eq.${userId}`,
       }, (payload) => {
         if (payload.new?.id) {
-          setUser((prev: any) => prev ? { ...prev, ...payload.new } : prev);
+          // Strip null/undefined values from payload.new before merging.
+          // With DEFAULT replica identity, unchanged columns come back as null
+          // and would overwrite correct store values (e.g. full_name → null → U).
+          // With FULL replica identity this is less critical but still safer.
+          const safePayload = Object.fromEntries(
+            Object.entries(payload.new).filter(([, v]) => v !== null && v !== undefined)
+          );
+          setUser((prev: any) => prev ? { ...prev, ...safePayload } : prev);
         }
       })
       .subscribe();
