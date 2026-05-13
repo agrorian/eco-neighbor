@@ -84,9 +84,6 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
   // Save current session whenever it changes — always use fresh DB data, never stale store snapshot
   useEffect(() => {
     // ── ENB DOCTRINE: Never save incomplete sessions ──────────────────────
-    // Guard every field — saving undefined state corrupts the saved accounts list
-  useEffect(() => {
-    // ── ENB DOCTRINE: Never save incomplete sessions ──────────────────────
     // Guard every field — saving undefined or blank state corrupts saved accounts.
     // full_name must be non-empty — blank full_name = loadUserProfile not done yet.
     if (!user || !user.id || !user.email || !user.full_name) return;
