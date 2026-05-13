@@ -556,9 +556,9 @@ export default function MyLog() {
   const [loading, setLoading] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  if (!user || !ALLOWED_ROLES.includes(user.role)) return <Navigate to="/" replace />;
-
   useEffect(() => { fetchLogs(); }, []);
+
+  if (!user || !ALLOWED_ROLES.includes(user.role)) return <Navigate to="/" replace />;
 
   const fetchLogs = async () => {
     setLoading(true);
