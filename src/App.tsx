@@ -97,57 +97,54 @@ export default function App() {
   // useRef keeps the flag stable across re-renders without causing re-renders.
   const isLoadingProfile = useState({ current: false })[0];
 
+  // ── Helper: map a DB row to the store shape ────────────────────────────────
+  const rowToUser = (row: any, fallbackEmail: string) => ({
+    id: row.id,
+    email: row.email || fallbackEmail,
+    full_name: row.full_name || '',
+    neighbourhood: row.neighbourhood || '',
+    city: row.city || undefined,
+    country_code: row.country_code || undefined,
+    profession: row.profession || '',
+    enb_local_bal: Number(row.enb_local_bal) || 0,
+    enb_global_bal: Number(row.enb_global_bal) || 0,
+    rep_score: Number(row.rep_score) || 0,
+    tier: row.tier || 'Newcomer',
+    role: row.role || 'member',
+    wallet_address: row.wallet_address || undefined,
+    whatsapp_number: row.whatsapp_number || undefined,
+    profile_pic_url: row.profile_pic_url || undefined,
+    lifetime_earned: Number(row.lifetime_earned) || 0,
+    referred_by: row.referred_by || undefined,
+    referral_code: row.referral_code || undefined,
+    consecutive_absences: Number(row.consecutive_absences) || 0,
+    cnic_number: row.cnic_number || undefined,
+    cnic_photo_url: row.cnic_photo_url || undefined,
+    cnic_verified: row.cnic_verified === true,
+    cnic_submitted_at: row.cnic_submitted_at || undefined,
+  });
+
   const loadUserProfile = async (userId: string, userEmail: string) => {
-    // ── ENB DOCTRINE: Hard guard — never load with undefined/empty userId ─
+    // ── Hard guard — never load with undefined/empty userId ───────────────
     if (!userId || userId === 'undefined') return;
     // ── Race guard — only one profile load in flight at a time ──────────────
+    // Prevents getSession() and onAuthStateChange(SIGNED_IN) from both firing
+    // loadUserProfile simultaneously on hard refresh, which caused the phantom.
     if (isLoadingProfile.current) return;
     isLoadingProfile.current = true;
     try {
-      // ── maybeSingle() not single() ────────────────────────────────────────
-      // .single() treats 0 rows as PGRST116 error — identical to an RLS block.
-      // .maybeSingle() returns {data:null, error:null} for genuine 0 rows, and
-      // {data:null, error:<msg>} for RLS/network failures.
-      // CRITICAL RULE: never INSERT when error is set — that means RLS blocked
-      // the read, NOT that the row is missing. Inserting on RLS block creates
-      // the phantom blank account seen in AccountSwitcher.
+      // ── Attempt 1: read the existing profile row ──────────────────────────
+      // maybeSingle(): {data, error:null} on success, {null, error} on RLS/network,
+      // {null, null} on genuine 0 rows. Never use .single() — it can't distinguish
+      // RLS block from missing row, which caused phantom INSERTs.
       const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+        .from('users').select('*').eq('id', userId).maybeSingle();
 
       if (data) {
-        setUser({
-          id: data.id,
-          email: data.email || userEmail,
-          full_name: data.full_name || '',
-          neighbourhood: data.neighbourhood || '',
-          city: data.city || undefined,
-          country_code: data.country_code || undefined,
-          profession: data.profession || '',
-          enb_local_bal: Number(data.enb_local_bal) || 0,
-          enb_global_bal: Number(data.enb_global_bal) || 0,
-          rep_score: Number(data.rep_score) || 0,
-          tier: data.tier || 'Newcomer',
-          role: data.role || 'member',
-          wallet_address: data.wallet_address || undefined,
-          whatsapp_number: data.whatsapp_number || undefined,
-          profile_pic_url: data.profile_pic_url || undefined,
-          lifetime_earned: Number(data.lifetime_earned) || 0,
-          referred_by: data.referred_by || undefined,
-          referral_code: data.referral_code || undefined,
-          consecutive_absences: Number(data.consecutive_absences) || 0,
-          cnic_number: data.cnic_number || undefined,
-          cnic_photo_url: data.cnic_photo_url || undefined,
-          cnic_verified: data.cnic_verified === true,
-          cnic_submitted_at: data.cnic_submitted_at || undefined,
-        });
+        // ── Happy path: row found, populate store ─────────────────────────
+        setUser(rowToUser(data, userEmail));
 
-        // ── ENB DOCTRINE: Global realtime sync ────────────────────────────────
-        // One subscription here keeps the entire app in sync.
-        // Every component reads from the store — none need their own user subscriptions.
-        // Guard: never subscribe with undefined id — causes cascade 400 errors
+        // ── ENB DOCTRINE: One global realtime subscription, set up once ───
         if (data.id) {
           supabase
             .channel(`global-user-sync-${data.id}`)
@@ -155,61 +152,82 @@ export default function App() {
               event: 'UPDATE', schema: 'public', table: 'users',
               filter: `id=eq.${data.id}`,
             }, (payload) => {
+              // functional update preserves all store fields not in payload
               if (payload.new && payload.new.id) {
                 setUser((prev: any) => prev ? { ...prev, ...payload.new } : prev);
               }
             })
             .subscribe();
         }
-      } else {
-        // ── NEVER INSERT on error — that means RLS blocked the read ──────────
-        // Only insert when data===null AND error===null (genuine 0 rows = new user).
-        // If error is set, the row exists but JWT/RLS blocked the read.
-        // Inserting here is what creates the phantom blank account.
-        if (error) {
-          console.error('Profile read blocked — RLS or network error. JWT may be stale. User must re-login.', error.message);
-          setUser(null);
-          return;
-        }
+        return; // done — never fall through
+      }
 
-        // data===null, error===null: genuine new user — safe to insert
-        console.warn('No profile row found for userId:', userId, '— inserting new row.');
-        const { data: insertedRow } = await supabase.from('users').insert({
+      if (error) {
+        // ── RLS or network blocked the read — JWT not ready yet ──────────
+        // This happens on hard refresh when getSession() fires before the
+        // Supabase client has fully initialised auth headers.
+        // NEVER INSERT on error — the row exists, we just can't read it yet.
+        // NEVER setUser(null) — that wipes the store and causes the phantom flicker.
+        // Retry once after a short delay to let the JWT settle.
+        console.warn('Profile read blocked (RLS/network) — retrying in 800ms.', error.message);
+        await new Promise(r => setTimeout(r, 800));
+        const { data: retryData } = await supabase
+          .from('users').select('*').eq('id', userId).maybeSingle();
+        if (retryData) {
+          setUser(rowToUser(retryData, userEmail));
+          if (retryData.id) {
+            supabase
+              .channel(`global-user-sync-${retryData.id}`)
+              .on('postgres_changes', {
+                event: 'UPDATE', schema: 'public', table: 'users',
+                filter: `id=eq.${retryData.id}`,
+              }, (payload) => {
+                if (payload.new && payload.new.id) {
+                  setUser((prev: any) => prev ? { ...prev, ...payload.new } : prev);
+                }
+              })
+              .subscribe();
+          }
+        } else {
+          // Retry also failed — do NOT wipe the store. Leave it as-is and
+          // let onAuthStateChange handle recovery when the token refreshes.
+          console.error('Profile retry also failed. Leaving store untouched — will recover on next token refresh.');
+        }
+        return;
+      }
+
+      // ── data===null, error===null: genuine new user — safe to INSERT ──────
+      // This path ONLY runs when there is truly no row for this userId.
+      // It will never run for Muhammad Faisal whose row exists in public.users.
+      console.warn('No profile row found for userId:', userId, '— creating new member row.');
+      const { data: insertedRow, error: insertError } = await supabase
+        .from('users').insert({
           id: userId, email: userEmail, full_name: '',
           enb_local_bal: 0, enb_global_bal: 0, rep_score: 0,
           tier: 'Newcomer', role: 'member', is_active: true,
         }).select().single();
 
-        // If insert succeeded, use the new row. If it failed (row already exists,
-        // RLS blocked), retry the read — the JWT may have refreshed.
-        if (insertedRow) {
-          setUser({
-            id: insertedRow.id, email: insertedRow.email || userEmail,
-            full_name: insertedRow.full_name || '',
-            neighbourhood: insertedRow.neighbourhood || '',
-            profession: insertedRow.profession || '',
-            enb_local_bal: Number(insertedRow.enb_local_bal) || 0,
-            enb_global_bal: Number(insertedRow.enb_global_bal) || 0,
-            rep_score: Number(insertedRow.rep_score) || 0,
-            tier: insertedRow.tier || 'Newcomer',
-            role: insertedRow.role || 'member',
-            lifetime_earned: Number(insertedRow.lifetime_earned) || 0,
-            referral_code: insertedRow.referral_code || undefined,
-          });
-        } else {
-          // Row exists but RLS blocked both the read and the insert.
-          // Do NOT set zeros — show an auth error state instead.
-          console.error('Profile load blocked by RLS. JWT role may be stale. User must re-login.');
-          setUser(null);
+      if (insertedRow) {
+        setUser(rowToUser(insertedRow, userEmail));
+      } else if (insertError) {
+        // INSERT failed — most likely a duplicate key, meaning the row DOES exist
+        // but RLS blocked the read AND the insert. Retry the read.
+        console.warn('INSERT failed (likely duplicate) — retrying read.', insertError.message);
+        await new Promise(r => setTimeout(r, 500));
+        const { data: fallbackRead } = await supabase
+          .from('users').select('*').eq('id', userId).maybeSingle();
+        if (fallbackRead) {
+          setUser(rowToUser(fallbackRead, userEmail));
         }
+        // If fallbackRead also fails — leave store untouched. Never setUser(null).
       }
     } catch (err) {
-      // Catch block: never set zeros on an existing user.
-      // If we cannot read the profile, the safest action is null (triggers re-login).
-      console.error('Profile load exception:', err);
-      setUser(null);
+      // ── NEVER setUser(null) in catch ─────────────────────────────────────
+      // Wiping the store causes the phantom flicker. If the profile load fails,
+      // the store retains whatever it had (possibly null on first load — that's
+      // fine, the user sees a loading state, not a phantom account).
+      console.error('Profile load exception — store left untouched:', err);
     } finally {
-      // ── Always release the race guard so future genuine re-logins work ────
       isLoadingProfile.current = false;
     }
   };
