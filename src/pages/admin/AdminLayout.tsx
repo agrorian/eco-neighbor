@@ -34,7 +34,11 @@ export default function AdminLayout() {
     setIsAdmin(checkSuperAdmin(user.role));
   }, [user?.id, user?.role]);
 
-  if (isAdmin === null) {
+  // ── Never redirect while user is loading or store is temporarily null ──────
+  // If user is null, it means the store is mid-update (token refresh cycle).
+  // Redirecting here wipes the page and causes a full reload → phantom account.
+  // Only show spinner while isAdmin is still being calculated.
+  if (isAdmin === null || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-enb-green" />
@@ -42,7 +46,7 @@ export default function AdminLayout() {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
 
