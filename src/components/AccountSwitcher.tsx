@@ -85,18 +85,24 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
   useEffect(() => {
     // ── ENB DOCTRINE: Never save incomplete sessions ──────────────────────
     // Guard every field — saving undefined state corrupts the saved accounts list
-    if (!user || !user.id || !user.email) return;
+  useEffect(() => {
+    // ── ENB DOCTRINE: Never save incomplete sessions ──────────────────────
+    // Guard every field — saving undefined or blank state corrupts saved accounts.
+    // full_name must be non-empty — blank full_name = loadUserProfile not done yet.
+    if (!user || !user.id || !user.email || !user.full_name) return;
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session || !data.session.user?.id) return;
       // Verify session user matches store user — prevent cross-account contamination
       if (data.session.user.id !== user.id) return;
+      // Verify session email matches store email — guards against phantom state
+      if (data.session.user.email !== user.email) return;
       const { data: freshProfile } = await supabase
         .from('users')
         .select('full_name, role, profile_pic_url')
         .eq('id', user.id)
         .single();
-      // Only save if we got a valid profile back
-      if (!freshProfile) return;
+      // Only save if we got a valid profile with a real name back
+      if (!freshProfile || !freshProfile.full_name) return;
       const merged = { ...user, ...freshProfile };
       saveCurrentSession(merged, data.session);
     });
