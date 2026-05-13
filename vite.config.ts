@@ -11,8 +11,16 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       VitePWA({
+        // ── SERVICE WORKER DISABLED ───────────────────────────────────────────
+        // The service worker was intercepting JS chunk requests and returning
+        // stale cached bundles (text/html fallback) instead of the updated JS.
+        // This caused every App.tsx deployment to have zero effect in the browser
+        // and was the root cause of the phantom U account persisting across 25+
+        // deployments. The SW is disabled until a proper cache invalidation
+        // strategy is implemented post-mainnet.
+        // To re-enable: change to registerType: 'autoUpdate' and restore workbox config.
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
+        injectRegister: null,  // null = do not inject SW registration script
         manifest: {
           name: 'Eco-Neighbor',
           short_name: 'ENB',
@@ -41,47 +49,8 @@ export default defineConfig(({ mode }) => {
           ]
         },
         workbox: {
-          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-          // ── JS chunks excluded from precache ─────────────────────────────
-          // Previously '**/*.{js,css,html,ico,png,svg}' caused Workbox to
-          // precache every JS chunk. On each new deployment the old chunks
-          // stayed in the service worker cache and were served alongside new
-          // ones — producing split-brain behaviour where old broken auth code
-          // ran in parallel with new fixes (the phantom account root cause).
-          // JS files are intentionally excluded here and handled via
-          // NetworkFirst runtime caching below instead.
-          globPatterns: ['**/*.{css,html,ico,png,svg}'],
-          runtimeCaching: [
-            {
-              // JS chunks — always try network first, never serve stale versions.
-              // Falls back to cache only if network fails within 10 seconds.
-              urlPattern: /\/assets\/.*\.js$/,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'js-chunks',
-                networkTimeoutSeconds: 10,
-                cacheableResponse: { statuses: [200] }
-              }
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                cacheableResponse: { statuses: [0, 200] }
-              }
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'gstatic-fonts-cache',
-                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                cacheableResponse: { statuses: [0, 200] }
-              }
-            }
-          ]
+          // Empty workbox config — SW disabled via injectRegister: null
+          globPatterns: [],
         }
       })
     ],
