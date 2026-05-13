@@ -4,8 +4,6 @@ export type UserRole = 'member' | 'business' | 'admin' | 'moderator' | 'organise
 export type UserTier = 'Newcomer' | 'Helper' | 'Guardian' | 'Pillar' | 'Founder';
 
 // ── ENB DOCTRINE: Single source of truth for tier thresholds ─────────────────
-// These numbers are canonical. Never redefine them in any other file.
-// Import TIER_NEXT_THRESHOLD from here wherever a progress bar or tier check is needed.
 export function getTier(repScore: number): UserTier {
   if (repScore >= 100000) return 'Founder';
   if (repScore >= 50000)  return 'Pillar';
@@ -14,18 +12,15 @@ export function getTier(repScore: number): UserTier {
   return 'Newcomer';
 }
 
-// How many Rep points to reach the NEXT tier from the current one.
-// Used for progress bars. Founder is the ceiling — no next tier.
 export const TIER_NEXT_THRESHOLD: Record<UserTier, number> = {
   Newcomer: 5000,
   Helper:   20000,
   Guardian: 50000,
   Pillar:   100000,
-  Founder:  100000, // ceiling — progress bar shows 100%
+  Founder:  100000,
 };
 
 // ── Single source of truth for isSuperAdmin check ────────────────────────────
-// Never inline-check role strings. Import and call this function everywhere.
 export function isSuperAdmin(role?: string | null): boolean {
   return role === 'admin' || role === 'super_admin';
 }
@@ -56,12 +51,31 @@ interface UserState {
     cnic_submitted_at?: string;
     country_code?: string;
   } | null;
-  setUser: (user: UserState['user']) => void;
+  setUser: (user: UserState['user'] | ((prev: UserState['user']) => UserState['user'])) => void;
   logout: () => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
   user: null,
-  setUser: (user) => set({ user }),
+  setUser: (userOrUpdater) => {
+    if (typeof userOrUpdater === 'function') {
+      set((state) => ({ user: userOrUpdater(state.user) }));
+    } else {
+      // ── Phantom guard: never write a user object with empty full_name ──────
+      // If full_name is blank but we already have a correct name in the store,
+      // keep the existing name. This prevents realtime payload nulls from
+      // wiping a correctly loaded full_name and showing the phantom U avatar.
+      if (userOrUpdater && !userOrUpdater.full_name) {
+        console.trace('[ENB] setUser called with empty full_name — check caller', userOrUpdater);
+        set((state) => ({
+          user: state.user
+            ? { ...userOrUpdater, full_name: state.user.full_name || userOrUpdater.full_name }
+            : userOrUpdater,
+        }));
+      } else {
+        set({ user: userOrUpdater });
+      }
+    }
+  },
   logout: () => set({ user: null }),
 }));
