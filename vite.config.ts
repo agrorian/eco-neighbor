@@ -42,8 +42,27 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-          globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+          // ── JS chunks excluded from precache ─────────────────────────────
+          // Previously '**/*.{js,css,html,ico,png,svg}' caused Workbox to
+          // precache every JS chunk. On each new deployment the old chunks
+          // stayed in the service worker cache and were served alongside new
+          // ones — producing split-brain behaviour where old broken auth code
+          // ran in parallel with new fixes (the phantom account root cause).
+          // JS files are intentionally excluded here and handled via
+          // NetworkFirst runtime caching below instead.
+          globPatterns: ['**/*.{css,html,ico,png,svg}'],
           runtimeCaching: [
+            {
+              // JS chunks — always try network first, never serve stale versions.
+              // Falls back to cache only if network fails within 10 seconds.
+              urlPattern: /\/assets\/.*\.js$/,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'js-chunks',
+                networkTimeoutSeconds: 10,
+                cacheableResponse: { statuses: [200] }
+              }
+            },
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
               handler: 'CacheFirst',
