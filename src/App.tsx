@@ -1,13 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { useUserStore } from '@/store/user';
 import Layout from '@/components/layout/Layout';
 import SplashScreen from '@/components/SplashScreen';
 import { supabase } from '@/lib/supabase';
-import ConfirmRide from '@/pages/submit/ConfirmRide';
-import RiderProfile from '@/pages/submit/RiderProfile';
-import AdminCaptains from '@/pages/submit/AdminCaptains';
 
 // --- Eagerly loaded (core pages, always needed) ---
 import Dashboard from '@/pages/Dashboard';
@@ -89,181 +86,78 @@ export default function App() {
   const { user, setUser } = useUserStore();
   const [showSplash, setShowSplash] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-  // ── Tracks whether a Supabase session exists in localStorage ──────────────
-  // Used to show a loading spinner instead of the Welcome page during the
-  // 50-200ms window between authChecked=true and the store being populated.
-  // Without this: user=null briefly → Welcome page flashes → jarring redirect.
-  const [sessionExists, setSessionExists] = useState(false);
-
-  // ── ENB DOCTRINE: Race guard — one profile load in flight at a time ───────
-  const isLoadingProfile = useRef(false);
-
-  // ── FIX #1: Store the realtime channel ref so it can be cleaned up ────────
-  // Root cause: previously the channel was created inside loadUserProfile with
-  // no reference stored. Every call to loadUserProfile created a NEW channel
-  // (same name, duplicate subscription). Channels accumulated and never cleaned
-  // up, causing multiple conflicting setUser calls on every users table UPDATE.
-  // Fix: store in a ref, check before creating, clean up on useEffect unmount.
-  const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-
-  // ── Helper: map a DB row to the store shape ────────────────────────────────
-  const rowToUser = (row: any, fallbackEmail: string) => ({
-    id: row.id,
-    email: row.email || fallbackEmail,
-    full_name: row.full_name || '',
-    neighbourhood: row.neighbourhood || '',
-    city: row.city || undefined,
-    country_code: row.country_code || undefined,
-    profession: row.profession || '',
-    enb_local_bal: Number(row.enb_local_bal) || 0,
-    enb_global_bal: Number(row.enb_global_bal) || 0,
-    rep_score: Number(row.rep_score) || 0,
-    tier: row.tier || 'Newcomer',
-    role: row.role || 'member',
-    wallet_address: row.wallet_address || undefined,
-    whatsapp_number: row.whatsapp_number || undefined,
-    profile_pic_url: row.profile_pic_url || undefined,
-    lifetime_earned: Number(row.lifetime_earned) || 0,
-    referred_by: row.referred_by || undefined,
-    referral_code: row.referral_code || undefined,
-    consecutive_absences: Number(row.consecutive_absences) || 0,
-    cnic_number: row.cnic_number || undefined,
-    cnic_photo_url: row.cnic_photo_url || undefined,
-    cnic_verified: row.cnic_verified === true,
-    cnic_submitted_at: row.cnic_submitted_at || undefined,
-  });
-
-  // ── FIX #2: Subscribe realtime ONCE, outside loadUserProfile ─────────────
-  // Root cause: channel was created inside loadUserProfile. Every successful
-  // profile load created a duplicate channel. Now: one channel, set up once,
-  // stored in realtimeChannelRef, properly cleaned up on unmount.
-  const subscribeRealtime = (userId: string) => {
-    // Already subscribed for this user — do not create a duplicate
-    if (realtimeChannelRef.current) return;
-
-    const ch = supabase
-      .channel(`global-user-sync-${userId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'users',
-        filter: `id=eq.${userId}`,
-      }, (payload) => {
-        if (payload.new && payload.new.id) {
-          setUser((prev: any) => prev ? { ...prev, ...payload.new } : prev);
-        }
-      })
-      .subscribe();
-
-    realtimeChannelRef.current = ch;
-  };
 
   const loadUserProfile = async (userId: string, userEmail: string) => {
-    if (!userId || userId === 'undefined') return;
-    if (isLoadingProfile.current) return;
-    isLoadingProfile.current = true;
-
     try {
-      // ── FIX #3: Use supabase.auth.getUser() FIRST to guarantee a valid JWT ──
-      // Root cause: maybeSingle() was fired immediately after getSession(). On
-      // page load, getSession() reads the JWT from localStorage. If the JWT is
-      // expired, PostgREST evaluates the request as anonymous → RLS fails silently
-      // → {data:null, error:null} → INSERT ghost row → store gets blank user.
-      //
-      // supabase.auth.getUser() contacts the Supabase Auth server directly. It:
-      //   (a) validates the JWT,
-      //   (b) refreshes it if expired before returning,
-      //   (c) returns the real authenticated user or an error.
-      // This guarantees the JWT is fresh before we hit the DB.
-      // Cost: one extra network call on page load. Worth it — eliminates the race.
-      // getUser() validates the JWT server-side and refreshes it if expired.
-      // If it returns 403/error, attempt one token refresh before giving up.
-      let { data: authData, error: authError } = await supabase.auth.getUser();
-
-      if (authError || !authData?.user) {
-        // Token may be expired — try refreshing it once
-        console.warn('[ENB] getUser failed, attempting refresh:', authError?.message);
-        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError || !refreshed?.user) {
-          // Genuinely not authenticated — redirect to login
-          console.warn('[ENB] Refresh also failed — not authenticated:', refreshError?.message);
-          // Clear sessionExists by redirecting. Use window.location to force clean state.
-          window.location.href = '/login';
-          return;
-        }
-        authData = { user: refreshed.user };
-      }
-
-      // Use the verified userId from the auth server (authoritative)
-      const verifiedUserId = authData!.user!.id;
-      const verifiedEmail  = authData!.user!.email || userEmail;
-
-      // Fetch the public profile row — JWT is now guaranteed valid
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', verifiedUserId)
-        .maybeSingle();
+        .eq('id', userId)
+        .single();
 
       if (data) {
-        // Happy path: row found, populate store, subscribe realtime
-        setUser(rowToUser(data, verifiedEmail));
-        subscribeRealtime(verifiedUserId);
-        return;
-      }
-
-      if (error) {
-        // RLS or network blocked the read even with a fresh JWT.
-        // This should be extremely rare now that getUser() guarantees a valid token.
-        // Retry once after a short delay.
-        console.warn('Profile read blocked after getUser() — retrying in 800ms.', error.message);
-        await new Promise(r => setTimeout(r, 800));
-        const { data: retryData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', verifiedUserId)
-          .maybeSingle();
-        if (retryData) {
-          setUser(rowToUser(retryData, verifiedEmail));
-          subscribeRealtime(verifiedUserId);
-        } else {
-          console.error('Profile retry also failed. Store left untouched.');
-        }
-        return;
-      }
-
-      // data===null, error===null: genuine 0 rows — new user, safe to INSERT
-      console.warn('No profile row found — creating new member row for:', verifiedUserId);
-      const { data: insertedRow, error: insertError } = await supabase
-        .from('users').insert({
-          id: verifiedUserId,
-          email: verifiedEmail,
-          full_name: '',
-          enb_local_bal: 0,
-          enb_global_bal: 0,
-          rep_score: 0,
-          tier: 'Newcomer',
-          role: 'member',
-          is_active: true,
+        setUser({
+          id: data.id,
+          email: data.email || userEmail,
+          full_name: data.full_name || '',
+          neighbourhood: data.neighbourhood || '',
+          profession: data.profession || '',
+          enb_local_bal: Number(data.enb_local_bal) || 0,
+          enb_global_bal: Number(data.enb_global_bal) || 0,
+          rep_score: Number(data.rep_score) || 0,
+          tier: data.tier || 'Newcomer',
+          role: data.role || 'member',
+          wallet_address: data.wallet_address || undefined,
+          whatsapp_number: data.whatsapp_number || undefined,
+          profile_pic_url: data.profile_pic_url || undefined,
+          lifetime_earned: Number(data.lifetime_earned) || 0,
+          referred_by: data.referred_by || undefined,
+          referral_code: data.referral_code || undefined,
+          consecutive_absences: Number(data.consecutive_absences) || 0,
+          cnic_number: data.cnic_number || undefined,
+          cnic_photo_url: data.cnic_photo_url || undefined,
+          cnic_verified: data.cnic_verified === true,
+          cnic_submitted_at: data.cnic_submitted_at || undefined,
+        });
+      } else {
+        // Profile row missing — this is a genuine new user (no existing data).
+        // SAFE INSERT ONLY: never overwrite an existing row's balance or role.
+        // If the row already exists (RLS blocked the read), the insert is ignored.
+        console.warn('No profile row found. Attempting safe insert. RLS error:', error?.message);
+        const { data: insertedRow } = await supabase.from('users').insert({
+          id: userId, email: userEmail, full_name: '',
+          enb_local_bal: 0, enb_global_bal: 0, rep_score: 0,
+          tier: 'Newcomer', role: 'member', is_active: true,
         }).select().single();
 
-      if (insertedRow) {
-        setUser(rowToUser(insertedRow, verifiedEmail));
-        subscribeRealtime(verifiedUserId);
-      } else if (insertError) {
-        // Duplicate key — row exists but the first read missed it (very rare race).
-        console.warn('INSERT duplicate — retrying read.', insertError.message);
-        await new Promise(r => setTimeout(r, 500));
-        const { data: fallbackRead } = await supabase
-          .from('users').select('*').eq('id', verifiedUserId).maybeSingle();
-        if (fallbackRead) {
-          setUser(rowToUser(fallbackRead, verifiedEmail));
-          subscribeRealtime(verifiedUserId);
+        // If insert succeeded, use the new row. If it failed (row already exists,
+        // RLS blocked), retry the read — the JWT may have refreshed.
+        if (insertedRow) {
+          setUser({
+            id: insertedRow.id, email: insertedRow.email || userEmail,
+            full_name: insertedRow.full_name || '',
+            neighbourhood: insertedRow.neighbourhood || '',
+            profession: insertedRow.profession || '',
+            enb_local_bal: Number(insertedRow.enb_local_bal) || 0,
+            enb_global_bal: Number(insertedRow.enb_global_bal) || 0,
+            rep_score: Number(insertedRow.rep_score) || 0,
+            tier: insertedRow.tier || 'Newcomer',
+            role: insertedRow.role || 'member',
+            lifetime_earned: Number(insertedRow.lifetime_earned) || 0,
+            referral_code: insertedRow.referral_code || undefined,
+          });
+        } else {
+          // Row exists but RLS blocked both the read and the insert.
+          // Do NOT set zeros — show an auth error state instead.
+          console.error('Profile load blocked by RLS. JWT role may be stale. User must re-login.');
+          setUser(null);
         }
-        // If fallbackRead also fails — leave store untouched. Never setUser(null).
       }
     } catch (err) {
-      console.error('Profile load exception — store left untouched:', err);
-    } finally {
-      isLoadingProfile.current = false;
+      // Catch block: never set zeros on an existing user.
+      // If we cannot read the profile, the safest action is null (triggers re-login).
+      console.error('Profile load exception:', err);
+      setUser(null);
     }
   };
 
@@ -271,85 +165,20 @@ export default function App() {
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
     if (hasSeenSplash) setShowSplash(false);
 
-    // ── ENB DOCTRINE: getSession() unblocks the UI only — never loads profile ──
-    // getSession() reads localStorage at T=0ms BEFORE Supabase's _recoverAndRefresh()
-    // has attached the JWT to request headers. Any DB call at this point fires with
-    // anon key only → auth.uid()=null → RLS fails → 0 rows → phantom INSERT.
-    //
-    // Fix: call setAuthChecked(true) immediately regardless of session state.
-    // The app renders at once. If user=null, AdminLayout/Layout show a spinner.
-    // onAuthStateChange(INITIAL_SESSION or SIGNED_IN) fires ~50-200ms later with
-    // JWT guaranteed attached → loadUserProfile runs → store populated → UI updates.
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) setSessionExists(true);
-      setAuthChecked(true);
+      if (session?.user) {
+        loadUserProfile(session.user.id, session.user.email ?? '').then(() => setAuthChecked(true));
+      } else {
+        setAuthChecked(true);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // ── Never wipe store on Supabase SIGNED_OUT event ────────────────────
-      // Supabase fires SIGNED_OUT during tab switching, backgrounding, and
-      // internal session rotation — NOT only on explicit logout.
-      // Explicit logout is handled by AccountSwitcher.handleLogout and More.tsx
-      // logout which call logout() directly before navigating.
-      if (event === 'SIGNED_OUT') return;
-
-      // ── USER_UPDATED: ignore — fires on every users table UPDATE ────────
-      if (event === 'USER_UPDATED') return;
-
-      if ((event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session?.user) {
-        const refreshedId = session.user.id;
-        if (!refreshedId) return;
-
-        // ── FIX #2 (cont): Read store state ONCE and capture it ─────────────
-        // Root cause of oscillation: useUserStore.getState().user?.id was called
-        // inside the handler but the Realtime heartbeat (every 25-30s) could
-        // fire this during a React state transition window where .user is briefly
-        // undefined — even though the user is fully logged in. This caused
-        // loadUserProfile to re-fire on every heartbeat reconnect.
-        //
-        // Fix: capture the ID into a local variable FIRST, then check.
-        // Also: read the ID from the Zustand store's internal state (not React
-        // component state) — getState() is always synchronous and never undefined
-        // mid-render. This eliminates the race window.
-        const storeState   = useUserStore.getState();
-        const currentUserId = storeState.user?.id ?? null;
-
-        if (currentUserId && currentUserId === refreshedId) {
-          // Same user, token refreshed silently — store is correct, do nothing.
-          // This is the normal case after the first load. No loadUserProfile needed.
-          return;
-        }
-
-        if (!currentUserId) {
-          // No user in store yet — genuine first load after session restore.
-          // loadUserProfile will call getUser() internally to validate the JWT.
-          loadUserProfile(refreshedId, session.user.email ?? '');
-          return;
-        }
-
-        // Different user in store vs refreshed token — legitimate account switch
-        // via AccountSwitcher.handleSwitch → supabase.auth.setSession() → SIGNED_IN.
-        // Clean up the previous user's realtime channel before loading the new profile.
-        if (realtimeChannelRef.current) {
-          supabase.removeChannel(realtimeChannelRef.current);
-          realtimeChannelRef.current = null;
-        }
-        loadUserProfile(refreshedId, session.user.email ?? '');
-      }
+      if (event === 'SIGNED_OUT') setUser(null);
     });
 
     const authTimeout = setTimeout(() => setAuthChecked(true), 4000);
-
-    // ── Cleanup: unsubscribe auth listener, clear timeout, remove realtime channel
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(authTimeout);
-      // FIX #1 cleanup: remove the realtime channel on unmount
-      if (realtimeChannelRef.current) {
-        supabase.removeChannel(realtimeChannelRef.current);
-        realtimeChannelRef.current = null;
-      }
-    };
+    return () => { subscription.unsubscribe(); clearTimeout(authTimeout); };
   }, []);
 
   const handleSplashComplete = () => {
@@ -359,18 +188,6 @@ export default function App() {
 
   if (showSplash) return <SplashScreen onComplete={handleSplashComplete} />;
   if (!authChecked) {
-    return (
-      <div className="min-h-screen bg-enb-surface flex items-center justify-center flex-col gap-3">
-        <div className="w-8 h-8 border-4 border-enb-green border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-gray-400">Loading your account...</p>
-      </div>
-    );
-  }
-  // ── Session exists but profile not yet in store ───────────────────────────
-  // This is the 50-200ms window after authChecked=true where getSession found
-  // a valid session but onAuthStateChange hasn't fired loadUserProfile yet.
-  // Show a spinner instead of the Welcome page to prevent the flash/redirect loop.
-  if (sessionExists && !user) {
     return (
       <div className="min-h-screen bg-enb-surface flex items-center justify-center flex-col gap-3">
         <div className="w-8 h-8 border-4 border-enb-green border-t-transparent rounded-full animate-spin" />
@@ -391,7 +208,6 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/dev-history" element={<VersionHistory />} />
           <Route path="/account-recovery" element={<AccountRecovery />} />
-          <Route path="/confirm-ride/:token" element={<ConfirmRide />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/token-disclaimer" element={<TokenDisclaimer />} />
@@ -411,7 +227,6 @@ export default function App() {
                 <Route path="onboarding" element={<AdminOnboarding />} />
                 <Route path="announcements" element={<AnnouncementsPage />} />
                 <Route path="org-structure" element={<OrgStructurePage />} />
-                <Route path="captains" element={<AdminCaptains />} />
               </Route>
               <Route path="/*" element={
                 <Layout>
@@ -439,7 +254,6 @@ export default function App() {
                       <Route path="/history" element={<MyHistory />} />
                       <Route path="/submission/:id" element={<SubmissionDetail />} />
                       <Route path="/issues" element={<CommunityIssues />} />
-                      <Route path="/rider/:userId" element={<RiderProfile />} />
                       <Route path="/glossary" element={<Glossary />} />
                       <Route path="/report" element={<ReportSubmission />} />
                       <Route path="/bug-report" element={<BugReport />} />

@@ -11,16 +11,8 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       VitePWA({
-        // ── SERVICE WORKER DISABLED ───────────────────────────────────────────
-        // The service worker was intercepting JS chunk requests and returning
-        // stale cached bundles (text/html fallback) instead of the updated JS.
-        // This caused every App.tsx deployment to have zero effect in the browser
-        // and was the root cause of the phantom U account persisting across 25+
-        // deployments. The SW is disabled until a proper cache invalidation
-        // strategy is implemented post-mainnet.
-        // To re-enable: change to registerType: 'autoUpdate' and restore workbox config.
         registerType: 'autoUpdate',
-        injectRegister: null,  // null = do not inject SW registration script
+        includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
           name: 'Eco-Neighbor',
           short_name: 'ENB',
@@ -49,8 +41,28 @@ export default defineConfig(({ mode }) => {
           ]
         },
         workbox: {
-          // Empty workbox config — SW disabled via injectRegister: null
-          globPatterns: [],
+          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+          globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-cache',
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] }
+              }
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'gstatic-fonts-cache',
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] }
+              }
+            }
+          ]
         }
       })
     ],
