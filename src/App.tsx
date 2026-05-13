@@ -140,13 +140,6 @@ export default function App() {
       const { data, error } = await supabase
         .from('users').select('*').eq('id', userId).maybeSingle();
 
-      // ── DIAGNOSTIC ────────────────────────────────────────────────────────
-      console.log('[ENB] loadUserProfile userId:', userId);
-      console.log('[ENB] loadUserProfile full_name:', data?.full_name ?? 'NO DATA');
-      console.log('[ENB] loadUserProfile error:', error?.message ?? 'none');
-      console.log('[ENB] loadUserProfile path:', data ? 'HAPPY' : error ? 'ERROR-RETRY' : 'INSERT');
-      // ─────────────────────────────────────────────────────────────────────
-
       if (data) {
         // ── Happy path: row found, populate store ─────────────────────────
         setUser(rowToUser(data, userEmail));
@@ -258,6 +251,12 @@ export default function App() {
       }
       // Handle token refresh and sign-in events
       // ── ENB DOCTRINE: Always verify the refreshed session matches current user ─
+      // ── USER_UPDATED fires every time sync_user_role_to_auth trigger runs ──
+      // That trigger fires on EVERY users table UPDATE (including last_seen).
+      // Supabase JS auto-updates the local session with auth user data on this event.
+      // We must ignore it — the store is already correct from loadUserProfile.
+      if (event === 'USER_UPDATED') return;
+
       if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session?.user) {
         const refreshedId = session.user.id;
         if (!refreshedId) return;
