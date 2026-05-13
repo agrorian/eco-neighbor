@@ -246,7 +246,20 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
-        setUser(null);
+        // ── Guard against Supabase internal session rotation ─────────────
+        // USER_UPDATED (from last_seen PATCH) causes Supabase to rotate the
+        // session internally, briefly firing SIGNED_OUT then SIGNED_IN.
+        // Only wipe the store if there is genuinely no session recoverable.
+        // Wait 1 second to see if a SIGNED_IN follows immediately.
+        setTimeout(() => {
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+              // Genuinely signed out — no session recoverable
+              setUser(null);
+            }
+            // If session exists, Supabase rotated internally — keep store intact
+          });
+        }, 1000);
         return;
       }
       // Handle token refresh and sign-in events
