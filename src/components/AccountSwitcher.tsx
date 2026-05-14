@@ -185,8 +185,13 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
 
   const handleAddAccount = () => {
     setOpen(false);
-    // Sign out current user and go to login — current session saved
-    supabase.auth.signOut().then(() => {
+    // ── Local-only signout — preserves server session token ───────────────
+    // supabase.auth.signOut() with no options does a GLOBAL signout which
+    // revokes the token on Supabase's servers. Switching back then fails
+    // immediately with "session expired" even if only seconds have passed.
+    // { scope: 'local' } clears only the browser session — the server token
+    // stays valid so setSession() works correctly when switching back.
+    supabase.auth.signOut({ scope: 'local' }).then(() => {
       logout();
       navigate('/login?add_account=true');
     });
