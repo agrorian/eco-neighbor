@@ -12,7 +12,6 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: null,
         includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
           name: 'Eco-Neighbor',
@@ -23,28 +22,29 @@ export default defineConfig(({ mode }) => {
           display: 'standalone',
           orientation: 'portrait',
           icons: [
-            {
-              src: 'pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png'
-            },
-            {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any maskable'
-            }
+            { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
           ]
         },
         workbox: {
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+          // ── JS chunks excluded from precache ─────────────────────────────
+          // Caching JS files causes stale bundles after deployment.
+          // JS is served via NetworkFirst below — always fresh from network,
+          // cache only used as offline fallback.
           globPatterns: ['**/*.{css,html,ico,png,svg}'],
           runtimeCaching: [
+            {
+              // JS chunks — network first, 10s timeout, cache as offline fallback only
+              urlPattern: /\/assets\/.*\.js$/,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'js-chunks',
+                networkTimeoutSeconds: 10,
+                cacheableResponse: { statuses: [200] }
+              }
+            },
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
               handler: 'CacheFirst',
@@ -71,9 +71,7 @@ export default defineConfig(({ mode }) => {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      },
+      alias: { '@': path.resolve(__dirname, './src') },
     },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
