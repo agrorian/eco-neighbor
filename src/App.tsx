@@ -118,27 +118,6 @@ export default function App() {
     cnic_submitted_at: data.cnic_submitted_at || undefined,
   });
 
-  const subscribeRealtime = (userId: string) => {
-    supabase
-      .channel(`global-user-sync-${userId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'users',
-        filter: `id=eq.${userId}`,
-      }, (payload) => {
-        if (payload.new?.id) {
-          // Strip null/undefined values from payload.new before merging.
-          // With DEFAULT replica identity, unchanged columns come back as null
-          // and would overwrite correct store values (e.g. full_name → null → U).
-          // With FULL replica identity this is less critical but still safer.
-          const safePayload = Object.fromEntries(
-            Object.entries(payload.new).filter(([, v]) => v !== null && v !== undefined)
-          );
-          setUser((prev: any) => prev ? { ...prev, ...safePayload } : prev);
-        }
-      })
-      .subscribe();
-  };
-
   const loadUserProfile = async (userId: string, userEmail: string) => {
     if (!userId || userId === 'undefined') return;
     if (isLoadingProfile.current) return;
@@ -155,7 +134,6 @@ export default function App() {
 
       if (data) {
         setUser(rowToUser(data, userEmail));
-        subscribeRealtime(data.id);
         return;
       }
 
@@ -168,7 +146,6 @@ export default function App() {
           .from('users').select('*').eq('id', userId).maybeSingle();
         if (retryData) {
           setUser(rowToUser(retryData, userEmail));
-          subscribeRealtime(retryData.id);
         }
         // Retry failed: leave store untouched. Next TOKEN_REFRESHED will retry.
         return;
@@ -185,7 +162,6 @@ export default function App() {
           .from('users').select('*').eq('id', userId).maybeSingle();
         if (retryData) {
           setUser(rowToUser(retryData, userEmail));
-          subscribeRealtime(retryData.id);
           return;
         }
       }
