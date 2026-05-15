@@ -38,6 +38,7 @@ async function getRecaptchaToken(action: string): Promise<string> {
 }
 
 import CarpoolSession, { RideSession } from '@/pages/submit/CarpoolSession';
+import TradeJobSelector, { TRADE_TYPES, TradeType } from '@/pages/submit/TradeJobSelector';
 import CaptainOnboarding from '@/pages/submit/CaptainOnboarding';
 
 interface ActionFormProps {
@@ -141,8 +142,9 @@ const ACTION_CONFIG: Record<string, {
 
   trade_job: {
     title: 'Trade Job',
-    hint: 'Photo of the completed work. Before/after photos are strongly recommended for higher approval rate.',
+    hint: '',  // Visual selector replaces text hint for trade jobs
     photoLabel: 'Photo of Completed Work',
+    isTradeJobSelector: true,  // Uses TradeJobSelector component instead of dropdown
     fields: [
       { id: 'trade_type', label: 'Trade / skill used', type: 'select', required: true,
         options: ['Plumbing', 'Electrical', 'Carpentry / woodwork', 'Masonry / construction', 'Painting / decorating', 'Welding / metalwork', 'Auto repair', 'Appliance repair', 'Other trade'] },
@@ -460,6 +462,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
 
   const anyUploading = photos.some(p => p.uploading);
   const [consentGiven, setConsentGiven] = useState(false);
+  const [selectedTrade, setSelectedTrade] = useState<TradeType | null>(null);
+  const isTradeJob = actionType === 'trade_job';
 
   // ── Carpool session state ─────────────────────────────────────────────────
   const [carpoolVehicle, setCarpoolVehicle] = useState('Car');
@@ -516,7 +520,13 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       photoUrls: uploadedUrls.length > 0 ? uploadedUrls : photos.map(p => p.preview),
       photoCount: photos.length,
       description: structuredDescription,
-      customFields: fieldValues,
+      customFields: {
+        ...fieldValues,
+        ...(isTradeJob && selectedTrade ? {
+          trade_type: selectedTrade.id,
+          trade_before_after: selectedTrade.beforeAfter,
+        } : {}),
+      },
       gpsLat,
       gpsLng,
       gpsAddress,
