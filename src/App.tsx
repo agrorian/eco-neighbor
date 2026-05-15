@@ -88,6 +88,9 @@ export default function App() {
   const { user, setUser } = useUserStore();
   const [showSplash, setShowSplash] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  // Tracks whether localStorage has a valid session — prevents Welcome page flash
+  // during the 100-300ms between authChecked=true and store being populated.
+  const [sessionExists, setSessionExists] = useState(false);
   // Race guard: prevents getSession() and onAuthStateChange from both
   // calling loadUserProfile simultaneously on hard refresh.
   const isLoadingProfile = useRef(false);
@@ -182,6 +185,9 @@ export default function App() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        // Session found — flag it so we show a spinner instead of Welcome page
+        // during the window between authChecked=true and store being populated.
+        setSessionExists(true);
         loadUserProfile(session.user.id, session.user.email ?? '').then(() => setAuthChecked(true));
       } else {
         setAuthChecked(true);
@@ -220,6 +226,16 @@ export default function App() {
   };
 
   if (showSplash) return <SplashScreen onComplete={handleSplashComplete} />;
+  // Session exists but profile not yet in store — show spinner, not Welcome page.
+  // This eliminates the 1-2 second flash of the Welcome screen on hard refresh.
+  if (sessionExists && !user) {
+    return (
+      <div className="min-h-screen bg-enb-surface flex items-center justify-center flex-col gap-3">
+        <div className="w-8 h-8 border-4 border-enb-green border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-gray-400">Loading your account...</p>
+      </div>
+    );
+  }
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-enb-surface flex items-center justify-center flex-col gap-3">
