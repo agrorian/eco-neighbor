@@ -79,18 +79,9 @@ async function runGeminiReview(
   if (!apiKey) return { verdict: 'uncertain', reason: 'AI review not configured — routed to human moderator', confidence: 0 };
 
   const label = actionType.replace(/_/g, ' ');
-  const prompt = `You are a civic action verifier for Eco-Neighbor, a community token system starting in Karachi, Pakistan.
-A user claims to have completed a "${label}".
-
-IMAGE ORDER: First image = BEFORE. Remaining = AFTER (taken 4+ hours later at the same location).
-
-Did a genuine "${label}" take place? Respond ONLY with this exact JSON — no other text:
-{"verdict":"approve"|"reject"|"uncertain","reason":"One plain-English sentence","confidence":0.0}
-
-Rules:
-- approve (≥0.75 confidence): Clear visible improvement matching the claim
-- reject (≥0.75 confidence): Identical/staged photos, irrelevant, or no change
-- uncertain: Poor light, unclear, or ambiguous — human moderator will decide`;
+  // Import prompt builder
+    const { getGeminiPrompt, AUTO_APPROVE_THRESHOLD } = await import('@/lib/geminiPrompts');
+    const { prompt } = getGeminiPrompt(actionType, {});
 
   const [beforeData, ...afterData] = await Promise.all([
     urlToInlineData(beforeUrl),
@@ -273,7 +264,7 @@ export default function AfterPhotoSubmission({
       // Auto-decision: ≥0.85 confidence → skip human queue
       const autoStatus =
         aiVerdict === 'approve' && aiConfidence >= 0.85 ? 'approved' :
-        aiVerdict === 'reject'  && aiConfidence >= 0.85 ? 'rejected' :
+        aiVerdict === 'reject'  && aiConfidence >= 0.85 ? 'rejected' : // threshold: 0.85
         'pending';
 
       const { data: afterRec, error: insertErr } = await supabase

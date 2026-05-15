@@ -7,6 +7,8 @@ import ActionForm from './submit/ActionForm';
 import SubmissionReview from './submit/SubmissionReview';
 import SubmissionSuccess from './submit/SubmissionSuccess';
 import { isTransformationAction, AFTER_UNLOCK_MS } from '@/lib/beforeAfter';
+import { getGeminiPrompt, AUTO_APPROVE_THRESHOLD } from '@/lib/geminiPrompts';
+
 
 type Step = 'select' | 'form' | 'review' | 'success';
 
@@ -22,6 +24,80 @@ const ACTION_REWARDS: Record<string, { enb: number; rep: number }> = {
   tree_planting:         { enb: 2000, rep: 1200 },
   waste_reporting:       { enb: 500,  rep: 200 },
 };
+
+
+// ── Gemini helpers (single-phase AI review) ──────────────────────────────────
+function toOptimizedUrl(url: string): string {
+  return url.includes('res.cloudinary.com')
+    ? url.replace('/upload/', '/upload/w_800,q_70,f_jpg/')
+    : url;
+}
+
+async function urlToInlineData(url: string): Promise<{ mimeType: string; data: string } | null> {
+  try {
+    const res = await fetch(toOptimizedUrl(url));
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const mimeType = blob.type || 'image/jpeg';
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const b64 = (reader.result as string).split(',')[1];
+        resolve({ mimeType, data: b64 });
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch { return null; }
+}
+
+async function runSinglePhaseGeminiReview(
+  photoUrls: string[],
+  actionType: string,
+  metadata?: Record<string, any>,
+): Promise<{ verdict: 'approve' | 'reject' | 'uncertain'; reason: string; confidence: number }> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) return { verdict: 'uncertain', reason: 'AI review not configured', confidence: 0 };
+
+  const { prompt } = getGeminiPrompt(actionType, metadata);
+
+  const photoData = await Promise.all(photoUrls.slice(0, 3).map(urlToInlineData));
+  const validPhotos = photoData.filter(Boolean);
+
+  if (validPhotos.length === 0) {
+    return { verdict: 'uncertain', reason: 'Could not load photos for AI review', confidence: 0 };
+  }
+
+  const parts: any[] = [
+    { text: prompt },
+    ...validPhotos.map(d => ({ inlineData: { mimeType: d!.mimeType, data: d!.data } })),
+  ];
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts }] }) },
+    );
+    if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
+    const json = await res.json();
+    const raw = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const parsed = JSON.parse(raw.replace(/```json|```/gi, '').trim());
+    return {
+      verdict: (['approve', 'reject', 'uncertain'].includes(parsed.verdict) ? parsed.verdict : 'uncertain') as any,
+      reason: parsed.reason || 'No reason provided',
+      confidence: Math.min(1, Math.max(0, Number(parsed.confidence) || 0.5)),
+    };
+  } catch {
+    return { verdict: 'uncertain', reason: 'AI review failed — routed to human moderator', confidence: 0 };
+  }
+}
+
+// Action types that use Before/After flow (AI runs in AfterPhotoSubmission)
+const BEFORE_AFTER_ACTIONS = ['neighbourhood_cleanup', 'tree_planting'];
+// Action types with GPS+session data as primary evidence (no photo AI needed)
+const GPS_ONLY_ACTIONS = ['carpool'];
+// All other actions get single-phase AI review here in SubmitAction
 
 export default function SubmitAction() {
   const { user } = useUserStore();
@@ -94,6 +170,46 @@ export default function SubmitAction() {
         enbAwarded = Math.min(Math.round(base * rideSession.calculatedDistanceKm * pMult), cap);
       }
 
+      // ── Gemini AI review for single-phase actions ──────────────────────────
+      let aiVerdict: 'approve' | 'reject' | 'uncertain' = 'uncertain';
+      let aiReason = 'AI review not applicable';
+      let aiConfidence = 0;
+      let aiAutoStatus: string = 'pending';
+
+      const photoUrlsForAI = formData.photoUrls?.length > 0
+        ? formData.photoUrls
+        : (formData.photo ? [formData.photo] : []);
+
+      const shouldRunAI = (
+        !BEFORE_AFTER_ACTIONS.includes(actionKey) &&
+        !GPS_ONLY_ACTIONS.includes(actionKey) &&
+        photoUrlsForAI.length > 0 &&
+        import.meta.env.VITE_GEMINI_API_KEY
+      );
+
+      if (shouldRunAI) {
+        try {
+          const aiResult = await runSinglePhaseGeminiReview(
+            photoUrlsForAI,
+            actionKey,
+            formData.customFields || {},
+          );
+          aiVerdict = aiResult.verdict;
+          aiReason = aiResult.reason;
+          aiConfidence = aiResult.confidence;
+          // Auto-decision at ≥0.85 confidence
+          if (aiVerdict === 'approve' && aiConfidence >= AUTO_APPROVE_THRESHOLD) {
+            aiAutoStatus = 'approved';
+          } else if (aiVerdict === 'reject' && aiConfidence >= AUTO_APPROVE_THRESHOLD) {
+            aiAutoStatus = 'rejected';
+          } else {
+            aiAutoStatus = 'pending'; // uncertain or low confidence → human moderator
+          }
+        } catch {
+          aiAutoStatus = 'pending'; // AI failure → human moderator
+        }
+      }
+
       const { error } = await supabase.from('submissions').insert({
         user_id: user.id,
         action_type: actionKey,
@@ -104,7 +220,10 @@ export default function SubmitAction() {
         gps_lat: lat,
         gps_lng: lng,
         gps_address: formData.gpsAddress || formData.location || null,
-        status: 'pending',
+        status: aiAutoStatus,
+        ai_review_verdict: aiVerdict,
+        ai_review_reason: aiReason,
+        ai_review_confidence: aiConfidence,
         enb_awarded: enbAwarded,
         rep_awarded: rewards.rep,
         image_source: formData.imageSource || 'CAMERA',
