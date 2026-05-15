@@ -94,7 +94,7 @@ export default function DesktopSidebar() {
               className="text-xs text-enb-text-muted font-medium"
               dir="ltr"
               style={{ unicodeBidi: 'embed', direction: 'ltr', display: 'block' }}
-            >$ENB · App v1.5.3</span>
+            >$ENB · App v1.6.0</span>
           </div>
           <InboxBell />
         </div>

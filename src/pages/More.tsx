@@ -87,7 +87,7 @@ export default function More() {
       </div>
 
       <div className="text-center text-xs text-gray-400 pt-2">
-        Eco-Neighbor · ENB Token · App v1.5.3
+        Eco-Neighbor · ENB Token · App v1.6.0
       </div>
     </div>
   );

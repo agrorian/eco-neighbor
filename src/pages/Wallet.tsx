@@ -44,8 +44,7 @@ function GlobalLockInfo({
         <Lock className="w-3.5 h-3.5" /> Why is my ENB.GLOBAL locked?
       </div>
       <p>
-        Your ENB.GLOBAL balance of <strong>{pendingAmount.toLocaleString()} ENB</strong> is earned
-        but not yet liquid. Unlock requires all of the following:
+        Your ENB.GLOBAL balance of <strong>{pendingAmount.toLocaleString()} ENB</strong> is earned and recorded. Conversion via the Maturation Bridge requires all of the following:
       </p>
       <ul className="space-y-1 pl-1">
         <li className="flex items-start gap-1.5">
@@ -57,19 +56,19 @@ function GlobalLockInfo({
         <li className="flex items-start gap-1.5">
           <ShieldCheck className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
           <span>
-            <strong>Pillar Tier</strong> reputation required (7,500 REP)
+            <strong>Pillar Tier</strong> reputation required (50,000 Rep Score)
           </span>
         </li>
         <li className="flex items-start gap-1.5">
           <ArrowUpRight className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
           <span>
-            Max <strong>50,000 ENB</strong> per release event
+            Max <strong>25% of your Eligible Conversion Pool (ECP)</strong> per event
           </span>
         </li>
         <li className="flex items-start gap-1.5">
           <RefreshCw className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
           <span>
-            Max <strong>2 release events</strong> per calendar year
+            Max <strong>2 conversion events</strong> per lifetime (3-year gap minimum)
           </span>
         </li>
       </ul>
