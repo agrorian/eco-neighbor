@@ -86,10 +86,6 @@ const APP_VERSIONS = [
     summary: "React 19 + Vite 6 + Tailwind CSS 4 + Supabase bootstrapped. Basic email/password auth. ENB token constants defined. Vercel deployment configured."
   },
   {
-    version: "v6.3", date: "15 May 2026", type: "CURRENT",
-    summary: "Maturation Bridge Condition 2 fully rewritten. ECP (Eligible Conversion Pool) formally defined: tokens individually aged 365+ days − FIFO debits − prior conversions. 25% cap applies to ECP only — not total lifetime earnings. 12.5% per event language removed. Plumber and milkman profession cards corrected. All version numbers updated. Backfill model: reviewed_at (both mods approved) as canonical token clock start.",
-  },
-  {
     version: "v0.2.0", date: "13 Mar 2026", type: "FEATURE",
     title: "Moderation System + Fraud Reporting",
     summary: "Dual blind moderator review with 30-second minimum timer. Mod pair rotation trigger. Moderator compensation (500 ENB approve / 200 ENB reject). Escalation queue. Fraud reporting system v2 with dynamic stake and GPS neighbourhood cross-check."
@@ -180,13 +176,9 @@ const APP_VERSIONS = [
     summary: "(1) ENB DEVELOPMENT DOCTRINE established — 9 architectural bugs found and fixed. Single source of truth enforced across codebase: one write path, one read path, one sync. TIER_NEXT_THRESHOLD and isSuperAdmin() centralised in store/user.ts. (2) Silent RLS failure case study resolved — admin_update_user_profile SECURITY DEFINER RPC created; UserManagement now uses RPC for all updates. (3) Stale closure audit — Wallet, GenerateRedemptionQR, ReferralHub, CnicPrompt all converted to functional prev => pattern. (4) Global realtime subscription added to App.tsx (single subscription, no component-level duplication). (5) TOKEN_REFRESHED + SIGNED_IN handlers added to onAuthStateChange. (6) City-wise dynamic Leaderboard — city + country_code added to DB and Zustand store; filter tabs auto-populate from live DB. (7) ImpactDashboard + FoodSharing geo/terminology cleanup — RCWI replaces Schools & Orphanages, Rawalpindi/Chaklala refs removed, v4.9 labels removed. (8) CARPOOL V2 — ENB CAPTAIN SYSTEM: CaptainOnboarding (license categories, CNIC + license upload, vehicle description), AdminCaptains panel (document viewer, approve/reject/suspend with inbox notifications), CarpoolSession (GPS live map with Leaflet/OSRM, route trail, timer, passenger QR), ConfirmRide (member + non-member QR web flow, 200 ENB passenger reward), RiderProfile (public Captain profile with rides/ratings/reviews). ActionForm carpool gated behind Captain status. Dynamic ENB formula per vehicle: Bike 100/km, Rickshaw 120, Auto-rickshaw 120, Car 150, Van 200, Bus 300 — with passenger and rating multipliers. (9) SQL migrations: captain_applications, ride_confirmations, carpool session columns (17), trg_sync_tier trigger, city/country_code on users, on_captain_approved + on_carpool_approved + update_carpool_rating triggers. (10) Maps strategy locked: Phase 1 Leaflet + OpenStreetMap + OSRM (free); Phase 2 Google Maps Platform — single env var swap, VITE_GOOGLE_MAPS_API_KEY placeholder added to Vercel."
   },
   {
-    version: "v1.5.3", date: "13 May 2026", type: "PREV",
+    version: "v1.5.3", date: "13 May 2026", type: "CURRENT",
     title: "Phantom Bug Fix, Auth Hardening & Multi-Account Switcher Repair",
     summary: "(1) PHANTOM U BUG ELIMINATED — root cause: global realtime subscription was calling setUser with Supabase postgres_changes payload.new that only contained updated columns (DEFAULT replica identity); all other columns including full_name came back as null and were spread over the store. Fix: realtime subscription removed entirely — balances refresh on navigation; safe for civic action app where moderation is async. (2) users table REPLICA IDENTITY set to FULL in DB for correct payload behaviour in future. (3) user.ts phantom guard — setUser now preserves existing full_name if incoming value is blank, with console.trace to identify any future caller with empty data. (4) App.tsx hardened: maybeSingle() replaces single() throughout, INSERT path removed (row creation is SignUpStep2 only), setUser(null) removed from error and catch paths, retry loop with 500ms/1.5s/3s backoff on 0-row JWT race, isLoadingProfile race guard. (5) MyLog.tsx React error #300 fixed — useEffect moved above conditional return (Rules of Hooks violation). (6) AccountSwitcher handleAddAccount: signOut({scope:'local'}) replaces global signOut — server token no longer revoked on Add Account, enabling immediate switch-back without re-login. (7) Service worker restored with NetworkFirst for JS chunks — PWA install and offline capability back. (8) vite.config.ts: JS excluded from precache globPatterns to prevent stale bundle serving on deployment."
-  },
-  {
-    version: "v1.6.0", date: "15 May 2026", type: "CURRENT",
-    summary: "Maturation Bridge — complete ECP ledger system. New tables: enb_token_ledger (every credit/debit timestamped), bridge_requests, bridge_conversions. RPCs: check_bridge_eligibility (ECP = aged tokens 365+ days − FIFO debits − prior conversions), approve_bridge_request (atomic with re-verification), write_ledger_credit (on dual-mod approval), write_ledger_debit (on SWAP), backfill_token_ledger. 25% cap on ECP only — not total lifetime earnings. BridgeManager wired to DB. MaturationBridge shows full ECP breakdown. Wallet lock conditions corrected (50,000 Rep, lifetime cap, 25% ECP). Whitepaper v6.3: Maturation Bridge Condition 2 rewritten, ECP formally defined, 12.5% per event language removed, profession cards corrected.",
   },
 ];
 
@@ -413,7 +405,7 @@ export default function VersionHistory() {
             <span className="font-bold text-enb-text-primary">Eco-Neighbor $ENB</span>
           </div>
           <p className="text-xs text-enb-text-muted">
-            Starting in Rawalpindi — built to replicate globally.
+            Starting in Karachi — built to replicate globally.
           </p>
           <div className="flex items-center justify-center gap-4 text-xs">
             <Link to="/" className="text-enb-green hover:underline">Launch App</Link>
@@ -424,4 +416,24 @@ export default function VersionHistory() {
       </div>
     </div>
   );
-}
+}  },
+  {
+    version: "v6.1", date: "May 2026", type: "PREV",
+    title: "Founding Pool Restructure + Geo Corrections",
+    summary: "(1) Community Operations Lead seat dissolved â 65M ENB absorbed into Unallocated Reserve (now 240M / 48%). Tech Lead reduced from 65M to 50M (10%). CGR Lead and Legal Lead seats dissolved. Active founding seats reduced to 5. (2) All Rawalpindi geographic references corrected to Karachi as pilot city. False real-users claim removed. (3) 11 instances of neighbourhood corrected to neighborhood (American English). (4) CFSP Priority Waterfall v4.9 propagated."
+  },
+  {
+    version: "v6.2", date: "May 2026", type: "PREV",
+    title: "SWAP Model Canonical + ENB Operations Fund First Spec",
+    summary: "(1) SWAP distribution locked: 80% CRP / 3.3% BLG / 2% BSF / 1.3% MM / 1.3% Insurance / 2% Reserve Buffer / 10% Ops Fund. No burn. (2) ENB Operations Fund first specified: Stream A 10% T2+ PDA immutable, Stream B 10% SWAP from Day 1. (3) Maturation Bridge conditions first written: 365-day hold + 50,000 Rep + 25% lifetime cap + max 2 events + 3-year gap. (4) Auto-Tranche T2+ corrected: CRP 60% / BPR 12% / Liquidity 8% / Dev 5% / Emergency 5% / Ops Fund 10% / FCP 0% permanently."
+  },
+  {
+    version: "v6.3", date: "May 2026", type: "PREV",
+    title: "Maturation Bridge ECP Correction",
+    summary: "(1) ECP (Eligible Conversion Pool) formally defined. 25% cap applies to ECP only â tokens individually aged 365+ days from reviewed_at (moment both mods approved) â NOT total lifetime earnings. (2) 12.5% per event language removed everywhere. Per-event = 25% of current ECP minus prior conversions. (3) Plumber card corrected (was 20%). Milkman card corrected (was 21,600 ENB). (4) Canonical Amina case study: Event 1 Month 18 = 91,000 ENB.GLOBAL. Event 2 Month 54 = 548,000 ENB.GLOBAL. Lifetime = 639,000 ENB.GLOBAL from 4.5 years of verified civic work."
+  },
+  {
+    version: "v6.4", date: "May 2026", type: "CURRENT",
+    title: "Three Missing Sections Added",
+    summary: "(1) Section 5.7 SWAP model fully rewritten â canonical v6.3 split documented, old v5.x Community Treasury removed. (2) Section 23 ENB Operations Fund written in full: Stream A + Stream B, three spending tiers, Permitted Uses, Absolute Boundaries, ops_fund_ledger Monthly Super Audit. (3) Section 5.7B ENB Captain Carpool System â Captain Onboarding Gate, GPS session, canonical reward formula (Bike 100 ENB/km cap 3K through Bus/Coaster 300 ENB/km cap 20K, passenger multipliers 1.0â2.5, rating multipliers 0.80â1.20), speed thresholds, Public Captain Profile."
+  }
