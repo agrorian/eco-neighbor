@@ -473,7 +473,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   const [approvedVehicles, setApprovedVehicles] = useState<string[]>([]);
   const [captainApproved, setCaptainApproved] = useState(false);
 
-  const canSubmit = photos.length > 0 && !anyUploading && requiredFieldsMet && !!gpsLat && consentGiven;
+  const canSubmit = photos.length > 0 && !anyUploading && requiredFieldsMet && !!gpsLat && consentGiven
+    && (!isTradeJob || selectedTrade !== null);
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -827,12 +828,27 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         </div>
       </div>
 
+      {/* ── Trade Job: visual selector ── */}
+      {isTradeJob && (
+        <div className="space-y-1">
+          <TradeJobSelector
+            selected={selectedTrade?.id || null}
+            onSelect={(trade) => {
+              setSelectedTrade(trade);
+              setFieldValues(prev => ({ ...prev, trade_type: trade.id }));
+            }}
+          />
+        </div>
+      )}
+
       {/* ── Custom Action Fields ── */}
       {config.fields.length > 0 && (
         <div className="space-y-1">
-          <p className="text-sm font-semibold text-enb-text-primary mb-3">Action Details</p>
+          {!isTradeJob && (
+            <p className="text-sm font-semibold text-enb-text-primary mb-3">Action Details</p>
+          )}
           <ActionFields
-            fields={config.fields}
+            fields={config.fields.filter(f => !(isTradeJob && f.id === 'trade_type'))}
             values={fieldValues}
             onChange={(id, val) => setFieldValues(prev => ({ ...prev, [id]: val }))}
           />
