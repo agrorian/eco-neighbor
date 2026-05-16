@@ -16,6 +16,11 @@ import Wallet from '@/pages/Wallet';
 import BusinessDirectory from '@/pages/directory/BusinessDirectory';
 import BusinessProfile from '@/pages/directory/BusinessProfile';
 import PartnerSignup from '@/pages/directory/PartnerSignup';
+import DirectoryHub from '@/pages/directory/DirectoryHub';
+import TradesDirectory from '@/pages/directory/TradesDirectory';
+import TradesProfile from '@/pages/directory/TradesProfile';
+import JobConfirmation from '@/pages/JobConfirmation';
+import JobRating from '@/pages/JobRating';
 import ScanRedemption from '@/pages/dashboard/ScanRedemption';
 import Leaderboard from '@/pages/Leaderboard';
 import ImpactDashboard from '@/pages/community/ImpactDashboard';
@@ -258,6 +263,8 @@ export default function App() {
           <Route path="/dev-history" element={<VersionHistory />} />
           <Route path="/account-recovery" element={<AccountRecovery />} />
           <Route path="/confirm-ride/:token" element={<ConfirmRide />} />
+          <Route path="/job/:code" element={<JobConfirmation />} />
+          <Route path="/job/:code/rate" element={<JobRating />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/token-disclaimer" element={<TokenDisclaimer />} />
@@ -287,8 +294,11 @@ export default function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/submit" element={<SubmitAction />} />
                       <Route path="/wallet" element={<Wallet />} />
-                      <Route path="/directory" element={<BusinessDirectory />} />
+                      <Route path="/directory" element={<DirectoryHub />} />
+                      <Route path="/directory/business" element={<BusinessDirectory />} />
                       <Route path="/directory/:id" element={<BusinessProfile />} />
+                      <Route path="/directory/trades" element={<TradesDirectory />} />
+                      <Route path="/directory/trades/:userId" element={<TradesProfile />} />
                       <Route path="/partner-signup" element={<PartnerSignup />} />
                       <Route path="/scan" element={<ScanRedemption />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />

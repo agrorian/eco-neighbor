@@ -46,7 +46,7 @@ function LeafletMap({ businesses, onSelect }: { businesses: Business[]; onSelect
       const withGps = businesses.filter(b => b.gps_lat && b.gps_lng);
       const centre: [number, number] = withGps.length > 0
         ? [withGps[0].gps_lat!, withGps[0].gps_lng!]
-        : [33.6007, 73.0679]; // Rawalpindi default
+        : [24.8607, 67.0011]; // Karachi default
 
       const map = L.map(mapRef.current).setView(centre, 14);
       mapInstanceRef.current = map;
