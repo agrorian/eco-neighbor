@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
-import { AlertTriangle, LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList, Bug, Radio, GitBranch } from 'lucide-react';
+import { AlertTriangle, LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList, Bug, Radio, GitBranch, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import { supabase } from '@/lib/supabase';
@@ -17,8 +17,9 @@ const NAV_ITEMS = [
   { icon: AlertTriangle,   label: 'Escalations',  path: '/admin/escalation', color: 'text-orange-500', bg: 'bg-orange-50' },
   { icon: Bug,             label: 'Bug Reports',  path: '/admin/bugs',       color: 'text-red-500',    bg: 'bg-red-50' },
   { icon: Store,           label: 'Onboarding',   path: '/admin/onboarding', color: 'text-enb-teal',   bg: 'bg-teal-50' },
-  { icon: Shield,          label: 'ENB Captains', path: '/admin/captains',   color: 'text-enb-gold',   bg: 'bg-amber-50' },
-  { icon: ClipboardList,   label: 'Daily Log',    path: '/my-log',           color: 'text-gray-600',   bg: 'bg-gray-100' },
+  { icon: Shield,          label: 'ENB Captains', path: '/admin/captains',        color: 'text-enb-gold',   bg: 'bg-amber-50' },
+  { icon: BarChart2,       label: 'Mod Performance', path: '/admin/mod-performance', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  { icon: ClipboardList,   label: 'Daily Log',    path: '/my-log',               color: 'text-gray-600',   bg: 'bg-gray-100' },
 ];
 
 export default function AdminLayout() {

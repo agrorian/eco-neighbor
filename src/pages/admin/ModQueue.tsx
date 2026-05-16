@@ -139,9 +139,10 @@ export default function ModQueue() {
 
     setSubmitting(assignment.id);
     const isM1 = assignment.mod1_id === user.id;
+    const reviewedAt = new Date().toISOString();
     const update: any = isM1
-      ? { decision1: dec.decision, reason1: dec.reason }
-      : { decision2: dec.decision, reason2: dec.reason };
+      ? { decision1: dec.decision, reason1: dec.reason, mod1_reviewed_at: reviewedAt }
+      : { decision2: dec.decision, reason2: dec.reason, mod2_reviewed_at: reviewedAt };
 
     const { error: updateError } = await supabase
       .from('moderator_assignments')

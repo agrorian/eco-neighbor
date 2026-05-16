@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import StarRating from '@/components/StarRating';
 
 // Passenger confirmation page — works for both ENB members (in-app) and non-members (web QR)
 export default function ConfirmRide() {
@@ -15,7 +16,6 @@ export default function ConfirmRide() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -49,7 +49,7 @@ export default function ConfirmRide() {
     const enbToPassenger = isAppUser ? 200 : 0;
     const enbToDriver = isAppUser ? 100 : 75;
 
-    // Insert confirmation record
+    // Insert confirmation record — captain_rating is NULL here (captain rates separately)
     const { error: confErr } = await supabase.from('ride_confirmations').insert({
       submission_id: submission.id,
       passenger_user_id: user?.id || null,
@@ -152,33 +152,17 @@ export default function ConfirmRide() {
             )}
           </div>
 
-          {/* Star rating */}
-          <div className="text-center space-y-2">
+          {/* Star rating — uses shared StarRating component */}
+          <div className="text-center space-y-3">
             <p className="text-sm font-medium text-enb-text-primary">How was your ride?</p>
-            <div className="flex justify-center gap-2">
-              {[1, 2, 3, 4, 5].map(s => (
-                <button
-                  key={s}
-                  onMouseEnter={() => setHoverRating(s)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  onClick={() => setRating(s)}
-                  className="transition-transform hover:scale-110"
-                >
-                  <Star
-                    className={`w-9 h-9 transition-colors ${
-                      s <= (hoverRating || rating)
-                        ? 'text-enb-gold fill-enb-gold'
-                        : 'text-gray-200'
-                    }`}
-                  />
-                </button>
-              ))}
+            <div className="flex justify-center">
+              <StarRating
+                value={rating}
+                onChange={setRating}
+                size="md"
+                showLabel
+              />
             </div>
-            {rating > 0 && (
-              <p className="text-xs text-gray-400">
-                {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][rating]}
-              </p>
-            )}
           </div>
 
           {/* Optional comment */}

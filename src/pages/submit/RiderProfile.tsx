@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Car, MessageCircle, Phone, MessageSquare, ArrowLeft, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Car, MessageCircle, Phone, MessageSquare, ArrowLeft, Loader2, AlertTriangle, CheckCircle, Lock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import StarRating from '@/components/StarRating';
 
 interface RiderData {
   id: string;
@@ -16,6 +17,8 @@ interface RiderData {
   is_carpool_rider: boolean;
   total_carpool_rides: number;
   avg_carpool_rating: number;
+  avg_passenger_rating: number;
+  total_rides_as_passenger: number;
   captain_applications?: { status: string; approved_vehicle_types: string[]; license_categories: string[] }[];
 }
 
@@ -27,22 +30,6 @@ interface Review {
   confirmation_type: string;
   passenger_user_id: string | null;
   passenger_name?: string;
-}
-
-function StarRow({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'lg' }) {
-  const sz = size === 'lg' ? 'w-6 h-6' : 'w-4 h-4';
-  return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map(s => (
-        <Star
-          key={s}
-          className={`${sz} transition-colors ${
-            s <= Math.round(rating) ? 'text-enb-gold fill-enb-gold' : 'text-gray-200'
-          }`}
-        />
-      ))}
-    </div>
-  );
 }
 
 export default function RiderProfile() {
@@ -60,10 +47,9 @@ export default function RiderProfile() {
     const fetchRider = async () => {
       setLoading(true);
 
-      // Fetch rider profile
       const { data: riderData, error: riderErr } = await supabase
         .from('users')
-        .select('id, full_name, profile_pic_url, whatsapp_number, neighbourhood, city, is_carpool_rider, total_carpool_rides, avg_carpool_rating, captain_applications(status, approved_vehicle_types, license_categories)')
+        .select('id, full_name, profile_pic_url, whatsapp_number, neighbourhood, city, is_carpool_rider, total_carpool_rides, avg_carpool_rating, avg_passenger_rating, total_rides_as_passenger, captain_applications(status, approved_vehicle_types, license_categories)')
         .eq('id', userId)
         .single();
 
@@ -86,12 +72,10 @@ export default function RiderProfile() {
         .limit(30);
 
       if (confirmData) {
-        // Filter to only this rider's confirmations
         const riderReviews = confirmData.filter(
           (r: any) => r.submissions?.user_id === userId
         );
 
-        // Fetch passenger names for app confirmations
         const passengerIds = riderReviews
           .filter(r => r.passenger_user_id)
           .map(r => r.passenger_user_id);
@@ -161,6 +145,7 @@ export default function RiderProfile() {
   );
 
   const isOwnProfile = currentUser?.id === userId;
+  const isCapOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin' || currentUser?.is_carpool_rider;
   const initials = (rider.full_name || 'R').charAt(0).toUpperCase();
   const location = rider.city || (rider.neighbourhood?.split(',')[1]?.trim()) || '';
 
@@ -176,7 +161,6 @@ export default function RiderProfile() {
 
       {/* Hero card */}
       <Card className="border-gray-100 overflow-hidden">
-        {/* Green header band */}
         <div className="h-20 bg-gradient-to-r from-enb-green to-enb-teal" />
 
         <div className="px-5 pb-5 -mt-10">
@@ -193,7 +177,6 @@ export default function RiderProfile() {
                 <span className="text-white text-2xl font-bold">{initials}</span>
               </div>
             )}
-            {/* ENB Captain badge */}
             <div className="absolute -bottom-1 -right-1 bg-enb-gold text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
               🚗 ENB Captain
             </div>
@@ -205,37 +188,47 @@ export default function RiderProfile() {
             <p className="text-sm text-enb-text-secondary mt-0.5">{location}</p>
           )}
 
-          {/* Stats row */}
-          <div className="flex gap-4 mt-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-enb-green">{rider.total_carpool_rides}</p>
-              <p className="text-xs text-gray-400">Rides</p>
-            </div>
-            <div className="w-px bg-gray-100" />
-            <div className="text-center">
-              <div className="flex items-center gap-1">
-                <p className="text-2xl font-bold text-enb-gold">
+          {/* Stats row — two rating blocks */}
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {/* As Captain */}
+            <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-3 space-y-1">
+              <p className="text-xs font-semibold text-enb-green uppercase tracking-wide">As Captain</p>
+              <div className="flex items-baseline gap-1.5">
+                <p className="text-2xl font-bold text-enb-text-primary">
                   {rider.avg_carpool_rating > 0 ? Number(rider.avg_carpool_rating).toFixed(1) : '—'}
                 </p>
-                {rider.avg_carpool_rating > 0 && (
-                  <Star className="w-5 h-5 text-enb-gold fill-enb-gold mb-1" />
-                )}
+                <p className="text-xs text-gray-400">/ 5</p>
               </div>
-              <p className="text-xs text-gray-400">Rating</p>
+              {rider.avg_carpool_rating > 0 && (
+                <StarRating value={Math.round(rider.avg_carpool_rating)} size="sm" />
+              )}
+              <p className="text-xs text-gray-400">{rider.total_carpool_rides} ride{rider.total_carpool_rides !== 1 ? 's' : ''}</p>
             </div>
-            <div className="w-px bg-gray-100" />
-            <div className="text-center">
-              <p className="text-2xl font-bold text-enb-text-primary">{reviews.length}</p>
-              <p className="text-xs text-gray-400">Reviews</p>
+
+            {/* As Passenger — only visible to captains and admin */}
+            <div className="bg-enb-gold/5 border border-enb-gold/20 rounded-xl p-3 space-y-1">
+              <p className="text-xs font-semibold text-enb-gold uppercase tracking-wide">As Passenger</p>
+              {isCapOrAdmin ? (
+                <>
+                  <div className="flex items-baseline gap-1.5">
+                    <p className="text-2xl font-bold text-enb-text-primary">
+                      {rider.avg_passenger_rating > 0 ? Number(rider.avg_passenger_rating).toFixed(1) : '—'}
+                    </p>
+                    <p className="text-xs text-gray-400">/ 5</p>
+                  </div>
+                  {rider.avg_passenger_rating > 0 && (
+                    <StarRating value={Math.round(rider.avg_passenger_rating)} size="sm" />
+                  )}
+                  <p className="text-xs text-gray-400">{rider.total_rides_as_passenger} ride{rider.total_rides_as_passenger !== 1 ? 's' : ''}</p>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-14 gap-1">
+                  <Lock className="w-4 h-4 text-gray-300" />
+                  <p className="text-xs text-gray-400 text-center">Visible to captains only</p>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Star display */}
-          {rider.avg_carpool_rating > 0 && (
-            <div className="mt-3">
-              <StarRow rating={rider.avg_carpool_rating} size="lg" />
-            </div>
-          )}
 
           {/* Approved vehicle types */}
           {(rider.captain_applications?.[0]?.approved_vehicle_types || []).length > 0 && (
@@ -247,7 +240,7 @@ export default function RiderProfile() {
               ))}
             </div>
           )}
-          {/* Verified Captain badge */}
+
           <div className="mt-3 flex items-center gap-1.5">
             <CheckCircle className="w-4 h-4 text-enb-green" />
             <span className="text-xs text-enb-green font-semibold">Verified ENB Captain — License & CNIC checked</span>
@@ -258,7 +251,6 @@ export default function RiderProfile() {
       {/* Action buttons — not shown on own profile */}
       {!isOwnProfile && (
         <div className="grid grid-cols-3 gap-2">
-          {/* In-app message */}
           <button
             onClick={handleInAppMessage}
             className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-enb-green/30 bg-enb-green/5 text-enb-green"
@@ -267,7 +259,6 @@ export default function RiderProfile() {
             <span className="text-xs font-medium">Message</span>
           </button>
 
-          {/* WhatsApp */}
           <button
             onClick={rider.whatsapp_number ? handleWhatsApp : undefined}
             disabled={!rider.whatsapp_number}
@@ -281,7 +272,6 @@ export default function RiderProfile() {
             <span className="text-xs font-medium">WhatsApp</span>
           </button>
 
-          {/* Call — placeholder for future */}
           <button
             disabled
             className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed relative"
@@ -295,7 +285,7 @@ export default function RiderProfile() {
         </div>
       )}
 
-      {/* Reviews section */}
+      {/* Reviews section — passenger reviews of captain */}
       <div className="space-y-3">
         <h2 className="text-base font-bold text-enb-text-primary">
           Passenger Reviews
@@ -306,7 +296,7 @@ export default function RiderProfile() {
 
         {reviews.length === 0 ? (
           <Card className="border-gray-100 p-6 text-center">
-            <Star className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+            <Car className="w-8 h-8 text-gray-200 mx-auto mb-2" />
             <p className="text-sm text-enb-text-secondary">No reviews yet.</p>
             <p className="text-xs text-gray-400 mt-1">
               Reviews appear after passengers confirm rides.
@@ -332,7 +322,7 @@ export default function RiderProfile() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <StarRow rating={review.rating} />
+                  <StarRating value={review.rating} size="sm" />
                   {review.confirmation_type === 'app' && (
                     <CheckCircle className="w-3.5 h-3.5 text-enb-green ml-1" title="Verified ENB member" />
                   )}

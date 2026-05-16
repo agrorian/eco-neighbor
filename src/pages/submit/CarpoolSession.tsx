@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, Clock, Users, QrCode, ChevronRight, AlertTriangle, CheckCircle, Navigation } from 'lucide-react';
+import { MapPin, Clock, Users, QrCode, AlertTriangle, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import StarRating from '@/components/StarRating';
 
 // ── Haversine distance (km) ──────────────────────────────────────────────────
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -67,6 +68,9 @@ export interface RideSession {
   waypoints: Waypoint[];
   rideToken: string;
   estimatedEnb: number;
+  // Captain's rating of the passenger — attached at session end
+  passengerRating: number | null;
+  passengerRatingComment: string | null;
 }
 
 interface Props {
@@ -80,7 +84,8 @@ function generateToken(): string {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
 }
 
-type Phase = 'pre' | 'riding' | 'ended';
+// Phase: pre → riding → rating → ended
+type Phase = 'pre' | 'riding' | 'rating' | 'ended';
 
 export default function CarpoolSession({ vehicleType, passengers, onRideComplete, onCancel }: Props) {
   const [phase, setPhase] = useState<Phase>('pre');
@@ -96,6 +101,14 @@ export default function CarpoolSession({ vehicleType, passengers, onRideComplete
   const [elapsedSec, setElapsedSec] = useState(0);
   const [rideToken] = useState(generateToken);
   const [showQr, setShowQr] = useState(false);
+
+  // ── Rating state (captain rates passenger at end) ────────────────────────
+  const [passengerRating, setPassengerRating] = useState(0);
+  const [passengerComment, setPassengerComment] = useState('');
+
+  // ── Captured session data (filled when "End Ride" tapped) ───────────────
+  const [pendingSession, setPendingSession] = useState<Omit<RideSession, 'passengerRating' | 'passengerRatingComment'> | null>(null);
+
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -155,7 +168,6 @@ export default function CarpoolSession({ vehicleType, passengers, onRideComplete
   // ── Update map marker as GPS changes ────────────────────────────────────
   useEffect(() => {
     if (!mapInstanceRef.current || currentLat == null || currentLng == null) return;
-    const L = (window as any).L;
     if (markerRef.current) markerRef.current.setLatLng([currentLat, currentLng]);
     if (phase === 'riding' && polylineRef.current) {
       const pts = waypointsRef.current.map(w => [w.lat, w.lng]);
@@ -174,24 +186,20 @@ export default function CarpoolSession({ vehicleType, passengers, onRideComplete
     startTimeRef.current = Date.now();
     setPhase('riding');
 
-    // Add origin waypoint
     const wp: Waypoint = { lat: currentLat, lng: currentLng, ts: Date.now() };
     waypointsRef.current = [wp];
     setWaypoints([wp]);
 
-    // Timer
     timerRef.current = setInterval(() => {
       setElapsedSec(Math.floor((Date.now() - startTimeRef.current) / 1000));
     }, 1000);
 
-    // Continuous GPS watch — runs even when screen changes (background)
     watchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         setCurrentLat(lat);
         setCurrentLng(lng);
-        // Record waypoint every ~10 seconds or >20m movement
         const last = waypointsRef.current[waypointsRef.current.length - 1];
         const dist = last ? haversineKm(last.lat, last.lng, lat, lng) * 1000 : 999;
         if (dist > 20 || Date.now() - (last?.ts || 0) > 10000) {
@@ -205,7 +213,7 @@ export default function CarpoolSession({ vehicleType, passengers, onRideComplete
     );
   };
 
-  // ── End Ride ─────────────────────────────────────────────────────────────
+  // ── End Ride — capture session, move to rating screen ───────────────────
   const handleEndRide = () => {
     if (watchRef.current != null) navigator.geolocation.clearWatch(watchRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
@@ -218,9 +226,8 @@ export default function CarpoolSession({ vehicleType, passengers, onRideComplete
     const flagged = calcSpeedFlag(vehicleType, distKm, durationMin);
     const enb = calcRideEnb(vehicleType, distKm, passengers);
 
-    setPhase('ended');
-
-    onRideComplete({
+    // Store the session data — do not call onRideComplete yet
+    setPendingSession({
       vehicleType, passengers,
       originLat, originLng,
       originTimestamp: originTs,
@@ -235,6 +242,20 @@ export default function CarpoolSession({ vehicleType, passengers, onRideComplete
       waypoints: waypointsRef.current,
       rideToken,
       estimatedEnb: enb,
+    });
+
+    // Move to rating screen
+    setPhase('rating');
+  };
+
+  // ── Submit rating and complete session ───────────────────────────────────
+  const handleSubmitRating = (skip = false) => {
+    if (!pendingSession) return;
+    setPhase('ended');
+    onRideComplete({
+      ...pendingSession,
+      passengerRating: skip ? null : (passengerRating || null),
+      passengerRatingComment: skip ? null : (passengerComment.trim() || null),
     });
   };
 
@@ -256,6 +277,73 @@ export default function CarpoolSession({ vehicleType, passengers, onRideComplete
     ? Math.round(haversineKm(originLat, originLng, currentLat, currentLng) * 100) / 100
     : 0;
   const estimatedEnb = calcRideEnb(vehicleType, estimatedKm || 0.1, passengers);
+
+  // ── Rating screen — shown after "End Ride" ───────────────────────────────
+  if (phase === 'rating') {
+    return (
+      <div className="space-y-4">
+        <div className="text-center space-y-1 pt-2">
+          <div className="w-16 h-16 rounded-full bg-enb-green/10 flex items-center justify-center mx-auto mb-3">
+            <span className="text-3xl">🏁</span>
+          </div>
+          <h2 className="text-lg font-bold text-enb-text-primary">Ride Complete</h2>
+          <p className="text-sm text-enb-text-secondary">
+            How was your passenger?
+          </p>
+        </div>
+
+        <Card className="border-gray-100 p-5 space-y-4">
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium text-enb-text-primary">Rate your passenger</p>
+            <p className="text-xs text-gray-400">
+              Were they on time, respectful, and at the correct pickup point?
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <StarRating
+              value={passengerRating}
+              onChange={setPassengerRating}
+              size="md"
+              showLabel
+            />
+          </div>
+
+          {passengerRating > 0 && (
+            <div>
+              <textarea
+                value={passengerComment}
+                onChange={e => setPassengerComment(e.target.value.slice(0, 80))}
+                placeholder="Any comments? (optional)"
+                className="w-full text-sm border border-gray-200 rounded-xl p-3 resize-none h-14 focus:outline-none focus:border-enb-green"
+              />
+              <p className="text-xs text-gray-400 text-right">{passengerComment.length}/80</p>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-400 text-center">
+            Ratings are blind — your passenger cannot see your rating until they have also rated you.
+          </p>
+        </Card>
+
+        <div className="space-y-2">
+          <Button
+            onClick={() => handleSubmitRating(false)}
+            disabled={passengerRating === 0}
+            className="w-full h-12 bg-enb-green hover:bg-enb-green/90 text-white disabled:opacity-50"
+          >
+            Submit Rating & Finish
+          </Button>
+          <button
+            onClick={() => handleSubmitRating(true)}
+            className="w-full text-sm text-gray-400 py-2 hover:text-gray-600 transition-colors"
+          >
+            Skip rating
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

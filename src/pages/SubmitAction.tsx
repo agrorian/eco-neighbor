@@ -154,7 +154,6 @@ export default function SubmitAction() {
       const isCarpool = actionKey === 'carpool';
       const rideSession = formData.rideSession;
       if (isCarpool && rideSession) {
-        // Import calcRideEnb inline — matches canonical formula
         const BASE_RATE: Record<string, number> = {
           'Bike': 100, 'Rickshaw': 120, 'Auto-rickshaw': 120,
           'Car': 150, 'Van/Minivan': 200, 'Bus/Coaster': 300,
@@ -197,16 +196,15 @@ export default function SubmitAction() {
           aiVerdict = aiResult.verdict;
           aiReason = aiResult.reason;
           aiConfidence = aiResult.confidence;
-          // Auto-decision at ≥0.85 confidence
           if (aiVerdict === 'approve' && aiConfidence >= AUTO_APPROVE_THRESHOLD) {
             aiAutoStatus = 'approved';
           } else if (aiVerdict === 'reject' && aiConfidence >= AUTO_APPROVE_THRESHOLD) {
             aiAutoStatus = 'rejected';
           } else {
-            aiAutoStatus = 'pending'; // uncertain or low confidence → human moderator
+            aiAutoStatus = 'pending';
           }
         } catch {
-          aiAutoStatus = 'pending'; // AI failure → human moderator
+          aiAutoStatus = 'pending';
         }
       }
 
@@ -257,6 +255,32 @@ export default function SubmitAction() {
       });
 
       if (error) throw error;
+
+      // ── Save captain's passenger rating if provided ──────────────────────
+      // Runs after insert succeeds. Looks up the new submission by ride_token.
+      // Non-fatal — a failed rating save does not block the submission success screen.
+      if (isCarpool && rideSession?.passengerRating && user?.id) {
+        try {
+          const { data: sub } = await supabase
+            .from('submissions')
+            .select('id')
+            .eq('ride_token', rideSession.rideToken)
+            .eq('user_id', user.id)
+            .single();
+
+          if (sub?.id) {
+            await supabase.rpc('submit_captain_passenger_rating', {
+              p_submission_id:  sub.id,
+              p_captain_id:     user.id,
+              p_rating:         rideSession.passengerRating,
+              p_comment:        rideSession.passengerRatingComment || null,
+            });
+          }
+        } catch {
+          // Silent — passenger rating failure must not block submission confirmation
+        }
+      }
+
       setStep('success');
     } catch (err: any) {
       setSubmitError(err.message || 'Submission failed. Please try again.');
