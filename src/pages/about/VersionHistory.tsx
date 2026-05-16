@@ -77,6 +77,27 @@ const WHITEPAPER_VERSIONS = [
     title: "Auto-Tranche System & Complete Ecosystem Sustainability Architecture",
     summary: "(1) Auto-Tranche: autonomous 10B ENB mint when CRP reaches 10%, infinite, immutable. (2) T2+ distribution locked in Solana smart contract: CRP 70% / BPR 12% / Liquidity 8% / Dev 5% / Emergency 5% — FCP 0% permanently. (3) Mint authority held by PDA smart contract only — NOT human-accessible. (4) SWAP = Sustainable Work Achieves Prosperity — replaces redemption in all user-facing language. (5) Geographic limits removed. (6) Daily action cap locked at 3 per user per day. (7) CRP Tiered Protection Protocol: 5 fully autonomous zones. (8) Supply rationale completely rewritten. (9) All evening corrections applied."
   }
+
+  {
+    version: "v6.1", date: "May 2026", type: "PREV",
+    title: "Founding Pool Restructure + Geo Corrections",
+    summary: "(1) Community Operations Lead seat dissolved — 65M ENB absorbed into Unallocated Reserve (now 240M / 48%). Tech Lead reduced from 65M to 50M (10%). CGR Lead and Legal Lead seats dissolved. Active founding seats reduced to 5. (2) All Rawalpindi geographic references corrected to Karachi as pilot city. False real-users claim removed. (3) 11 instances of neighbourhood corrected to neighborhood (American English). (4) CFSP Priority Waterfall v4.9 propagated."
+  },
+  {
+    version: "v6.2", date: "May 2026", type: "PREV",
+    title: "SWAP Model Canonical + ENB Operations Fund First Spec",
+    summary: "(1) SWAP distribution locked: 80% CRP / 3.3% BLG / 2% BSF / 1.3% MM / 1.3% Insurance / 2% Reserve Buffer / 10% Ops Fund. No burn. (2) ENB Operations Fund first specified: Stream A 10% T2+ PDA immutable, Stream B 10% SWAP from Day 1. (3) Maturation Bridge conditions first written: 365-day hold + 50,000 Rep + 25% lifetime cap + max 2 events + 3-year gap. (4) Auto-Tranche T2+ corrected: CRP 60% / BPR 12% / Liquidity 8% / Dev 5% / Emergency 5% / Ops Fund 10% / FCP 0% permanently."
+  },
+  {
+    version: "v6.3", date: "May 2026", type: "PREV",
+    title: "Maturation Bridge ECP Correction",
+    summary: "(1) ECP (Eligible Conversion Pool) formally defined. 25% cap applies to ECP only — tokens individually aged 365+ days from reviewed_at (both mods approved) — NOT total lifetime earnings. (2) 12.5% per event language removed everywhere. Per-event = 25% of current ECP minus prior conversions. (3) Plumber card corrected (was 20%). Milkman card corrected (was 21,600 ENB). (4) Canonical Amina case study: Event 1 Month 18 = 91,000 ENB.GLOBAL. Event 2 Month 54 = 548,000 ENB.GLOBAL. Lifetime = 639,000 ENB.GLOBAL from 4.5 years of verified civic work."
+  },
+  {
+    version: "v6.4", date: "May 2026", type: "CURRENT",
+    title: "Three Missing Sections Added",
+    summary: "(1) Section 5.7 SWAP model fully rewritten — canonical v6.3 split documented, old v5.x Community Treasury removed. No burn. (2) Section 23 ENB Operations Fund written in full: Stream A (10% T2+ PDA immutable) + Stream B (10% SWAP from Day 1), three spending tiers, Permitted Uses, Absolute Boundaries, ops_fund_ledger Monthly Super Audit. (3) Section 5.7B ENB Captain Carpool System — Captain Onboarding Gate, GPS session, canonical reward formula (Bike 100 ENB/km cap 3K through Bus/Coaster 300 ENB/km cap 20K, passenger multipliers 1.0–2.5, rating multipliers 0.80–1.20), speed thresholds, Public Captain Profile."
+  },
 ];
 
 const APP_VERSIONS = [
@@ -416,24 +437,4 @@ export default function VersionHistory() {
       </div>
     </div>
   );
-}  },
-  {
-    version: "v6.1", date: "May 2026", type: "PREV",
-    title: "Founding Pool Restructure + Geo Corrections",
-    summary: "(1) Community Operations Lead seat dissolved â 65M ENB absorbed into Unallocated Reserve (now 240M / 48%). Tech Lead reduced from 65M to 50M (10%). CGR Lead and Legal Lead seats dissolved. Active founding seats reduced to 5. (2) All Rawalpindi geographic references corrected to Karachi as pilot city. False real-users claim removed. (3) 11 instances of neighbourhood corrected to neighborhood (American English). (4) CFSP Priority Waterfall v4.9 propagated."
-  },
-  {
-    version: "v6.2", date: "May 2026", type: "PREV",
-    title: "SWAP Model Canonical + ENB Operations Fund First Spec",
-    summary: "(1) SWAP distribution locked: 80% CRP / 3.3% BLG / 2% BSF / 1.3% MM / 1.3% Insurance / 2% Reserve Buffer / 10% Ops Fund. No burn. (2) ENB Operations Fund first specified: Stream A 10% T2+ PDA immutable, Stream B 10% SWAP from Day 1. (3) Maturation Bridge conditions first written: 365-day hold + 50,000 Rep + 25% lifetime cap + max 2 events + 3-year gap. (4) Auto-Tranche T2+ corrected: CRP 60% / BPR 12% / Liquidity 8% / Dev 5% / Emergency 5% / Ops Fund 10% / FCP 0% permanently."
-  },
-  {
-    version: "v6.3", date: "May 2026", type: "PREV",
-    title: "Maturation Bridge ECP Correction",
-    summary: "(1) ECP (Eligible Conversion Pool) formally defined. 25% cap applies to ECP only â tokens individually aged 365+ days from reviewed_at (moment both mods approved) â NOT total lifetime earnings. (2) 12.5% per event language removed everywhere. Per-event = 25% of current ECP minus prior conversions. (3) Plumber card corrected (was 20%). Milkman card corrected (was 21,600 ENB). (4) Canonical Amina case study: Event 1 Month 18 = 91,000 ENB.GLOBAL. Event 2 Month 54 = 548,000 ENB.GLOBAL. Lifetime = 639,000 ENB.GLOBAL from 4.5 years of verified civic work."
-  },
-  {
-    version: "v6.4", date: "May 2026", type: "CURRENT",
-    title: "Three Missing Sections Added",
-    summary: "(1) Section 5.7 SWAP model fully rewritten â canonical v6.3 split documented, old v5.x Community Treasury removed. (2) Section 23 ENB Operations Fund written in full: Stream A + Stream B, three spending tiers, Permitted Uses, Absolute Boundaries, ops_fund_ledger Monthly Super Audit. (3) Section 5.7B ENB Captain Carpool System â Captain Onboarding Gate, GPS session, canonical reward formula (Bike 100 ENB/km cap 3K through Bus/Coaster 300 ENB/km cap 20K, passenger multipliers 1.0â2.5, rating multipliers 0.80â1.20), speed thresholds, Public Captain Profile."
-  }
+}
