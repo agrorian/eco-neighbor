@@ -76,8 +76,7 @@ const WHITEPAPER_VERSIONS = [
     version: "v6.0", date: "Apr 2026", type: "PREV",
     title: "Auto-Tranche System & Complete Ecosystem Sustainability Architecture",
     summary: "(1) Auto-Tranche: autonomous 10B ENB mint when CRP reaches 10%, infinite, immutable. (2) T2+ distribution locked in Solana smart contract: CRP 70% / BPR 12% / Liquidity 8% / Dev 5% / Emergency 5% — FCP 0% permanently. (3) Mint authority held by PDA smart contract only — NOT human-accessible. (4) SWAP = Sustainable Work Achieves Prosperity — replaces redemption in all user-facing language. (5) Geographic limits removed. (6) Daily action cap locked at 3 per user per day. (7) CRP Tiered Protection Protocol: 5 fully autonomous zones. (8) Supply rationale completely rewritten. (9) All evening corrections applied."
-  }
-
+  },
   {
     version: "v6.1", date: "May 2026", type: "PREV",
     title: "Founding Pool Restructure + Geo Corrections",
