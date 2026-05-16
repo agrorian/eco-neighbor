@@ -241,10 +241,12 @@ export default function TradesDirectory() {
     const fetch = async () => {
       setLoading(true);
       // Show members who either have verified trade jobs OR whose profession is a known trade
+      // Exclude business accounts (role = 'business') — only show individual tradespeople
       const { data } = await supabase
         .from('users')
         .select('id, full_name, profile_pic_url, neighbourhood, city, profession, trade_types, total_verified_jobs, avg_job_rating, total_job_ratings, trade_availability, trade_availability_until, cnic_verified, joined_at')
         .or(`total_verified_jobs.gt.0,profession.in.(${TRADE_PROFESSION_LIST.map(p => `"${p}"`).join(',')})`)
+        .neq('role', 'business')
         .order('total_verified_jobs', { ascending: false });
 
       if (data) {

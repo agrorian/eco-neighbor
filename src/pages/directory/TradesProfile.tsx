@@ -9,6 +9,7 @@ import StarRating from '@/components/StarRating';
 import { TRADE_EMOJI, TRADE_LABEL } from './TradesDirectory';
 import StartJobModal from './StartJobModal';
 import AvailabilityPicker from '@/components/AvailabilityPicker';
+import { TRADE_PROFESSIONS } from '@/lib/constants';
 
 interface TradesPersonData {
   id: string;
@@ -112,11 +113,25 @@ export default function TradesProfile() {
         .from('users')
         .select('id, full_name, profile_pic_url, neighbourhood, city, profession, whatsapp_number, trade_types, total_verified_jobs, avg_job_rating, total_job_ratings, trade_availability, trade_availability_until, trade_availability_schedule, cnic_verified, joined_at, avg_carpool_rating, rep_score')
         .eq('id', userId)
-        .gt('total_verified_jobs', 0)
         .maybeSingle();
 
-      if (!p) { setError('Profile not found or no verified jobs yet.'); setLoading(false); return; }
-      setPerson(p);
+      // Allow profile if user has verified jobs OR profession is a known trade
+      const isTradePerson = (p?.total_verified_jobs || 0) > 0 ||
+        (p?.profession && TRADE_PROFESSIONS[p.profession]);
+
+      if (!p || !isTradePerson) {
+        setError('Profile not found.');
+        setLoading(false);
+        return;
+      }
+      setPerson({
+        ...p,
+        trade_types: p.trade_types?.length > 0
+          ? p.trade_types
+          : p.profession && TRADE_PROFESSIONS[p.profession]
+            ? [TRADE_PROFESSIONS[p.profession]]
+            : [],
+      });
 
       // Approved trade job submissions — the portfolio
       const { data: jobData } = await supabase
