@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, AlertTriangle, Loader2, Filter, X, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,7 @@ function fmtDate(iso: string) {
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function ModPerformance() {
+  const navigate = useNavigate();
   const [view, setView] = useState<View>('list1');
   const [timeWindow, setTimeWindow] = useState<TimeWindow>('30d');
 
@@ -596,7 +598,13 @@ export default function ModPerformance() {
                 {/* Row header */}
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <div>
-                    <p className="text-xs text-gray-400 font-mono">{row.submissionId.slice(0, 8)}…</p>
+                    <button
+                    onClick={() => navigate(`/submission/${row.submissionId}`)}
+                    className="text-xs text-enb-teal font-mono hover:underline text-left"
+                    title="Open submission detail"
+                  >
+                    {row.submissionId.slice(0, 8)}… ↗
+                  </button>
                     <p className="text-sm font-semibold text-enb-text-primary capitalize">
                       {row.actionType.replace(/_/g, ' ')}
                     </p>
