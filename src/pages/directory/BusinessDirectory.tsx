@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Map as MapIcon, List, Star, Tag, Loader2 } from 'lucide-react';
+import { Search, Map as MapIcon, List, Star, Tag, Loader2, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
@@ -177,7 +177,12 @@ export default function BusinessDirectory() {
     <div className="space-y-6 pb-24">
       <header className="space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-enb-text-primary">{l('directory', 'title')}</h1>
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/directory')} className="p-2 rounded-xl hover:bg-gray-100">
+              <ArrowLeft className="w-5 h-5 text-gray-500" />
+            </button>
+            <h1 className="text-2xl font-bold text-enb-text-primary">{l('directory', 'title')}</h1>
+          </div>
           <div className="flex bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('list')}

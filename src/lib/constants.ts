@@ -52,6 +52,31 @@ export const PROFESSIONS = [
   'Wholesale Trader',
 ];
 
+// ── TRADE_PROFESSIONS — single source of truth ────────────────────────────────
+// Maps each PROFESSIONS value that represents a trade to its trade type key.
+// Used by: Profile.tsx (section visibility), TradesDirectory.tsx (query filter),
+// TradesProfile.tsx (badge display).
+// NEVER define this mapping in more than one place.
+export const TRADE_PROFESSIONS: Record<string, string> = {
+  'Plumber':                                  'plumbing',
+  'Electrician':                              'electrical',
+  'Electronics Technician':                   'appliance_repair',
+  'Mobile Repairman':                         'appliance_repair',
+  'Electrical Shop (Wires, Lights, Fittings)':'electrical',
+  'Carpenter':                                'carpentry',
+  'Painter / Mason':                          'masonry',
+  'Welder':                                   'welding',
+  'Mechanic / Auto Technician':               'auto_repair',
+  'Cobbler / Shoe Repairer':                  'general',
+  'Tailor / Seamstress':                      'general',
+  'Contractor':                               'general',
+  'Baker / Confectioner':                     'general',
+  'Chef / Cook':                              'general',
+};
+
+// All profession strings that qualify as trade professions (for UI checks)
+export const TRADE_PROFESSION_LIST = Object.keys(TRADE_PROFESSIONS);
+
 // Business categories — used in PartnerManager, PartnerSignup, BusinessDirectory
 export const BUSINESS_CATEGORIES = [
   'Allopathic Clinic / Doctor',

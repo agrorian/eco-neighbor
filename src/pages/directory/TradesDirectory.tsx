@@ -4,6 +4,7 @@ import { Search, Map as MapIcon, List, Loader2, ArrowLeft, Star } from 'lucide-r
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import { TRADE_PROFESSION_LIST, TRADE_PROFESSIONS } from '@/lib/constants';
 
 // ── Trade type emoji map — visual-first, no text needed ──────────────────────
 export const TRADE_EMOJI: Record<string, string> = {
@@ -239,12 +240,25 @@ export default function TradesDirectory() {
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
+      // Show members who either have verified trade jobs OR whose profession is a known trade
       const { data } = await supabase
         .from('users')
-        .select('id, full_name, profile_pic_url, neighbourhood, city, trade_types, total_verified_jobs, avg_job_rating, total_job_ratings, trade_availability, trade_availability_until, cnic_verified, joined_at')
-        .gt('total_verified_jobs', 0)
+        .select('id, full_name, profile_pic_url, neighbourhood, city, profession, trade_types, total_verified_jobs, avg_job_rating, total_job_ratings, trade_availability, trade_availability_until, cnic_verified, joined_at')
+        .or(`total_verified_jobs.gt.0,profession.in.(${TRADE_PROFESSION_LIST.map(p => `"${p}"`).join(',')})`)
         .order('total_verified_jobs', { ascending: false });
-      if (data) setPeople(data);
+
+      if (data) {
+        // Enrich trade_types from profession if trade_types is empty
+        const enriched = data.map(p => ({
+          ...p,
+          trade_types: p.trade_types?.length > 0
+            ? p.trade_types
+            : p.profession && TRADE_PROFESSIONS[p.profession]
+              ? [TRADE_PROFESSIONS[p.profession]]
+              : [],
+        }));
+        setPeople(enriched);
+      }
       setLoading(false);
     };
     fetch();

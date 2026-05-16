@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import AvailabilityPicker from '@/components/AvailabilityPicker';
 import { TRADE_EMOJI, TRADE_LABEL } from '@/pages/directory/TradesDirectory';
+import { TRADE_PROFESSIONS, TRADE_PROFESSION_LIST } from '@/lib/constants';
 
 const BADGES = [
   { id: 1, name: 'Early Adopter', icon: '🚀', description: 'Joined in the first month' },
@@ -54,10 +55,17 @@ export default function Profile() {
     ? user.profile_pic_url
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1A6B3C&color=fff&size=96`;
 
-  // Trades — use store fields (added in v1.8.0 SQL)
+  // Trades — show section if profession is a known trade type
   const totalVerifiedJobs = (user as any).total_verified_jobs || 0;
   const tradeTypes: string[] = (user as any).trade_types || [];
-  const isTradesPerson = totalVerifiedJobs > 0 || tradeTypes.length > 0;
+  const professionTradeKey = user.profession ? TRADE_PROFESSIONS[user.profession] : null;
+  const isTradesPerson = !!professionTradeKey || totalVerifiedJobs > 0;
+  // Derive primary trade display from profession mapping, fall back to DB trade_types
+  const displayTradeTypes = tradeTypes.length > 0
+    ? tradeTypes
+    : professionTradeKey
+      ? [professionTradeKey]
+      : [];
   const currentAvailability = localAvailability ?? (user as any).trade_availability ?? 'not_set';
   const avail = AVAILABILITY_CONFIG[currentAvailability] || AVAILABILITY_CONFIG.not_set;
 
@@ -188,9 +196,9 @@ export default function Profile() {
           </button>
 
           {/* Trade type chips */}
-          {tradeTypes.length > 0 && (
+          {displayTradeTypes.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {tradeTypes.map(t => (
+              {displayTradeTypes.map(t => (
                 <span key={t} className="flex items-center gap-1.5 bg-enb-teal/10 text-enb-teal text-sm font-semibold px-3 py-1.5 rounded-full border border-enb-teal/20">
                   {TRADE_EMOJI[t] || '🛠️'} {TRADE_LABEL[t] || t}
                 </span>
