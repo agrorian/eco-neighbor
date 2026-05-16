@@ -16,11 +16,6 @@ import Wallet from '@/pages/Wallet';
 import BusinessDirectory from '@/pages/directory/BusinessDirectory';
 import BusinessProfile from '@/pages/directory/BusinessProfile';
 import PartnerSignup from '@/pages/directory/PartnerSignup';
-import DirectoryHub from '@/pages/directory/DirectoryHub';
-import TradesDirectory from '@/pages/directory/TradesDirectory';
-import TradesProfile from '@/pages/directory/TradesProfile';
-import JobConfirmation from '@/pages/JobConfirmation';
-import JobRating from '@/pages/JobRating';
 import ScanRedemption from '@/pages/dashboard/ScanRedemption';
 import Leaderboard from '@/pages/Leaderboard';
 import ImpactDashboard from '@/pages/community/ImpactDashboard';
@@ -56,7 +51,6 @@ const FounderHardship = lazy(() => import('@/pages/FounderHardship'));
 const PartnerFloat = lazy(() => import('@/pages/PartnerFloat'));
 const ModQueue = lazy(() => import('@/pages/admin/ModQueue'));
 const EscalationQueue = lazy(() => import('@/pages/admin/EscalationQueue'));
-const ModPerformance = lazy(() => import('@/pages/admin/ModPerformance'));
 const MyHistory = lazy(() => import('@/pages/MyHistory'));
 const SubmissionDetail = lazy(() => import('@/pages/SubmissionDetail'));
 const CommunityIssues = lazy(() => import('@/pages/community/CommunityIssues'));
@@ -125,6 +119,17 @@ export default function App() {
     cnic_photo_url: data.cnic_photo_url || undefined,
     cnic_verified: data.cnic_verified === true,
     cnic_submitted_at: data.cnic_submitted_at || undefined,
+    // ── v1.7.0 carpool passenger rating ──────────────────────────────────────
+    avg_passenger_rating: Number(data.avg_passenger_rating) || 0,
+    total_rides_as_passenger: Number(data.total_rides_as_passenger) || 0,
+    // ── v1.8.0 trades ecosystem ───────────────────────────────────────────────
+    trade_types: data.trade_types || [],
+    total_verified_jobs: Number(data.total_verified_jobs) || 0,
+    avg_job_rating: Number(data.avg_job_rating) || 0,
+    total_job_ratings: Number(data.total_job_ratings) || 0,
+    trade_availability: data.trade_availability || 'not_set',
+    trade_availability_until: data.trade_availability_until || undefined,
+    trade_availability_schedule: data.trade_availability_schedule || null,
   });
 
   const loadUserProfile = async (userId: string, userEmail: string) => {
@@ -263,8 +268,6 @@ export default function App() {
           <Route path="/dev-history" element={<VersionHistory />} />
           <Route path="/account-recovery" element={<AccountRecovery />} />
           <Route path="/confirm-ride/:token" element={<ConfirmRide />} />
-          <Route path="/job/:code" element={<JobConfirmation />} />
-          <Route path="/job/:code/rate" element={<JobRating />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/token-disclaimer" element={<TokenDisclaimer />} />
@@ -285,7 +288,6 @@ export default function App() {
                 <Route path="announcements" element={<AnnouncementsPage />} />
                 <Route path="org-structure" element={<OrgStructurePage />} />
                 <Route path="captains" element={<AdminCaptains />} />
-                <Route path="mod-performance" element={<ModPerformance />} />
               </Route>
               <Route path="/*" element={
                 <Layout>
@@ -294,11 +296,8 @@ export default function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/submit" element={<SubmitAction />} />
                       <Route path="/wallet" element={<Wallet />} />
-                      <Route path="/directory" element={<DirectoryHub />} />
-                      <Route path="/directory/business" element={<BusinessDirectory />} />
+                      <Route path="/directory" element={<BusinessDirectory />} />
                       <Route path="/directory/:id" element={<BusinessProfile />} />
-                      <Route path="/directory/trades" element={<TradesDirectory />} />
-                      <Route path="/directory/trades/:userId" element={<TradesProfile />} />
                       <Route path="/partner-signup" element={<PartnerSignup />} />
                       <Route path="/scan" element={<ScanRedemption />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
