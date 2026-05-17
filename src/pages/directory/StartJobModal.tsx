@@ -34,6 +34,32 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
   const [genError, setGenError] = useState('');
   const [messageSending, setMessageSending] = useState(false);
   const [messageSent, setMessageSent] = useState(false);
+  const [contacts, setContacts] = useState<{ id: string; name: string }[]>([]);
+  const [showContactPicker, setShowContactPicker] = useState(false);
+
+  // Fetch recent conversation partners when code is generated
+  const fetchRecentContacts = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('messages')
+      .select('sender_id, recipient_id')
+      .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (!data) return;
+    const partnerIds = [...new Set(
+      data.map(m => m.sender_id === user.id ? m.recipient_id : m.sender_id)
+    )].slice(0, 6);
+
+    if (partnerIds.length === 0) return;
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .in('id', partnerIds);
+
+    if (users) setContacts(users.map(u => ({ id: u.id, name: u.full_name })));
+  };
 
   const handleGenerate = async () => {
     if (!user) return;
@@ -58,6 +84,7 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
     setJobCode(code);
     setStep('code');
     setGenerating(false);
+    fetchRecentContacts(); // load contacts for the send picker
   };
 
   const handleCopy = () => {
@@ -217,23 +244,53 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
                 Done — I'll submit my work after completing the job
               </button>
 
-              {/* Send directly via in-app message if customer ID known */}
-              {customerId && !messageSent && (
-                <button
-                  onClick={() => sendLinkToCustomer(customerId)}
-                  disabled={messageSending}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-enb-teal/10 text-enb-teal border border-enb-teal/20 text-sm font-semibold"
-                >
-                  {messageSending
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : <MessageCircle className="w-4 h-4" />
-                  }
-                  {messageSending ? 'Sending...' : 'Send Link to Customer via Message'}
-                </button>
+              {/* Send via message — contact picker */}
+              {!messageSent && (
+                <div className="space-y-2">
+                  {!showContactPicker ? (
+                    <button
+                      onClick={() => setShowContactPicker(true)}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-enb-teal/10 text-enb-teal border border-enb-teal/20 text-sm font-semibold"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Send Link via Message
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-500 text-center">Send to which customer?</p>
+                      {contacts.length === 0 ? (
+                        <p className="text-xs text-gray-400 text-center py-2">No recent contacts found</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {contacts.map(c => (
+                            <button
+                              key={c.id}
+                              onClick={() => sendLinkToCustomer(c.id)}
+                              disabled={messageSending}
+                              className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-enb-teal/40 hover:bg-enb-teal/5 transition-all text-left"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-enb-teal/20 flex items-center justify-center text-enb-teal font-bold text-sm flex-shrink-0">
+                                {c.name.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-sm font-medium text-enb-text-primary">{c.name}</span>
+                              {messageSending && <Loader2 className="w-4 h-4 animate-spin ml-auto text-enb-teal" />}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setShowContactPicker(false)}
+                        className="w-full text-xs text-gray-400 py-1"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
               {messageSent && (
-                <div className="flex items-center justify-center gap-2 py-3 text-sm text-enb-green font-medium">
-                  <Check className="w-4 h-4" /> Link sent to customer's inbox ✓
+                <div className="flex items-center justify-center gap-2 py-2 text-sm text-enb-green font-medium">
+                  <Check className="w-4 h-4" /> Link sent to customer ✓
                 </div>
               )}
 
