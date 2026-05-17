@@ -11,6 +11,7 @@ import { useT } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 
 const ActiveCampaignBanner = () => {
+  const { isUrdu } = useT();
   const [campaign, setCampaign] = React.useState<any>(null);
 
   React.useEffect(() => {
@@ -32,7 +33,9 @@ const ActiveCampaignBanner = () => {
 
   const endsAt = new Date(campaign.ends_at);
   const hoursLeft = Math.max(0, Math.round((endsAt.getTime() - Date.now()) / 3600000));
-  const timeLabel = hoursLeft >= 48 ? `${Math.round(hoursLeft / 24)}d left` : `${hoursLeft}h left`;
+  const dLabel = isUrdu ? 'دن باقی' : 'd left';
+  const hLabel = isUrdu ? 'گھنٹے باقی' : 'h left';
+  const timeLabel = hoursLeft >= 48 ? `${Math.round(hoursLeft / 24)} ${dLabel}` : `${hoursLeft} ${hLabel}`;
 
   return (
     <motion.div
@@ -44,7 +47,7 @@ const ActiveCampaignBanner = () => {
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-2">
           <div className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
-            {campaign.multiplier}× Bonus Active
+            {campaign.multiplier}× {isUrdu ? 'بونس فعال' : 'Bonus Active'}
           </div>
           {campaign.ends_at && (
             <div className="flex items-center gap-1 text-xs font-medium bg-black/20 px-2 py-1 rounded-lg">
@@ -55,11 +58,11 @@ const ActiveCampaignBanner = () => {
         </div>
         <h3 className="text-xl font-bold mb-1">{campaign.name}</h3>
         <p className="text-white/90 text-sm mb-4 max-w-xs">
-          Earn {campaign.multiplier}× ENB for eligible actions during this campaign!
+          {isUrdu ? `${campaign.multiplier}× ENB کمائیں — اس مہم میں اہل اعمال کے لیے!` : `Earn ${campaign.multiplier}× ENB for eligible actions during this campaign!`}
         </p>
         <Link to="/impact">
           <Button variant="secondary" size="sm" className="bg-white text-enb-green hover:bg-white/90 border-none">
-            View Details <ArrowRight className="w-4 h-4 ml-1" />
+            {isUrdu ? 'تفصیل دیکھیں' : 'View Details'} <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </Link>
       </div>
@@ -67,20 +70,51 @@ const ActiveCampaignBanner = () => {
   );
 };
 
-const ACTION_LABELS: Record<string, string> = {
+const ACTION_LABELS_EN: Record<string, string> = {
   neighbourhood_cleanup: 'Neighbourhood Cleanup',
-  food_sharing: 'Food Sharing',
-  skill_workshop: 'Skill Workshop',
-  tree_planting: 'Tree Planting',
-  carpool: 'Carpool',
-  recycling: 'Recycling',
-  mentoring: 'Mentoring',
-  verified_trade_job: 'Verified Trade Job',
-  community_event: 'Community Event',
-  other: 'Community Action',
+  recycling_dropoff:     'Recycling Drop-off',
+  food_sharing:          'Food Sharing',
+  skill_workshop:        'Skill Workshop',
+  tree_planting:         'Tree Planting',
+  carpool:               'Carpool',
+  recycling:             'Recycling',
+  mentoring:             'Mentoring',
+  youth_mentoring:       'Youth Mentoring',
+  trade_job:             'Trade Job',
+  verified_trade_job:    'Verified Trade Job',
+  infrastructure_report: 'Infrastructure Report',
+  waste_reporting:       'Waste Reporting',
+  community_event:       'Community Event',
+  other:                 'Community Action',
 };
-const formatAction = (raw: string) =>
-  ACTION_LABELS[raw] || raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+const ACTION_LABELS_UR: Record<string, string> = {
+  neighbourhood_cleanup: 'محلہ صفائی',
+  recycling_dropoff:     'ری سائیکلنگ',
+  food_sharing:          'کھانا بانٹنا',
+  skill_workshop:        'ہنر ورکشاپ',
+  tree_planting:         'درخت لگانا',
+  carpool:               'کارپول',
+  recycling:             'ری سائیکلنگ',
+  mentoring:             'رہنمائی',
+  youth_mentoring:       'نوجوانوں کی رہنمائی',
+  trade_job:             'ہنر کا کام',
+  verified_trade_job:    'تصدیق شدہ ہنر کام',
+  infrastructure_report: 'انفراسٹرکچر رپورٹ',
+  waste_reporting:       'کچرہ رپورٹ',
+  community_event:       'کمیونٹی تقریب',
+  other:                 'کمیونٹی کام',
+};
+const ACTION_EMOJIS: Record<string, string> = {
+  neighbourhood_cleanup: '🧹', recycling_dropoff: '♻️', food_sharing: '🍱',
+  skill_workshop: '🎓', tree_planting: '🌳', carpool: '🚗', recycling: '♻️',
+  mentoring: '🤝', youth_mentoring: '🤝', trade_job: '🔧', verified_trade_job: '🔧',
+  infrastructure_report: '🚧', waste_reporting: '🗑️', community_event: '🎉', other: '✅',
+};
+const formatAction = (raw: string, isUrdu?: boolean) => {
+  if (isUrdu) return ACTION_LABELS_UR[raw] || raw.replace(/_/g, ' ');
+  return ACTION_LABELS_EN[raw] || raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+};
+const actionEmoji = (raw: string) => ACTION_EMOJIS[raw] || '✅';
 
 const ImpactCounter = () => {
   const { l, isUrdu } = useT();
@@ -172,9 +206,11 @@ const ImpactCounter = () => {
             <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
               <div>
                 <h3 className="font-bold text-enb-text-primary">
-                  {modalType === 'actions' ? `${stats.actions.toLocaleString()} Verified Actions` : `${(stats.enb / 1000).toFixed(1)}k ENB Distributed`}
+                  {modalType === 'actions'
+                    ? `${stats.actions.toLocaleString()} ${isUrdu ? 'تصدیق شدہ کام' : 'Verified Actions'}`
+                    : `${(stats.enb / 1000).toFixed(1)}k ${isUrdu ? 'ENB تقسیم شدہ' : 'ENB Distributed'}`}
                 </h3>
-                <p className="text-xs text-gray-400 mt-0.5">Community activity · First names only · No private info</p>
+                <p className="text-xs text-gray-400 mt-0.5">{isUrdu ? 'کمیونٹی سرگرمی · صرف پہلے نام · کوئی ذاتی معلومات نہیں' : 'Community activity · First names only · No private info'}</p>
               </div>
               <button onClick={closeModal} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg leading-none">×</button>
             </div>
@@ -182,18 +218,18 @@ const ImpactCounter = () => {
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
                   <div className="w-7 h-7 border-2 border-enb-green border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs text-gray-400">Loading community data...</span>
+                  <span className="text-xs text-gray-400">{isUrdu ? 'ڈیٹا لوڈ ہو رہا ہے...' : 'Loading community data...'}</span>
                 </div>
               ) : rows.length === 0 ? (
-                <div className="text-center py-12 text-gray-400 text-sm">No verified actions yet</div>
+                <div className="text-center py-12 text-gray-400 text-sm">{isUrdu ? 'ابھی تک کوئی تصدیق شدہ کام نہیں' : 'No verified actions yet'}</div>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 sticky top-0 border-b border-gray-100">
                     <tr>
-                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Member</th>
-                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Action</th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">{isUrdu ? 'ممبر' : 'Member'}</th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">{isUrdu ? 'کام' : 'Action'}</th>
                       <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase">ENB</th>
-                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
+                      <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase">{isUrdu ? 'تاریخ' : 'Date'}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -208,7 +244,7 @@ const ImpactCounter = () => {
                           </div>
                         </td>
                         <td className="p-3">
-                          <span className="text-xs font-medium">{formatAction(a.action_type || '')}</span>
+                          <span className="text-xs font-medium">{actionEmoji(a.action_type || '')} {formatAction(a.action_type || '', isUrdu)}</span>
                           {a.neighbourhood && <div className="text-[10px] text-gray-400 mt-0.5">{a.neighbourhood}</div>}
                         </td>
                         <td className="p-3 text-right font-bold text-enb-green text-xs">+{(a.enb_awarded || 0).toLocaleString()}</td>
@@ -223,7 +259,7 @@ const ImpactCounter = () => {
             </div>
             <div className="p-3 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
               <span className="text-xs text-gray-400">{l('dashboard', 'mostRecent').replace('{n}', rows.length.toString())}</span>
-              <span className="text-xs text-gray-300">· First names only · No private info</span>
+              <span className="text-xs text-gray-300">· {isUrdu ? 'صرف پہلے نام · کوئی ذاتی معلومات نہیں' : 'First names only · No private info'}</span>
             </div>
           </div>
         </div>
@@ -349,14 +385,14 @@ export default function MemberDashboard() {
               {l('dashboard', 'greeting')}, {user.full_name?.split(' ')[0] || user.email} {getTierIcon(user.rep_score)}
             </h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-sm text-enb-text-secondary font-medium bg-gray-100 px-2 py-0.5 rounded-md">{tier} Tier</span>
+              <span className="text-sm text-enb-text-secondary font-medium bg-gray-100 px-2 py-0.5 rounded-md">{l('tiers', tier as any)} {isUrdu ? 'درجہ' : 'Tier'}</span>
               <span className="text-sm text-enb-text-secondary">•</span>
               <span className="text-sm text-enb-text-secondary font-medium flex items-center gap-1">
-                <Star className="w-3 h-3 text-enb-gold fill-current" />{user.rep_score} Rep
+                <Star className="w-3 h-3 text-enb-gold fill-current" />{user.rep_score} {isUrdu ? 'ساکھ' : 'Rep'}
               </span>
               {!user.cnic_verified && (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                  <Lock className="w-2.5 h-2.5" /> Unverified
+                  <Lock className="w-2.5 h-2.5" /> {isUrdu ? 'غیر تصدیق شدہ' : 'Unverified'}
                 </span>
               )}
             </div>
@@ -375,7 +411,7 @@ export default function MemberDashboard() {
                 <Lock className="w-4 h-4 text-amber-500" />
                 <div className="text-3xl font-bold text-amber-500">{(user.enb_local_bal || 0).toLocaleString()}</div>
               </div>
-              <div className="text-xs text-amber-600 font-medium">Locked · Verify ID</div>
+              <div className="text-xs text-amber-600 font-medium">{isUrdu ? 'بند · شناخت تصدیق کریں' : 'Locked · Verify ID'}</div>
             </>
           )}
         </div>
