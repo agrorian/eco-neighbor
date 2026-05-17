@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useT } from '@/contexts/LanguageContext';
 import { Camera, MapPin, CheckCircle, Loader2, AlertCircle, X, Plus, Users, Clock, Weight, TreePine, Car, Wrench, Package, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -69,21 +70,23 @@ const ACTION_CONFIG: Record<string, {
     hint: 'Take a before photo showing the litter, and an after photo showing the clean area.',
     photoLabel: 'Before & After Photos',
     fields: [
-      { id: 'area_size', label: 'Area Cleaned', type: 'visual_select', required: true,
+      { id: 'area_size', label: 'Area Cleaned', labelUr: 'صاف کیا گیا علاقہ', type: 'visual_select', required: true,
         visualOptions: [
-          { value: 'small',  emoji: '🏠', label: 'Small\nUnder 50m²' },
-          { value: 'medium', emoji: '🛣️', label: 'Medium\n50–200m²' },
-          { value: 'large',  emoji: '🌍', label: 'Large\n200m²+' },
-          { value: 'road',   emoji: '🚗', label: 'Road /\nStreet' },
-          { value: 'park',   emoji: '🌳', label: 'Park /\nOpen ground' },
-          { value: 'other',  emoji: '📍', label: 'Other\nArea' },
+          { value: 'small',  emoji: '🏠', label: 'Small / Under 50m²',   labelUr: 'چھوٹا / 50 مربع میٹر سے کم' },
+          { value: 'medium', emoji: '🛣️', label: 'Medium / 50–200m²',    labelUr: 'درمیانہ / 50–200 مربع میٹر' },
+          { value: 'large',  emoji: '🌍', label: 'Large / 200m²+',        labelUr: 'بڑا / 200 مربع میٹر سے زیادہ' },
+          { value: 'road',   emoji: '🚗', label: 'Road / Street',         labelUr: 'سڑک / گلی' },
+          { value: 'park',   emoji: '🌳', label: 'Park / Open ground',    labelUr: 'پارک / کھلا میدان' },
+          { value: 'other',  emoji: '📍', label: 'Other Area',            labelUr: 'دوسرا علاقہ' },
         ],
       },
-      { id: 'waste_bags', label: 'Bags of waste collected', type: 'stepper', required: true,
-        min: 1, max: 50, unit: 'bags', quickPicks: [1, 2, 3, 5, 10] },
-      { id: 'duration', label: 'Time spent', type: 'stepper', required: true,
-        min: 5, max: 240, unit: 'min', quickPicks: [15, 30, 45, 60, 90] },
-      { id: 'notes', label: 'Any additional notes', type: 'textarea', placeholder: 'Type of waste found, any hazardous items, etc.', required: false },
+      { id: 'waste_bags', label: 'Bags of waste collected', labelUr: 'جمع کیے گئے کچرے کے تھیلے', type: 'stepper', required: true,
+        min: 1, max: 50, unit: 'bags', unitUr: 'تھیلے', quickPicks: [1, 2, 3, 5, 10] },
+      { id: 'duration', label: 'Time spent', labelUr: 'صرف کیا گیا وقت', type: 'stepper', required: true,
+        min: 5, max: 240, unit: 'min', unitUr: 'منٹ', quickPicks: [15, 30, 45, 60, 90] },
+      { id: 'notes', label: 'Any additional notes', labelUr: 'کوئی اضافی نوٹ', type: 'textarea',
+        placeholder: 'Type of waste found, any hazardous items, etc.',
+        placeholderUr: 'پائے گئے کچرے کی قسم، کوئی خطرناک اشیاء وغیرہ', required: false },
     ],
   },
 
@@ -219,30 +222,39 @@ const ACTION_CONFIG: Record<string, {
 // ─── Field types ────────────────────────────────────────────────────────────
 interface FieldDef {
   id: string;
-  label: string;
+  label: string;           // English label
+  labelUr?: string;        // Urdu label
   type: 'text' | 'number' | 'textarea' | 'select' | 'multiselect' | 'visual_select' | 'stepper';
   placeholder?: string;
-  options?: string[];           // for select / multiselect
-  visualOptions?: { value: string; emoji: string; label: string }[];  // for visual_select
-  min?: number;                 // for stepper
-  max?: number;                 // for stepper
-  unit?: string;                // for stepper (e.g. 'bags', 'min', 'trees')
-  quickPicks?: number[];        // for stepper — one-tap preset values
+  placeholderUr?: string;
+  options?: string[];           // for select / multiselect (English)
+  visualOptions?: {             // for visual_select
+    value: string;
+    emoji: string;
+    label: string;             // English
+    labelUr?: string;          // Urdu
+  }[];
+  min?: number;
+  max?: number;
+  unit?: string;               // English unit label
+  unitUr?: string;             // Urdu unit label
+  quickPicks?: number[];
   required: boolean;
 }
 
 // ─── Custom fields renderer ─────────────────────────────────────────────────
-function ActionFields({ fields, values, onChange }: {
+function ActionFields({ fields, values, onChange, isUrdu }: {
   fields: FieldDef[];
   values: Record<string, any>;
   onChange: (id: string, value: any) => void;
+  isUrdu?: boolean;
 }) {
   return (
     <div className="space-y-4">
       {fields.map(field => (
         <div key={field.id} className="space-y-1.5">
           <label className="text-sm font-medium text-enb-text-primary">
-            {field.label}
+            {isUrdu && field.labelUr ? field.labelUr : field.label}
             {field.required && <span className="text-red-500 ml-1">*</span>}
           </label>
 
@@ -268,7 +280,7 @@ function ActionFields({ fields, values, onChange }: {
             <Textarea
               value={values[field.id] || ''}
               onChange={e => onChange(field.id, e.target.value)}
-              placeholder={field.placeholder}
+              placeholder={isUrdu && field.placeholderUr ? field.placeholderUr : field.placeholder}
               className="resize-none h-20 bg-white"
             />
           )}
@@ -336,7 +348,7 @@ function ActionFields({ fields, values, onChange }: {
                   >
                     <span className="text-2xl leading-none" role="img" aria-hidden="true">{opt.emoji}</span>
                     <span className={`text-xs font-semibold text-center leading-tight ${isSelected ? 'text-white' : 'text-enb-text-primary'}`}>
-                      {opt.label}
+                      {isUrdu && opt.labelUr ? opt.labelUr : opt.label}
                     </span>
                   </button>
                 );
@@ -349,7 +361,7 @@ function ActionFields({ fields, values, onChange }: {
             const current = Number(values[field.id] || field.min || 1);
             const min = field.min ?? 1;
             const max = field.max ?? 999;
-            const unit = field.unit || '';
+            const unit = (isUrdu && field.unitUr) ? field.unitUr : (field.unit || '');
             return (
               <div className="space-y-2">
                 {/* Quick pick chips */}
@@ -413,6 +425,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     photoLabel: 'Photo Proof',
     fields: [],
   };
+
+  const { isUrdu } = useT();
 
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
@@ -965,6 +979,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
             fields={config.fields.filter(f => !(isTradeJob && f.id === 'trade_type'))}
             values={fieldValues}
             onChange={(id, val) => setFieldValues(prev => ({ ...prev, [id]: val }))}
+            isUrdu={isUrdu}
           />
         </div>
       )}
