@@ -282,7 +282,7 @@ const PHOTO_GUIDES: Record<string, PhotoGuideData> = {
   youth_mentoring: {
     beforeAfter: false,
     afterScene: '🤝💡📚',
-    singleHint_en: 'Take a photo during the mentoring session. The young person's face can be partially covered for privacy if needed.',
+    singleHint_en: "Take a photo during the mentoring session. The young person's face can be partially covered for privacy if needed.",
     singleHint_ur: 'رہنمائی سیشن کے دوران تصویر لیں۔ نوجوان کا چہرہ ضرورت پڑنے پر تھوڑا چھپایا جا سکتا ہے۔',
   },
   tree_planting: {
