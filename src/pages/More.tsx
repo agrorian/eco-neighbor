@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug, Apple, Flag, Bell, MessageSquare, BookOpen } from 'lucide-react';
+import { Trophy, User, ArrowRightLeft, Settings, LogOut, Globe, Vote, Store, LayoutDashboard, ClipboardList, Users, TrendingUp, TrendingDown, History, Bug, Apple, Flag, Bell, MessageSquare, BookOpen } from 'lucide-react';
 import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLang } from '@/contexts/LanguageContext';
@@ -23,6 +23,7 @@ export default function More() {
   const isMemberOnly = user?.role === 'member';
 
   const allItems = [
+    { icon: User,         label: 'My Profile',      path: '/profile',         color: 'text-enb-green',  show: true },
     { icon: Bell,         label: 'Inbox',           path: '/inbox',           color: 'text-enb-green',  show: true },
     { icon: MessageSquare,label: 'Messages',         path: '/messages',        color: 'text-blue-600',   show: true },
     { icon: Trophy, label: 'Leaderboard', path: '/leaderboard', color: 'text-enb-gold', show: true },

@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote, Flag, Bell, MessageSquare, BookOpen } from 'lucide-react';
+import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote, Flag, Bell, MessageSquare, BookOpen, User } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -30,6 +30,7 @@ export default function DesktopSidebar() {
     { path: '/glossary',      icon: BookOpen,      label: 'ENB Glossary' },
     { path: '/bridge',        icon: ArrowRightLeft,label: l('nav', 'bridge') },
     { path: '/settings',      icon: Settings,      label: l('nav', 'settings') },
+    { path: '/profile',       icon: User,          label: 'My Profile' },
   ];
 
   const volunteerNav = !['onboarding_team', 'admin', 'super_admin', 'moderator', 'founder'].includes(user?.role || '') ? [
