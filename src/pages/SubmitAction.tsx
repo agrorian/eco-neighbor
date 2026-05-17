@@ -232,6 +232,7 @@ export default function SubmitAction() {
         after_submitted: isTransformation ? false : null,
         report_status: isReporting ? 'open' : null,
         reviewer_consent: formData.consentGiven === true,
+        custom_fields: formData.customFields || null,
         // ── Carpool session fields ──────────────────────────────────────────
         ...(isCarpool && rideSession ? {
           origin_lat:              rideSession.originLat,
