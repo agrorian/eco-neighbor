@@ -62,13 +62,14 @@ const ACTION_CONFIG: Record<string, {
   title: string;
   hint: string;
   photoLabel: string;
+  photoLabelUr?: string;
   fields: FieldDef[];
   isCarpoolSession?: boolean;
 }> = {
   neighbourhood_cleanup: {
     title: 'Neighbourhood Cleanup',
     hint: 'Take a before photo showing the litter, and an after photo showing the clean area.',
-    photoLabel: 'Before & After Photos',
+    photoLabel: 'Before & After Photos', photoLabelUr: 'پہلے اور بعد کی تصاویر',
     fields: [
       { id: 'area_size', label: 'Area Cleaned', labelUr: 'صاف کیا گیا علاقہ', type: 'visual_select', required: true,
         visualOptions: [
@@ -93,7 +94,7 @@ const ACTION_CONFIG: Record<string, {
   recycling_dropoff: {
     title: 'Recycling Drop-off',
     hint: 'Photo at the recycling centre with your items visible. Include the centre name/sign if possible.',
-    photoLabel: 'Photo at Recycling Centre',
+    photoLabel: 'Photo at Recycling Centre', photoLabelUr: 'ری سائیکلنگ سینٹر پر تصویر',
     fields: [
       { id: 'material_type', label: 'Material Type', type: 'multiselect', required: true,
         options: ['Plastic bottles', 'Cardboard/Paper', 'Glass', 'Metal/Cans', 'Electronics', 'Mixed recyclables'] },
@@ -113,7 +114,7 @@ const ACTION_CONFIG: Record<string, {
   food_sharing: {
     title: 'Food Sharing',
     hint: 'Photo of the food being shared and the recipients (or the handover moment).',
-    photoLabel: 'Photo of Food & Recipients',
+    photoLabel: 'Photo of Food & Recipients', photoLabelUr: 'کھانے اور وصول کنندگان کی تصویر',
     fields: [
       { id: 'food_type', label: 'Type of food shared', type: 'text', placeholder: 'e.g. Cooked rice, bread, vegetables', required: true },
       { id: 'portions', label: 'Number of portions / people fed', type: 'number', placeholder: 'e.g. 10', required: true },
@@ -127,7 +128,7 @@ const ACTION_CONFIG: Record<string, {
   skill_workshop: {
     title: 'Skill Workshop',
     hint: 'Photo of the session in progress showing you teaching and attendees participating.',
-    photoLabel: 'Photo of Workshop in Progress',
+    photoLabel: 'Photo of Workshop in Progress', photoLabelUr: 'ورکشاپ کی تصویر',
     fields: [
       { id: 'skill_topic', label: 'Skill / topic taught', type: 'text', placeholder: 'e.g. Basic electrical safety, Urdu literacy, ENB app usage', required: true },
       { id: 'attendees', label: 'Number of attendees', type: 'number', placeholder: 'e.g. 12', required: true },
@@ -141,7 +142,7 @@ const ACTION_CONFIG: Record<string, {
   infrastructure_report: {
     title: 'Infrastructure Report',
     hint: 'Clear photo of the issue. Include context (street sign, landmark) so location can be verified.',
-    photoLabel: 'Photo of the Issue',
+    photoLabel: 'Photo of the Issue', photoLabelUr: 'مسئلے کی تصویر',
     fields: [
       { id: 'issue_type', label: 'Type of issue', type: 'select', required: true,
         options: ['Broken road / pothole', 'Damaged footpath', 'Leaking water pipe', 'Broken streetlight', 'Sewage overflow', 'Illegal dumping', 'Damaged public property', 'Other'] },
@@ -156,7 +157,7 @@ const ACTION_CONFIG: Record<string, {
   trade_job: {
     title: 'Trade Job',
     hint: '',  // Visual selector replaces text hint for trade jobs
-    photoLabel: 'Photo of Completed Work',
+    photoLabel: 'Photo of Completed Work', photoLabelUr: 'مکمل کام کی تصویر',
     isTradeJobSelector: true,  // Uses TradeJobSelector component instead of dropdown
     fields: [
       { id: 'trade_type', label: 'Trade / skill used', type: 'select', required: true,
@@ -177,7 +178,7 @@ const ACTION_CONFIG: Record<string, {
   youth_mentoring: {
     title: 'Youth Mentoring',
     hint: 'Photo of the mentoring session. The young person\'s face can be partially obscured for privacy.',
-    photoLabel: 'Photo of Mentoring Session',
+    photoLabel: 'Photo of Mentoring Session', photoLabelUr: 'رہنمائی سیشن کی تصویر',
     fields: [
       { id: 'mentee_count', label: 'Number of mentees', type: 'number', placeholder: 'e.g. 2', required: true },
       { id: 'session_topic', label: 'Topic / area of mentoring', type: 'text', placeholder: 'e.g. Career guidance, digital literacy, maths tutoring', required: true },
@@ -192,7 +193,7 @@ const ACTION_CONFIG: Record<string, {
   tree_planting: {
     title: 'Tree Planting',
     hint: 'Photo of you planting the tree, showing the sapling in the ground with surrounding area visible.',
-    photoLabel: 'Photo of Tree Being Planted',
+    photoLabel: 'Photo of Tree Being Planted', photoLabelUr: 'درخت لگانے کی تصویر',
     fields: [
       { id: 'tree_count', label: 'Number of trees planted', type: 'number', placeholder: 'e.g. 3', required: true },
       { id: 'tree_species', label: 'Tree species (if known)', type: 'text', placeholder: 'e.g. Neem, Eucalyptus, Shisham, Unknown', required: false },
@@ -206,7 +207,7 @@ const ACTION_CONFIG: Record<string, {
   waste_reporting: {
     title: 'Waste Reporting',
     hint: 'Clear photo showing the dumping site. Include a landmark for location verification.',
-    photoLabel: 'Photo of Dumping Site',
+    photoLabel: 'Photo of Dumping Site', photoLabelUr: 'کوڑے کی جگہ کی تصویر',
     fields: [
       { id: 'waste_type', label: 'Type of waste', type: 'select', required: true,
         options: ['Household garbage', 'Construction debris', 'Industrial / chemical waste', 'Medical waste', 'Plastic/packaging', 'Mixed waste'] },
@@ -281,7 +282,7 @@ const PHOTO_GUIDES: Record<string, PhotoGuideData> = {
   youth_mentoring: {
     beforeAfter: false,
     afterScene: '🤝💡📚',
-    singleHint_en: "Take a photo during the mentoring session. The young person's face can be partially covered for privacy if needed.",
+    singleHint_en: 'Take a photo during the mentoring session. The young person's face can be partially covered for privacy if needed.',
     singleHint_ur: 'رہنمائی سیشن کے دوران تصویر لیں۔ نوجوان کا چہرہ ضرورت پڑنے پر تھوڑا چھپایا جا سکتا ہے۔',
   },
   tree_planting: {
@@ -1006,9 +1007,9 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-enb-text-primary">
-            {config.photoLabel} <span className="text-red-500">*</span>
+            {isUrdu && config.photoLabelUr ? config.photoLabelUr : config.photoLabel} <span className="text-red-500">*</span>
           </label>
-          <span className="text-xs text-gray-400">{photos.length}/{MAX_PHOTOS} photos</span>
+          <span className="text-xs text-gray-400">{photos.length}/{MAX_PHOTOS} {isUrdu ? 'تصاویر' : 'photos'}</span>
         </div>
 
         {cameraActive && (
@@ -1076,7 +1077,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
               className="w-full h-24 border-2 border-dashed border-enb-green bg-enb-green/5 hover:bg-enb-green/10 text-enb-green flex flex-col gap-2 rounded-xl"
             >
               <Camera className="w-8 h-8" />
-              <span className="text-sm font-medium">Open Camera</span>
+              <span className="text-sm font-medium">{isUrdu ? 'کیمرہ کھولیں' : 'Open Camera'}</span>
             </Button>
             {cameraError && (
               <div className="mt-2 p-3 bg-red-50 rounded-lg flex items-start gap-2 text-sm text-red-600">
@@ -1084,21 +1085,21 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
                 {cameraError}
               </div>
             )}
-            <p className="text-xs text-gray-400 mt-1 text-center">Gallery uploads not accepted — live photos only</p>
+            <p className="text-xs text-gray-400 mt-1 text-center">{isUrdu ? 'گیلری سے اپلوڈ نہیں — صرف لائیو تصویر' : 'Gallery uploads not accepted — live photos only'}</p>
           </div>
         )}
       </div>
 
       {/* ── GPS Location ── */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-enb-text-primary">GPS Location <span className="text-red-500">*</span></label>
+        <label className="text-sm font-medium text-enb-text-primary">{isUrdu ? 'جی پی ایس مقام' : 'GPS Location'} <span className="text-red-500">*</span></label>
         <div
           onClick={!gpsAddress ? handleGetLocation : undefined}
           className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${gpsAddress ? 'bg-enb-green/10 border-enb-green/20 text-enb-green' : 'bg-white border-gray-200 text-gray-500 cursor-pointer hover:bg-gray-50'}`}
         >
           {loadingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
           <span className="text-sm font-medium">
-            {gpsAddress ? `📍 ${gpsAddress}` : loadingLocation ? 'Detecting...' : 'Tap to detect GPS location'}
+            {gpsAddress ? `📍 ${gpsAddress}` : loadingLocation ? (isUrdu ? 'تلاش ہو رہا ہے...' : 'Detecting...') : (isUrdu ? 'جی پی ایس مقام حاصل کریں' : 'Tap to detect GPS location')}
           </span>
           {gpsAddress && <CheckCircle className="w-4 h-4 ml-auto" />}
         </div>
@@ -1167,8 +1168,9 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           )}
         </div>
         <p className="text-xs text-enb-text-secondary leading-relaxed">
-          I consent to my verified action photos and location being shared with ENB's grant reviewers
-          and impact auditors for verification purposes. My personal identity will not be disclosed.
+          {isUrdu
+            ? 'میں اپنی تصدیق شدہ تصاویر اور مقام کو ENB کے گرانٹ جائزہ کاروں اور اثرات کے آڈیٹرز کے ساتھ شیئر کرنے کی اجازت دیتا/دیتی ہوں۔ میری ذاتی شناخت ظاہر نہیں کی جائے گی۔'
+            : "I consent to my verified action photos and location being shared with ENB's grant reviewers and impact auditors for verification purposes. My personal identity will not be disclosed."}
         </p>
       </button>
 
@@ -1179,16 +1181,16 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         className="w-full h-12 text-lg shadow-lg shadow-enb-green/20 bg-enb-green hover:bg-enb-green/90 text-white"
       >
         {anyUploading
-          ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Uploading photos...</>
-          : 'Review Submission'}
+          ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{isUrdu ? 'تصاویر اپلوڈ ہو رہی ہیں...' : 'Uploading photos...'}</>
+          : (isUrdu ? 'جمع کریں' : 'Review Submission')}
       </Button>
 
       {/* Validation hint */}
       {!canSubmit && photos.length > 0 && !anyUploading && (
         <p className="text-xs text-center text-gray-400">
-          {!gpsLat ? '📍 GPS location required' :
-           !requiredFieldsMet ? '📋 Please fill all required fields' :
-           !consentGiven ? '☑️ Please tick the consent box above' : ''}
+          {!gpsLat ? (isUrdu ? '📍 جی پی ایس مقام ضروری ہے' : '📍 GPS location required') :
+           !requiredFieldsMet ? (isUrdu ? '📋 تمام ضروری خانے بھریں' : '📋 Please fill all required fields') :
+           !consentGiven ? (isUrdu ? '☑️ اوپر رضامندی کا خانہ ٹک کریں' : '☑️ Please tick the consent box above') : ''}
         </p>
       )}
     </div>
