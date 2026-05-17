@@ -219,6 +219,160 @@ const ACTION_CONFIG: Record<string, {
   },
 };
 
+
+// ─── Photo guide data — bilingual, visual-first ──────────────────────────────
+// Each action defines its photo requirements as emoji scenes + bilingual text.
+// beforeAfter=true  → two-panel guide (orange before / green after)
+// beforeAfter=false → single green evidence panel
+// beforeAfter=null  → no guide (carpool — GPS only)
+
+interface PhotoGuideData {
+  beforeAfter: boolean | null;
+  beforeScene?: string;   // emoji illustration of BEFORE state
+  afterScene?: string;    // emoji illustration of AFTER / evidence state
+  beforeHint_en?: string;
+  beforeHint_ur?: string;
+  afterHint_en?: string;
+  afterHint_ur?: string;
+  singleHint_en?: string; // for single-panel actions
+  singleHint_ur?: string;
+}
+
+const PHOTO_GUIDES: Record<string, PhotoGuideData> = {
+  neighbourhood_cleanup: {
+    beforeAfter: true,
+    beforeScene: '🗑️🧺❌',
+    afterScene:  '✨🌿✅',
+    beforeHint_en: 'Take a photo of the litter, rubbish pile, or dirty area BEFORE you start cleaning',
+    beforeHint_ur: 'صفائی شروع کرنے سے پہلے کوڑے، گندگی یا غلیظ جگہ کی تصویر لیں',
+    afterHint_en: 'Take a photo of the same area AFTER cleaning — show how clean it looks now',
+    afterHint_ur: 'صفائی کے بعد اسی جگہ کی تصویر لیں — دکھائیں کہ اب کتنی صاف ہے',
+  },
+  recycling_dropoff: {
+    beforeAfter: false,
+    afterScene: '♻️📦✅',
+    singleHint_en: 'Take a photo at the recycling centre with your items clearly visible. Include the drop-off sign or location name if possible.',
+    singleHint_ur: 'ری سائیکلنگ سینٹر پر اپنے سامان کے ساتھ تصویر لیں۔ ہو سکے تو جگہ کا نام یا بورڈ بھی دکھائیں۔',
+  },
+  carpool: {
+    beforeAfter: null, // GPS session — no photo needed
+  },
+  food_sharing: {
+    beforeAfter: false,
+    afterScene: '🍱🤲👥',
+    singleHint_en: 'Take a photo of the food being handed over to the recipients. Show both the food and the people receiving it clearly.',
+    singleHint_ur: 'کھانا دینے کا لمحہ تصویر میں قید کریں۔ کھانا اور وصول کرنے والے لوگ دونوں واضح نظر آئیں۔',
+  },
+  skill_workshop: {
+    beforeAfter: false,
+    afterScene: '👨‍🏫📋👥',
+    singleHint_en: 'Take a photo during the session showing you teaching and attendees actively participating. Group photo preferred.',
+    singleHint_ur: 'سیشن کے دوران تصویر لیں جس میں آپ پڑھا رہے ہوں اور شرکاء توجہ سے سن رہے ہوں۔',
+  },
+  infrastructure_report: {
+    beforeAfter: false,
+    afterScene: '🚧📍📷',
+    singleHint_en: 'Take a clear photo of the issue — broken road, leaking pipe, damaged streetlight. Include a nearby landmark or street sign.',
+    singleHint_ur: 'مسئلے کی واضح تصویر لیں — ٹوٹی سڑک، ٹپکتا پائپ، خراب بلب۔ قریبی نشانی یا گلی کا نام بھی دکھائیں۔',
+  },
+  trade_job: {
+    beforeAfter: null, // TradeJobSelector handles this with per-trade guidance
+  },
+  youth_mentoring: {
+    beforeAfter: false,
+    afterScene: '🤝💡📚',
+    singleHint_en: 'Take a photo during the mentoring session. The young person's face can be partially covered for privacy if needed.',
+    singleHint_ur: 'رہنمائی سیشن کے دوران تصویر لیں۔ نوجوان کا چہرہ ضرورت پڑنے پر تھوڑا چھپایا جا سکتا ہے۔',
+  },
+  tree_planting: {
+    beforeAfter: true,
+    beforeScene: '⛏️🕳️🌱',
+    afterScene:  '🌳✅💧',
+    beforeHint_en: 'Take a photo of the empty spot or hole dug BEFORE planting — show the ground and location clearly',
+    beforeHint_ur: 'درخت لگانے سے پہلے خالی جگہ یا کھودے گئے گڑھے کی تصویر لیں — جگہ واضح نظر آئے',
+    afterHint_en: 'Take a photo of the planted sapling in the ground AFTER planting — show the tree, soil and surrounding area',
+    afterHint_ur: 'درخت لگانے کے بعد پودے کی تصویر لیں — درخت، مٹی اور آس پاس کی جگہ واضح ہو',
+  },
+  waste_reporting: {
+    beforeAfter: false,
+    afterScene: '🗑️📍⚠️',
+    singleHint_en: 'Take a clear photo of the illegal dump site. Show the full extent of the waste and include a landmark or street in the background.',
+    singleHint_ur: 'غیر قانونی کوڑے کی جگہ کی واضح تصویر لیں۔ پورا کوڑا اور پیچھے کوئی پہچانی جگہ یا گلی نظر آئے۔',
+  },
+};
+
+// ─── PhotoGuide component ─────────────────────────────────────────────────────
+function PhotoGuide({ actionType, isUrdu }: { actionType: string; isUrdu: boolean }) {
+  const guide = PHOTO_GUIDES[actionType];
+  if (!guide || guide.beforeAfter === null) return null;
+
+  if (guide.beforeAfter) {
+    // Two-panel Before / After guide
+    return (
+      <div className="space-y-2">
+        <p className={`text-xs font-semibold text-enb-text-secondary uppercase tracking-wide ${isUrdu ? 'text-sm normal-case' : ''}`}>
+          {isUrdu ? 'تصویر کی ہدایات' : 'Photo Instructions'}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {/* Before panel */}
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 space-y-2">
+            <div className="text-xl leading-none">{guide.beforeScene}</div>
+            <div className={`text-[10px] font-bold text-orange-700 uppercase tracking-wide ${isUrdu ? 'text-xs normal-case' : ''}`}>
+              {isUrdu ? 'پہلے کی تصویر' : 'BEFORE Photo'}
+            </div>
+            <p className={`text-xs text-orange-800 leading-tight ${isUrdu ? 'text-sm' : ''}`}>
+              {isUrdu ? guide.beforeHint_ur : guide.beforeHint_en}
+            </p>
+            <div className="flex items-center gap-1 text-orange-600">
+              <span className="text-base">📷</span>
+              <span className={`text-[10px] font-semibold ${isUrdu ? 'text-xs' : ''}`}>
+                {isUrdu ? 'ابھی تصویر لیں' : 'Take photo now'}
+              </span>
+            </div>
+          </div>
+          {/* After panel */}
+          <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-3 space-y-2">
+            <div className="text-xl leading-none">{guide.afterScene}</div>
+            <div className={`text-[10px] font-bold text-enb-green uppercase tracking-wide ${isUrdu ? 'text-xs normal-case' : ''}`}>
+              {isUrdu ? 'بعد کی تصویر' : 'AFTER Photo'}
+            </div>
+            <p className={`text-xs text-enb-text-secondary leading-tight ${isUrdu ? 'text-sm' : ''}`}>
+              {isUrdu ? guide.afterHint_ur : guide.afterHint_en}
+            </p>
+            <div className="flex items-center gap-1 text-enb-green">
+              <span className="text-base">📷</span>
+              <span className={`text-[10px] font-semibold ${isUrdu ? 'text-xs' : ''}`}>
+                {isUrdu ? 'کام کے بعد لیں' : 'Take after work'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Single evidence panel
+  return (
+    <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="text-2xl leading-none">{guide.afterScene}</span>
+        <div className={`text-xs font-bold text-enb-green uppercase tracking-wide ${isUrdu ? 'text-sm normal-case' : ''}`}>
+          {isUrdu ? 'تصویر کی ہدایت' : 'Photo Instruction'}
+        </div>
+      </div>
+      <p className={`text-xs text-enb-text-secondary leading-relaxed ${isUrdu ? 'text-sm' : ''}`}>
+        {isUrdu ? guide.singleHint_ur : guide.singleHint_en}
+      </p>
+      <div className="flex items-center gap-1.5 text-enb-green pt-1">
+        <span className="text-base">📷</span>
+        <span className={`text-xs font-semibold ${isUrdu ? '' : ''}`}>
+          {isUrdu ? 'واضح تصویر لیں' : 'Take a clear photo'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Field types ────────────────────────────────────────────────────────────
 interface FieldDef {
   id: string;
@@ -845,14 +999,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         <div className="w-16" />
       </div>
 
-      {/* Photo guidance hint */}
-      <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-4 flex items-start gap-3">
-        <Camera className="w-5 h-5 text-enb-green flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-semibold text-enb-green mb-0.5">Photo guidance</p>
-          <p className="text-sm text-enb-text-secondary">{config.hint}</p>
-        </div>
-      </div>
+      {/* Photo guidance — visual emoji panels, bilingual */}
+      <PhotoGuide actionType={actionType} isUrdu={isUrdu} />
 
       {/* ── Photo Section ── */}
       <div className="space-y-2">
