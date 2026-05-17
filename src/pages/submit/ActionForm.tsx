@@ -225,16 +225,29 @@ const ACTION_CONFIG: Record<string, {
     fields: [
       { id: 'trade_type', label: 'Trade / skill used', type: 'select', required: true,
         options: ['Plumbing', 'Electrical', 'Carpentry / woodwork', 'Masonry / construction', 'Painting / decorating', 'Welding / metalwork', 'Auto repair', 'Appliance repair', 'Other trade'] },
-      { id: 'job_description', label: 'Work performed', type: 'text', placeholder: 'e.g. Fixed leaking pipe under kitchen sink', required: true },
-      { id: 'client_type', label: 'Client type', type: 'select', required: true,
-        options: ['Household — neighbour', 'Household — family', 'Small business', 'Community space / mosque', 'Public area'] },
-      { id: 'duration', label: 'Job duration (minutes)', type: 'number', placeholder: 'e.g. 90', required: false },
-      { id: 'customer_confirmed', label: 'Customer confirmation', type: 'select', required: true,
-        options: ['Customer present for photo', 'Customer confirmed by WhatsApp', 'Not yet confirmed'] },
+      { id: 'job_description', label: 'Work performed', labelUr: 'انجام دیا گیا کام', type: 'text', placeholder: 'e.g. Fixed leaking pipe under kitchen sink', placeholderUr: 'مثلاً: کچن میں ٹوٹا پائپ ٹھیک کیا', required: true },
+      { id: 'client_type', label: 'Client type', labelUr: 'گاہک کی قسم', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Household — neighbour',       emoji: '🏘️', label: 'Neighbour',   labelUr: 'پڑوسی' },
+          { value: 'Household — family',          emoji: '👨‍👩‍👧', label: 'Family',     labelUr: 'خاندان' },
+          { value: 'Small business',              emoji: '🏪', label: 'Business',    labelUr: 'چھوٹا کاروبار' },
+          { value: 'Community space / mosque',    emoji: '🕌', label: 'Mosque/Comm', labelUr: 'مسجد / کمیونٹی' },
+          { value: 'Public area',                 emoji: '🏛️', label: 'Public',      labelUr: 'عوامی جگہ' },
+        ],
+      },
+      { id: 'duration', label: 'Job duration', labelUr: 'کام کا دورانیہ', type: 'stepper', required: false,
+        min: 15, max: 480, unit: 'min', unitUr: 'منٹ', quickPicks: [30, 60, 90, 120, 180] },
+      { id: 'customer_confirmed', label: 'Customer confirmation', labelUr: 'گاہک کی تصدیق', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Customer present for photo',      emoji: '📸', label: 'Photo proof',    labelUr: 'تصویر میں موجود' },
+          { value: 'Customer confirmed by WhatsApp',  emoji: '💬', label: 'WhatsApp',       labelUr: 'واٹس ایپ سے تصدیق' },
+          { value: 'Not yet confirmed',               emoji: '⏳', label: 'Not yet',        labelUr: 'ابھی نہیں' },
+        ],
+      },
       // Optional: link to the job code generated via StartJobModal so the pending
       // job moves from "Pending" to "Portfolio" when this submission is approved.
-      { id: 'linked_job_code', label: 'Link to Job Code (optional)', type: 'text',
-        placeholder: 'e.g. ENB-A1B2-C3D4 — leave blank if not applicable', required: false },
+      { id: 'linked_job_code', label: 'Link to Job Code (optional)', labelUr: 'جاب کوڈ (اختیاری)', type: 'text',
+        placeholder: 'e.g. ENB-A1B2-C3D4 — leave blank if not applicable', placeholderUr: 'مثلاً: ENB-A1B2-C3D4 — خالی چھوڑیں اگر نہیں', required: false },
     ],
   },
 
@@ -243,13 +256,28 @@ const ACTION_CONFIG: Record<string, {
     hint: 'Photo of the mentoring session. The young person\'s face can be partially obscured for privacy.',
     photoLabel: 'Photo of Mentoring Session', photoLabelUr: 'رہنمائی سیشن کی تصویر',
     fields: [
-      { id: 'mentee_count', label: 'Number of mentees', type: 'number', placeholder: 'e.g. 2', required: true },
-      { id: 'session_topic', label: 'Topic / area of mentoring', type: 'text', placeholder: 'e.g. Career guidance, digital literacy, maths tutoring', required: true },
-      { id: 'duration', label: 'Session duration (minutes)', type: 'number', placeholder: 'e.g. 60', required: true },
-      { id: 'age_group', label: 'Age group of mentees', type: 'select', required: true,
-        options: ['Under 12', '12–15 years', '16–18 years', '18–25 years (young adult)'] },
-      { id: 'session_number', label: 'Is this part of an ongoing programme?', type: 'select', required: false,
-        options: ['One-time session', 'Session 2', 'Session 3', 'Session 4+', 'Ongoing regular sessions'] },
+      { id: 'mentee_count', label: 'Mentees', labelUr: 'زیرِ رہنمائی افراد', type: 'stepper', required: true,
+        min: 1, max: 20, unit: 'people', unitUr: 'افراد', quickPicks: [1, 2, 3, 5, 10] },
+      { id: 'session_topic', label: 'Topic / area of mentoring', labelUr: 'رہنمائی کا موضوع', type: 'text', placeholder: 'e.g. Career guidance, digital literacy, maths tutoring', placeholderUr: 'مثلاً: کیرئیر رہنمائی، ڈیجیٹل خواندگی، ریاضی', required: true },
+      { id: 'duration', label: 'Duration', labelUr: 'دورانیہ', type: 'stepper', required: true,
+        min: 15, max: 180, unit: 'min', unitUr: 'منٹ', quickPicks: [30, 45, 60, 90, 120] },
+      { id: 'age_group', label: 'Age group', labelUr: 'عمر کا گروپ', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Under 12',                   emoji: '🧒', label: 'Under 12',     labelUr: '12 سال سے کم' },
+          { value: '12–15 years',                emoji: '👦', label: '12–15 yrs',    labelUr: '12–15 سال' },
+          { value: '16–18 years',                emoji: '🧑', label: '16–18 yrs',    labelUr: '16–18 سال' },
+          { value: '18–25 years (young adult)',   emoji: '👨', label: '18–25 yrs',    labelUr: '18–25 سال' },
+        ],
+      },
+      { id: 'session_number', label: 'Part of ongoing programme?', labelUr: 'جاری پروگرام کا حصہ؟', type: 'visual_select', required: false,
+        visualOptions: [
+          { value: 'One-time session',        emoji: '1️⃣', label: 'One-time',      labelUr: 'ایک بار' },
+          { value: 'Session 2',               emoji: '2️⃣', label: 'Session 2',     labelUr: 'سیشن 2' },
+          { value: 'Session 3',               emoji: '3️⃣', label: 'Session 3',     labelUr: 'سیشن 3' },
+          { value: 'Session 4+',              emoji: '4️⃣', label: 'Session 4+',    labelUr: 'سیشن 4+' },
+          { value: 'Ongoing regular sessions',emoji: '🔄', label: 'Ongoing',       labelUr: 'جاری' },
+        ],
+      },
     ],
   },
 
@@ -258,12 +286,27 @@ const ACTION_CONFIG: Record<string, {
     hint: 'Photo of you planting the tree, showing the sapling in the ground with surrounding area visible.',
     photoLabel: 'Photo of Tree Being Planted', photoLabelUr: 'درخت لگانے کی تصویر',
     fields: [
-      { id: 'tree_count', label: 'Number of trees planted', type: 'number', placeholder: 'e.g. 3', required: true },
-      { id: 'tree_species', label: 'Tree species (if known)', type: 'text', placeholder: 'e.g. Neem, Eucalyptus, Shisham, Unknown', required: false },
-      { id: 'location_type', label: 'Planting location', type: 'select', required: true,
-        options: ['Public road / footpath', 'Park or open ground', 'School / madrassa grounds', 'Mosque / community grounds', 'Private garden', 'Community farm'] },
-      { id: 'water_source', label: 'Water source for maintenance', type: 'select', required: true,
-        options: ['I will water regularly', 'Community member will water', 'Rain-fed / natural', 'Irrigation system nearby'] },
+      { id: 'tree_count', label: 'Trees planted', labelUr: 'لگائے گئے درخت', type: 'stepper', required: true,
+        min: 1, max: 50, unit: 'trees', unitUr: 'درخت', quickPicks: [1, 2, 3, 5, 10] },
+      { id: 'tree_species', label: 'Tree species (if known)', labelUr: 'درخت کی قسم (اگر معلوم ہو)', type: 'text', placeholder: 'e.g. Neem, Shisham, Unknown', placeholderUr: 'مثلاً: نیم، شیشم، معلوم نہیں', required: false },
+      { id: 'location_type', label: 'Planting location', labelUr: 'لگانے کی جگہ', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Public road / footpath',      emoji: '🛣️', label: 'Road/Path',   labelUr: 'سڑک / راستہ' },
+          { value: 'Park or open ground',         emoji: '🌳', label: 'Park',        labelUr: 'پارک / میدان' },
+          { value: 'School / madrassa grounds',   emoji: '🏫', label: 'School',      labelUr: 'اسکول / مدرسہ' },
+          { value: 'Mosque / community grounds',  emoji: '🕌', label: 'Mosque',      labelUr: 'مسجد / کمیونٹی' },
+          { value: 'Private garden',              emoji: '🏡', label: 'Garden',      labelUr: 'نجی باغ' },
+          { value: 'Community farm',              emoji: '🌾', label: 'Farm',        labelUr: 'کمیونٹی فارم' },
+        ],
+      },
+      { id: 'water_source', label: 'Water source', labelUr: 'پانی کا ذریعہ', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'I will water regularly',       emoji: '🪣', label: 'I will water',   labelUr: 'میں پانی دوں گا' },
+          { value: 'Community member will water',  emoji: '👥', label: 'Community',      labelUr: 'کمیونٹی ممبر' },
+          { value: 'Rain-fed / natural',           emoji: '🌧️', label: 'Rain-fed',       labelUr: 'بارش / قدرتی' },
+          { value: 'Irrigation system nearby',     emoji: '💧', label: 'Irrigation',     labelUr: 'آبپاشی قریب' },
+        ],
+      },
     ],
   },
 
@@ -272,13 +315,32 @@ const ACTION_CONFIG: Record<string, {
     hint: 'Clear photo showing the dumping site. Include a landmark for location verification.',
     photoLabel: 'Photo of Dumping Site', photoLabelUr: 'کوڑے کی جگہ کی تصویر',
     fields: [
-      { id: 'waste_type', label: 'Type of waste', type: 'select', required: true,
-        options: ['Household garbage', 'Construction debris', 'Industrial / chemical waste', 'Medical waste', 'Plastic/packaging', 'Mixed waste'] },
-      { id: 'quantity', label: 'Estimated quantity', type: 'select', required: true,
-        options: ['Small — a few bags', 'Medium — pickup truck load', 'Large — multiple loads', 'Very large — ongoing site'] },
-      { id: 'landmark', label: 'Nearest landmark or street', type: 'text', placeholder: 'e.g. Behind petrol station, G.T. Road', required: true },
-      { id: 'ongoing', label: 'Is dumping ongoing?', type: 'select', required: false,
-        options: ['One-time / old dump', 'Appears to be ongoing', 'Unknown'] },
+      { id: 'waste_type', label: 'Type of waste', labelUr: 'کچرے کی قسم', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Household garbage',          emoji: '🏠', label: 'Household',    labelUr: 'گھریلو کچرہ' },
+          { value: 'Construction debris',        emoji: '🧱', label: 'Construction', labelUr: 'تعمیراتی ملبہ' },
+          { value: 'Industrial / chemical waste',emoji: '⚗️', label: 'Industrial',   labelUr: 'صنعتی / کیمیائی' },
+          { value: 'Medical waste',              emoji: '🏥', label: 'Medical',      labelUr: 'طبی کچرہ' },
+          { value: 'Plastic/packaging',          emoji: '🛍️', label: 'Plastic',      labelUr: 'پلاسٹک' },
+          { value: 'Mixed waste',                emoji: '🗑️', label: 'Mixed',        labelUr: 'ملا جلا' },
+        ],
+      },
+      { id: 'quantity', label: 'Estimated quantity', labelUr: 'اندازاً مقدار', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Small — a few bags',         emoji: '🛍️', label: 'Small',        labelUr: 'چھوٹا — چند تھیلے' },
+          { value: 'Medium — pickup truck load', emoji: '🚚', label: 'Medium',       labelUr: 'درمیانہ — ٹرک بھر' },
+          { value: 'Large — multiple loads',     emoji: '🚛', label: 'Large',        labelUr: 'بڑا — کئی ٹرک' },
+          { value: 'Very large — ongoing site',  emoji: '⚠️', label: 'Very large',   labelUr: 'بہت بڑا — جاری جگہ' },
+        ],
+      },
+      { id: 'landmark', label: 'Nearest landmark or street', labelUr: 'قریبی پہچانی جگہ یا گلی', type: 'text', placeholder: 'e.g. Behind petrol station, G.T. Road', placeholderUr: 'مثلاً: پیٹرول اسٹیشن کے پیچھے', required: true },
+      { id: 'ongoing', label: 'Is dumping ongoing?', labelUr: 'کیا کوڑا پھینکنا جاری ہے؟', type: 'visual_select', required: false,
+        visualOptions: [
+          { value: 'One-time / old dump',    emoji: '📅', label: 'Old dump',      labelUr: 'پرانا / ایک بار' },
+          { value: 'Appears to be ongoing',  emoji: '⚠️', label: 'Ongoing',       labelUr: 'جاری لگتا ہے' },
+          { value: 'Unknown',               emoji: '❓', label: 'Not sure',       labelUr: 'معلوم نہیں' },
+        ],
+      },
     ],
   },
 };
@@ -928,8 +990,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-enb-text-primary">Carpool</h2>
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Ride in progress</span>
+            <h2 className="text-xl font-bold text-enb-text-primary">{isUrdu ? "کارپول" : "Carpool"}</h2>
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{isUrdu ? "سفر جاری ہے" : "Ride in progress"}</span>
           </div>
           <CarpoolSession
             vehicleType={carpoolVehicle}
@@ -989,7 +1051,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <button onClick={onBack} className="text-enb-text-secondary text-sm">{isUrdu ? "→ واپس" : "← Back"}</button>
-            <h2 className="text-xl font-bold text-enb-text-primary">Carpool</h2>
+            <h2 className="text-xl font-bold text-enb-text-primary">{isUrdu ? "کارپول" : "Carpool"}</h2>
             <div className="w-16" />
           </div>
           <CaptainOnboarding
