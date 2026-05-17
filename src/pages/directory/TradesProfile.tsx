@@ -89,6 +89,96 @@ function formatJoined(iso: string): string {
   return new Date(iso).toLocaleDateString('en-PK', { month: 'long', year: 'numeric' });
 }
 
+// ── PendingJobCard — expandable card showing full customer details ────────────
+function PendingJobCard({ job }: { job: any }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <button
+      onClick={() => setExpanded(v => !v)}
+      className="w-full text-left bg-amber-50 border border-amber-200 rounded-2xl overflow-hidden transition-all"
+    >
+      {/* Header row — always visible */}
+      <div className="p-4 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-sm font-bold text-amber-700">{job.job_code}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">
+              {job.customer_confirmed_at
+                ? new Date(job.customer_confirmed_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })
+                : '—'}
+            </span>
+            <span className="text-gray-400 text-sm">{expanded ? '▲' : '▼'}</span>
+          </div>
+        </div>
+        <p className="text-sm font-medium text-enb-text-primary">
+          {TRADE_EMOJI[job.trade_type] || '🛠️'} {TRADE_LABEL[job.trade_type] || job.trade_type}
+          {job.customer_name && <span className="text-gray-500 font-normal"> · {job.customer_name}</span>}
+        </p>
+        {!expanded && job.problem_description && (
+          <p className="text-xs text-gray-500 line-clamp-1">{job.problem_description}</p>
+        )}
+      </div>
+
+      {/* Expanded details */}
+      {expanded && (
+        <div className="border-t border-amber-200 bg-white p-4 space-y-3">
+          {/* Customer details */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer Details</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400">👤 Name</p>
+                <p className="text-sm font-semibold text-enb-text-primary mt-0.5">
+                  {job.customer_name || '—'}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400">📱 Phone</p>
+                <p className="text-sm font-semibold text-enb-text-primary mt-0.5">
+                  {job.customer_phone || '—'}
+                </p>
+              </div>
+            </div>
+
+            {job.problem_description && (
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400 mb-1">🔧 Problem Description</p>
+                <p className="text-sm text-enb-text-primary">{job.problem_description}</p>
+              </div>
+            )}
+
+            {job.agreed_price && (
+              <div className="bg-green-50 rounded-xl p-3 border border-green-100">
+                <p className="text-xs text-gray-400 mb-0.5">💵 Agreed Price</p>
+                <p className="text-sm font-bold text-enb-green">Rs. {Number(job.agreed_price).toLocaleString()}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Submission reminder */}
+          <div className="bg-amber-50 rounded-xl p-3 text-xs text-enb-text-secondary border border-amber-100">
+            📋 Complete the work, then go to <strong>Community Action → Trade Job</strong> to submit before/after photos and earn your ENB tokens.
+          </div>
+
+          {/* WhatsApp quick contact */}
+          {job.customer_phone && (
+            <a
+              href={`https://wa.me/${job.customer_phone.replace(/\D/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-green-500 text-white text-sm font-semibold"
+            >
+              💬 WhatsApp Customer
+            </a>
+          )}
+        </div>
+      )}
+    </button>
+  );
+}
+
 export default function TradesProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
@@ -159,7 +249,7 @@ export default function TradesProfile() {
       if (isOwnProfile) {
         const { data: pendingData } = await supabase
           .from('job_requests')
-          .select('id, job_code, trade_type, customer_name, customer_phone, customer_confirmed_at, problem_description')
+          .select('id, job_code, trade_type, customer_name, customer_phone, customer_confirmed_at, problem_description, agreed_price')
           .eq('tradesperson_id', userId)
           .eq('status', 'customer_confirmed')
           .order('customer_confirmed_at', { ascending: false });
@@ -399,24 +489,7 @@ export default function TradesProfile() {
             </span>
           </h2>
           {pendingJobs.map(pj => (
-            <div key={pj.id} className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-sm font-bold text-amber-700">{pj.job_code}</span>
-                <span className="text-xs text-gray-500">
-                  {new Date(pj.customer_confirmed_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}
-                </span>
-              </div>
-              <p className="text-sm font-medium text-enb-text-primary">
-                {TRADE_EMOJI[pj.trade_type] || '🛠️'} {TRADE_LABEL[pj.trade_type] || pj.trade_type}
-                {pj.customer_name && <span className="text-gray-500 font-normal"> · {pj.customer_name}</span>}
-              </p>
-              {pj.problem_description && (
-                <p className="text-xs text-gray-500 line-clamp-2">{pj.problem_description}</p>
-              )}
-              <div className="bg-white rounded-xl p-3 text-xs text-enb-text-secondary border border-amber-100">
-                📋 Complete the work, then go to <strong>Community Action → Trade Job</strong> to submit before/after photos and earn your ENB tokens.
-              </div>
-            </div>
+            <PendingJobCard key={pj.id} job={pj} />
           ))}
         </div>
       )}
