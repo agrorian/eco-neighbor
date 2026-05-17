@@ -61,13 +61,14 @@ interface PhotoItem {
 const ACTION_CONFIG: Record<string, {
   title: string;
   hint: string;
+  titleUr?: string;
   photoLabel: string;
   photoLabelUr?: string;
   fields: FieldDef[];
   isCarpoolSession?: boolean;
 }> = {
   neighbourhood_cleanup: {
-    title: 'Neighbourhood Cleanup',
+    title: 'Neighbourhood Cleanup', titleUr: 'محلہ صفائی',
     hint: 'Take a before photo showing the litter, and an after photo showing the clean area.',
     photoLabel: 'Before & After Photos', photoLabelUr: 'پہلے اور بعد کی تصاویر',
     fields: [
@@ -92,19 +93,20 @@ const ACTION_CONFIG: Record<string, {
   },
 
   recycling_dropoff: {
-    title: 'Recycling Drop-off',
+    title: 'Recycling Drop-off', titleUr: 'ری سائیکلنگ',
     hint: 'Photo at the recycling centre with your items visible. Include the centre name/sign if possible.',
     photoLabel: 'Photo at Recycling Centre', photoLabelUr: 'ری سائیکلنگ سینٹر پر تصویر',
     fields: [
-      { id: 'material_type', label: 'Material Type', type: 'multiselect', required: true,
-        options: ['Plastic bottles', 'Cardboard/Paper', 'Glass', 'Metal/Cans', 'Electronics', 'Mixed recyclables'] },
-      { id: 'weight_kg', label: 'Approximate weight (kg)', type: 'number', placeholder: 'e.g. 5', required: false },
-      { id: 'centre_name', label: 'Recycling centre / drop-off point', type: 'text', placeholder: 'e.g. Chaklala Waste Collection Point', required: true },
+      { id: 'material_type', label: 'Material Type', labelUr: 'مواد کی قسم', type: 'multiselect', required: true,
+        options: ['Plastic bottles', 'Cardboard/Paper', 'Glass', 'Metal/Cans', 'Electronics', 'Mixed recyclables'],
+        optionsUr: ['پلاسٹک بوتلیں', 'گتہ / کاغذ', 'شیشہ', 'دھات / کین', 'الیکٹرونکس', 'ملا جلا کچرہ'] },
+      { id: 'weight_kg', label: 'Approximate weight (kg)', labelUr: 'اندازاً وزن (کلو)', type: 'number', placeholder: 'e.g. 5', required: false },
+      { id: 'centre_name', label: 'Recycling centre / drop-off point', labelUr: 'ری سائیکلنگ سینٹر کا نام', type: 'text', placeholder: 'e.g. Chaklala Waste Collection Point', placeholderUr: 'مثلاً: چکلالہ کچرہ جمع مرکز', required: true },
     ],
   },
 
   carpool: {
-    title: 'Carpool',
+    title: 'Carpool', titleUr: 'کارپول',
     hint: 'Start a verified ride session. GPS tracks your route automatically — no photos or manual distance entry required.',
     photoLabel: '',
     fields: [],  // Carpool uses CarpoolSession component — not the standard field renderer
@@ -112,21 +114,23 @@ const ACTION_CONFIG: Record<string, {
   },
 
   food_sharing: {
-    title: 'Food Sharing',
+    title: 'Food Sharing', titleUr: 'کھانا بانٹنا',
     hint: 'Photo of the food being shared and the recipients (or the handover moment).',
     photoLabel: 'Photo of Food & Recipients', photoLabelUr: 'کھانے اور وصول کنندگان کی تصویر',
     fields: [
-      { id: 'food_type', label: 'Type of food shared', type: 'text', placeholder: 'e.g. Cooked rice, bread, vegetables', required: true },
-      { id: 'portions', label: 'Number of portions / people fed', type: 'number', placeholder: 'e.g. 10', required: true },
-      { id: 'food_condition', label: 'Food condition', type: 'select', required: true,
-        options: ['Freshly cooked', 'Same-day packaged', 'Surplus from event', 'Donated dry goods'] },
-      { id: 'recipient_type', label: 'Recipients', type: 'select', required: true,
-        options: ['Families', 'Daily wage workers', 'Elderly residents', 'Children', 'Mixed community'] },
+      { id: 'food_type', label: 'Type of food shared', labelUr: 'کھانے کی قسم', type: 'text', placeholder: 'e.g. Cooked rice, bread, vegetables', placeholderUr: 'مثلاً: پکے چاول، روٹی، سبزیاں', required: true },
+      { id: 'portions', label: 'Number of portions / people fed', labelUr: 'حصوں کی تعداد / کھانے والے لوگ', type: 'number', placeholder: 'e.g. 10', required: true },
+      { id: 'food_condition', label: 'Food condition', labelUr: 'کھانے کی حالت', type: 'select', required: true,
+        options: ['Freshly cooked', 'Same-day packaged', 'Surplus from event', 'Donated dry goods'],
+        optionsUr: ['تازہ پکا ہوا', 'اسی دن پیک کیا گیا', 'تقریب سے بچا ہوا', 'عطیہ کردہ خشک اشیاء'] },
+      { id: 'recipient_type', label: 'Recipients', labelUr: 'وصول کنندگان', type: 'select', required: true,
+        options: ['Families', 'Daily wage workers', 'Elderly residents', 'Children', 'Mixed community'],
+        optionsUr: ['خاندان', 'یومیہ مزدور', 'بزرگ افراد', 'بچے', 'ملا جلا معاشرہ'] },
     ],
   },
 
   skill_workshop: {
-    title: 'Skill Workshop',
+    title: 'Skill Workshop', titleUr: 'ہنر ورکشاپ',
     hint: 'Photo of the session in progress showing you teaching and attendees participating.',
     photoLabel: 'Photo of Workshop in Progress', photoLabelUr: 'ورکشاپ کی تصویر',
     fields: [
@@ -140,7 +144,7 @@ const ACTION_CONFIG: Record<string, {
   },
 
   infrastructure_report: {
-    title: 'Infrastructure Report',
+    title: 'Infrastructure Report', titleUr: 'انفراسٹرکچر رپورٹ',
     hint: 'Clear photo of the issue. Include context (street sign, landmark) so location can be verified.',
     photoLabel: 'Photo of the Issue', photoLabelUr: 'مسئلے کی تصویر',
     fields: [
@@ -155,7 +159,7 @@ const ACTION_CONFIG: Record<string, {
   },
 
   trade_job: {
-    title: 'Trade Job',
+    title: 'Trade Job', titleUr: 'ہنر کا کام',
     hint: '',  // Visual selector replaces text hint for trade jobs
     photoLabel: 'Photo of Completed Work', photoLabelUr: 'مکمل کام کی تصویر',
     isTradeJobSelector: true,  // Uses TradeJobSelector component instead of dropdown
@@ -176,7 +180,7 @@ const ACTION_CONFIG: Record<string, {
   },
 
   youth_mentoring: {
-    title: 'Youth Mentoring',
+    title: 'Youth Mentoring', titleUr: 'نوجوانوں کی رہنمائی',
     hint: 'Photo of the mentoring session. The young person\'s face can be partially obscured for privacy.',
     photoLabel: 'Photo of Mentoring Session', photoLabelUr: 'رہنمائی سیشن کی تصویر',
     fields: [
@@ -191,7 +195,7 @@ const ACTION_CONFIG: Record<string, {
   },
 
   tree_planting: {
-    title: 'Tree Planting',
+    title: 'Tree Planting', titleUr: 'درخت لگانا',
     hint: 'Photo of you planting the tree, showing the sapling in the ground with surrounding area visible.',
     photoLabel: 'Photo of Tree Being Planted', photoLabelUr: 'درخت لگانے کی تصویر',
     fields: [
@@ -205,7 +209,7 @@ const ACTION_CONFIG: Record<string, {
   },
 
   waste_reporting: {
-    title: 'Waste Reporting',
+    title: 'Waste Reporting', titleUr: 'کچرہ رپورٹ',
     hint: 'Clear photo showing the dumping site. Include a landmark for location verification.',
     photoLabel: 'Photo of Dumping Site', photoLabelUr: 'کوڑے کی جگہ کی تصویر',
     fields: [
@@ -383,6 +387,7 @@ interface FieldDef {
   placeholder?: string;
   placeholderUr?: string;
   options?: string[];           // for select / multiselect (English)
+  optionsUr?: string[];         // Urdu equivalents — same order as options (English)
   visualOptions?: {             // for visual_select
     value: string;
     emoji: string;
@@ -442,28 +447,32 @@ function ActionFields({ fields, values, onChange, isUrdu }: {
 
           {field.type === 'select' && (
             <div className="flex flex-col gap-1.5">
-              {field.options!.map(opt => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => onChange(field.id, opt)}
-                  className={`text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                    values[field.id] === opt
-                      ? 'bg-enb-green text-white border-enb-green'
-                      : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green/40'
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
+              {field.options!.map((opt, idx) => {
+                const label = isUrdu && field.optionsUr?.[idx] ? field.optionsUr[idx] : opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => onChange(field.id, opt)}
+                    className={`text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                      values[field.id] === opt
+                        ? 'bg-enb-green text-white border-enb-green'
+                        : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green/40'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           )}
 
           {field.type === 'multiselect' && (
             <div className="flex flex-wrap gap-2">
-              {field.options!.map(opt => {
+              {field.options!.map((opt, idx) => {
                 const selected: string[] = values[field.id] || [];
                 const isSelected = selected.includes(opt);
+                const label = isUrdu && field.optionsUr?.[idx] ? field.optionsUr[idx] : opt;
                 return (
                   <button
                     key={opt}
@@ -478,7 +487,7 @@ function ActionFields({ fields, values, onChange, isUrdu }: {
                         : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green/40'
                     }`}
                   >
-                    {opt}
+                    {label}
                   </button>
                 );
               })}
@@ -888,7 +897,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <button onClick={onBack} className="text-enb-text-secondary text-sm">← Back</button>
+            <button onClick={onBack} className="text-enb-text-secondary text-sm">{isUrdu ? "→ واپس" : "← Back"}</button>
             <h2 className="text-xl font-bold text-enb-text-primary">Carpool</h2>
             <div className="w-16" />
           </div>
@@ -906,7 +915,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <button onClick={onBack} className="text-enb-text-secondary text-sm">← Back</button>
+          <button onClick={onBack} className="text-enb-text-secondary text-sm">{isUrdu ? "→ واپس" : "← Back"}</button>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-enb-text-primary">Carpool</h2>
             <span className="text-xs bg-enb-gold/20 text-enb-gold font-bold px-2 py-0.5 rounded-full">🚗 Captain</span>
@@ -995,8 +1004,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onBack} className="text-enb-text-secondary -ml-2">← Back</Button>
-        <h2 className="text-xl font-bold text-enb-text-primary">{config.title}</h2>
+        <Button variant="ghost" onClick={onBack} className="text-enb-text-secondary -ml-2">{isUrdu ? "→ واپس" : "← Back"}</Button>
+        <h2 className="text-xl font-bold text-enb-text-primary">{isUrdu && config.titleUr ? config.titleUr : config.title}</h2>
         <div className="w-16" />
       </div>
 
@@ -1122,7 +1131,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       {config.fields.length > 0 && (
         <div className="space-y-1">
           {!isTradeJob && (
-            <p className="text-sm font-semibold text-enb-text-primary mb-3">Action Details</p>
+            <p className="text-sm font-semibold text-enb-text-primary mb-3">{isUrdu ? "کام کی تفصیل" : "Action Details"}</p>
           )}
           <ActionFields
             fields={config.fields.filter(f => !(isTradeJob && f.id === 'trade_type'))}
