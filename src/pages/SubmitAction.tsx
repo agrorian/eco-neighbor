@@ -256,6 +256,33 @@ export default function SubmitAction() {
 
       if (error) throw error;
 
+      // ── Wire linked job code → job_requests.submission_id ───────────────
+      // When a tradesperson submits a trade_job and enters their job code,
+      // we update job_requests.submission_id so the pending job moves to Portfolio
+      // once the submission is approved.
+      if (actionKey === 'trade_job' && formData.linkedJobCode) {
+        try {
+          const { data: newSub } = await supabase
+            .from('submissions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('action_type', 'trade_job')
+            .order('submitted_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (newSub?.id) {
+            await supabase
+              .from('job_requests')
+              .update({ submission_id: newSub.id })
+              .eq('job_code', formData.linkedJobCode.trim().toUpperCase())
+              .eq('tradesperson_id', user.id); // safety: only own jobs
+          }
+        } catch {
+          // Silent — submission already recorded; job_code link is best-effort
+        }
+      }
+
       // ── Save captain's passenger rating if provided ──────────────────────
       // Runs after insert succeeds. Looks up the new submission by ride_token.
       // Non-fatal — a failed rating save does not block the submission success screen.

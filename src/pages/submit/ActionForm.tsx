@@ -154,6 +154,10 @@ const ACTION_CONFIG: Record<string, {
       { id: 'duration', label: 'Job duration (minutes)', type: 'number', placeholder: 'e.g. 90', required: false },
       { id: 'customer_confirmed', label: 'Customer confirmation', type: 'select', required: true,
         options: ['Customer present for photo', 'Customer confirmed by WhatsApp', 'Not yet confirmed'] },
+      // Optional: link to the job code generated via StartJobModal so the pending
+      // job moves from "Pending" to "Portfolio" when this submission is approved.
+      { id: 'linked_job_code', label: 'Link to Job Code (optional)', type: 'text',
+        placeholder: 'e.g. ENB-A1B2-C3D4 — leave blank if not applicable', required: false },
     ],
   },
 
@@ -528,6 +532,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           trade_before_after: selectedTrade.beforeAfter,
         } : {}),
       },
+      // Pass linked_job_code so SubmitAction can wire submission_id → job_requests
+      linkedJobCode: isTradeJob ? (fieldValues['linked_job_code'] || null) : null,
       gpsLat,
       gpsLng,
       gpsAddress,

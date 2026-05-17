@@ -1,8 +1,10 @@
 // src/components/InboxBell.tsx
 // Drop this anywhere in your nav/header to show unread count badge
+// ENB FIX (v1.9.0): bell now clears when user navigates to /inbox
+// by auto-marking all visible messages as read in the shared localStorage key.
 
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
@@ -10,28 +12,63 @@ import { useUserStore } from '@/store/user';
 export default function InboxBell() {
   const { user } = useUserStore();
   const [unread, setUnread] = useState(0);
+  const location = useLocation();
 
+  const storageKey = user?.id ? `enb_inbox_read_${user.id}` : null;
+
+  const calcUnread = async () => {
+    if (!user?.id || !storageKey) return;
+
+    const { data } = await supabase
+      .from('messages')
+      .select('id')
+      .or(
+        `and(message_type.eq.broadcast,target_audience.in.("all","${user.role || 'member'}")),` +
+        `and(message_type.eq.mention,recipient_id.eq.${user.id})`
+      );
+
+    if (!data) return;
+
+    try {
+      const readIds: string[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      setUnread(data.filter(m => !readIds.includes(m.id)).length);
+    } catch {
+      setUnread(data.length);
+    }
+  };
+
+  // Clear badge whenever user navigates to /inbox by marking all messages read
   useEffect(() => {
-    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
+    if (!user?.id || !storageKey) return;
+    if (location.pathname !== '/inbox') return;
 
-    const calcUnread = async () => {
+    const markAllRead = async () => {
       const { data } = await supabase
         .from('messages')
         .select('id')
-        .eq('message_type', 'broadcast')
-        .in('target_audience', ['all', user.role || 'member']);
+        .or(
+          `and(message_type.eq.broadcast,target_audience.in.("all","${user.role || 'member'}")),` +
+          `and(message_type.eq.mention,recipient_id.eq.${user.id})`
+        );
 
-      if (!data) return;
+      if (!data?.length) return;
 
       try {
-        const readIds: string[] = JSON.parse(
-          localStorage.getItem(`enb_inbox_read_${user.id}`) || '[]'
-        );
-        setUnread(data.filter(m => !readIds.includes(m.id)).length);
+        const existing: string[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const allIds = Array.from(new Set([...existing, ...data.map(m => m.id)]));
+        localStorage.setItem(storageKey, JSON.stringify(allIds));
+        setUnread(0);
       } catch {
-        setUnread(data.length);
+        setUnread(0);
       }
     };
+
+    markAllRead();
+  }, [location.pathname, user?.id, user?.role, storageKey]);
+
+  // Initial load + realtime
+  useEffect(() => {
+    if (!user?.id) return;
 
     calcUnread();
 
@@ -41,7 +78,6 @@ export default function InboxBell() {
         event: 'INSERT',
         schema: 'public',
         table: 'messages',
-        filter: 'message_type=eq.broadcast',
       }, () => calcUnread())
       .subscribe();
 

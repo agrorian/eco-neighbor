@@ -158,7 +158,41 @@ export default function ModQueue() {
     const { data: result } = await supabase.rpc('evaluate_mod_decision', { p_assignment_id: assignment.id });
 
     if (result?.status === 'approved') {
-      showToast('✅ Both mods agreed — submission approved! +500 ENB earned.');
+      showToast('\u2705 Both mods agreed \u2014 submission approved! +500 ENB earned.');
+
+      // ── Post-approval: fire rating link notification for trade jobs ──────
+      // If the approved submission is a trade_job, find the linked job_request
+      // and send the customer an inbox DM with the /job/:code/rate link.
+      // Non-fatal — a failure here must never block the approval flow.
+      try {
+        const { data: sub } = await supabase
+          .from('submissions')
+          .select('action_type, id')
+          .eq('id', assignment.submission_id)
+          .single();
+
+        if (sub?.action_type === 'trade_job') {
+          const { data: jobReq } = await supabase
+            .from('job_requests')
+            .select('job_code, customer_user_id, tradesperson_id')
+            .eq('submission_id', assignment.submission_id)
+            .maybeSingle();
+
+          if (jobReq?.customer_user_id && jobReq?.job_code) {
+            const ratingUrl = `${window.location.origin}/job/${jobReq.job_code}/rate`;
+            await supabase.from('messages').insert({
+              sender_id:      jobReq.tradesperson_id,
+              recipient_id:   jobReq.customer_user_id,
+              message_type:   'direct',
+              content: `\u2705 <strong>Job completed & verified!</strong><br/>Your job has been approved by the ENB moderation team. Please take a moment to rate the work:<br/><br/><a href="${ratingUrl}" style="color:#1A6B3C;font-weight:600;">\u2b50 Rate this job</a>`,
+              channel_id:     null,
+              team_id:        null,
+            });
+          }
+        }
+      } catch {
+        // Silent — approval already recorded above, this is a best-effort notification
+      }
     } else if (result?.status === 'rejected') {
       showToast('❌ Both mods agreed — submission rejected. +200 ENB earned.');
     } else if (result?.status === 'escalated_to_senior') {
