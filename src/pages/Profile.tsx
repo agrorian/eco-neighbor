@@ -56,17 +56,16 @@ export default function Profile() {
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1A6B3C&color=fff&size=96`;
 
   // Trades — show section if profession is a known trade type
-  const totalVerifiedJobs = (user as any).total_verified_jobs || 0;
-  const tradeTypes: string[] = (user as any).trade_types || [];
+  const totalVerifiedJobs = user.total_verified_jobs || 0;
+  const tradeTypes: string[] = user.trade_types || [];
   const professionTradeKey = user.profession ? TRADE_PROFESSIONS[user.profession] : null;
   const isTradesPerson = !!professionTradeKey || totalVerifiedJobs > 0;
-  // Derive primary trade display from profession mapping, fall back to DB trade_types
   const displayTradeTypes = tradeTypes.length > 0
     ? tradeTypes
     : professionTradeKey
       ? [professionTradeKey]
       : [];
-  const currentAvailability = localAvailability ?? (user as any).trade_availability ?? 'not_set';
+  const currentAvailability = localAvailability ?? user.trade_availability ?? 'not_set';
   const avail = AVAILABILITY_CONFIG[currentAvailability] || AVAILABILITY_CONFIG.not_set;
 
   return (
@@ -215,13 +214,13 @@ export default function Profile() {
             </Card>
             <Card className="border-gray-100 p-4 text-center">
               <p className="text-3xl mb-1">⭐</p>
-              {(user as any).total_job_ratings >= 3 ? (
+              {(user.total_job_ratings || 0) >= 3 ? (
                 <>
                   <p className="text-xl font-bold text-enb-text-primary">
-                    {Number((user as any).avg_job_rating || 0).toFixed(1)}
+                    {Number(user.avg_job_rating || 0).toFixed(1)}
                   </p>
                   <p className="text-xs text-gray-400">
-                    ({(user as any).total_job_ratings} reviews)
+                    ({user.total_job_ratings} reviews)
                   </p>
                 </>
               ) : (
@@ -282,7 +281,7 @@ export default function Profile() {
       {showAvailPicker && (
         <AvailabilityPicker
           initialAvailability={currentAvailability}
-          initialSchedule={(user as any).trade_availability_schedule ?? null}
+          initialSchedule={user.trade_availability_schedule ?? null}
           onClose={() => setShowAvailPicker(false)}
           onSaved={(avail) => setLocalAvailability(avail)}
         />

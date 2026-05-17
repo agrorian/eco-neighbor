@@ -50,6 +50,20 @@ interface UserState {
     cnic_verified?: boolean;
     cnic_submitted_at?: string;
     country_code?: string;
+    // ── v1.7.0 carpool passenger rating ──────────────────────────────────────
+    avg_passenger_rating?: number;
+    total_rides_as_passenger?: number;
+    is_carpool_rider?: boolean;
+    avg_carpool_rating?: number;
+    total_carpool_rides?: number;
+    // ── v1.8.0 trades ecosystem ───────────────────────────────────────────────
+    trade_types?: string[];
+    total_verified_jobs?: number;
+    avg_job_rating?: number;
+    total_job_ratings?: number;
+    trade_availability?: string;
+    trade_availability_until?: string;
+    trade_availability_schedule?: Record<string, { from: string; to: string }> | null;
   } | null;
   setUser: (user: UserState['user'] | ((prev: UserState['user']) => UserState['user'])) => void;
   logout: () => void;
