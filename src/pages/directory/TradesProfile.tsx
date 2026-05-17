@@ -97,6 +97,7 @@ export default function TradesProfile() {
   const [person, setPerson] = useState<TradesPersonData | null>(null);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [ratings, setRatings] = useState<JobRating[]>([]);
+  const [pendingJobs, setPendingJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showJobModal, setShowJobModal] = useState(false);
@@ -153,6 +154,17 @@ export default function TradesProfile() {
         .not('job_rating', 'is', null)
         .order('rated_at', { ascending: false });
       if (ratingData) setRatings(ratingData);
+
+      // Pending jobs — confirmed by customer but not yet submitted
+      if (isOwnProfile) {
+        const { data: pendingData } = await supabase
+          .from('job_requests')
+          .select('id, job_code, trade_type, customer_name, customer_phone, customer_confirmed_at, problem_description')
+          .eq('tradesperson_id', userId)
+          .eq('status', 'customer_confirmed')
+          .order('customer_confirmed_at', { ascending: false });
+        if (pendingData) setPendingJobs(pendingData);
+      }
 
       setLoading(false);
     };
@@ -377,7 +389,39 @@ export default function TradesProfile() {
         </button>
       )}
 
-      {/* Portfolio — the digital resume */}
+      {/* Pending jobs — customer confirmed, awaiting submission */}
+      {isOwnProfile && pendingJobs.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-base font-bold text-enb-text-primary flex items-center gap-2">
+            ⏳ Pending Jobs
+            <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              {pendingJobs.length} awaiting submission
+            </span>
+          </h2>
+          {pendingJobs.map(pj => (
+            <div key={pj.id} className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-sm font-bold text-amber-700">{pj.job_code}</span>
+                <span className="text-xs text-gray-500">
+                  {new Date(pj.customer_confirmed_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}
+                </span>
+              </div>
+              <p className="text-sm font-medium text-enb-text-primary">
+                {TRADE_EMOJI[pj.trade_type] || '🛠️'} {TRADE_LABEL[pj.trade_type] || pj.trade_type}
+                {pj.customer_name && <span className="text-gray-500 font-normal"> · {pj.customer_name}</span>}
+              </p>
+              {pj.problem_description && (
+                <p className="text-xs text-gray-500 line-clamp-2">{pj.problem_description}</p>
+              )}
+              <div className="bg-white rounded-xl p-3 text-xs text-enb-text-secondary border border-amber-100">
+                📋 Complete the work, then go to <strong>Community Action → Trade Job</strong> to submit before/after photos and earn your ENB tokens.
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Portfolio */}
       <div className="space-y-3">
         <h2 className="text-base font-bold text-enb-text-primary flex items-center gap-2">
           <Briefcase className="w-5 h-5 text-enb-teal" />

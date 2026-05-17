@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { X, Loader2, Copy, Check, AlertTriangle } from 'lucide-react';
+import { X, Loader2, Copy, Check, AlertTriangle, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import { useNavigate } from 'react-router-dom';
 import { TRADE_EMOJI, TRADE_LABEL } from './TradesDirectory';
 
 // ── StartJobModal — generates Job Code for street encounter ───────────────────
@@ -13,6 +14,7 @@ interface Props {
   tradespersonId: string;
   tradespersonName: string;
   tradeTypes: string[];
+  customerId?: string; // if opened from a conversation, pre-fill the recipient
   onClose: () => void;
 }
 
@@ -21,14 +23,17 @@ function generateCode(): string {
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
-export default function StartJobModal({ tradespersonId, tradespersonName, tradeTypes, onClose }: Props) {
+export default function StartJobModal({ tradespersonId, tradespersonName, tradeTypes, customerId, onClose }: Props) {
   const { user } = useUserStore();
+  const navigate = useNavigate();
   const [selectedTrade, setSelectedTrade] = useState(tradeTypes[0] || 'general');
   const [step, setStep] = useState<'select' | 'code'>('select');
   const [jobCode, setJobCode] = useState('');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [genError, setGenError] = useState('');
+  const [messageSending, setMessageSending] = useState(false);
+  const [messageSent, setMessageSent] = useState(false);
 
   const handleGenerate = async () => {
     if (!user) return;
@@ -61,6 +66,24 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  // Send the job link directly to the customer via in-app message
+  const sendLinkToCustomer = async (recipientId: string) => {
+    if (!user || !jobCode) return;
+    setMessageSending(true);
+    const url = `${window.location.origin}/job/${jobCode}`;
+    const content = `Here is your Job Code link to confirm our carpentry work agreement: ${url}\n\nJob Code: ${jobCode}\n\nPlease open this link, enter your details to confirm the job. شکریہ 🔑`;
+    await supabase.from('messages').insert({
+      sender_id: user.id,
+      recipient_id: recipientId,
+      message_type: 'direct',
+      content,
+      channel_id: null,
+      team_id: null,
+    });
+    setMessageSending(false);
+    setMessageSent(true);
   };
 
   const confirmUrl = jobCode ? `${window.location.origin}/job/${jobCode}` : '';
@@ -193,6 +216,32 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
               >
                 Done — I'll submit my work after completing the job
               </button>
+
+              {/* Send directly via in-app message if customer ID known */}
+              {customerId && !messageSent && (
+                <button
+                  onClick={() => sendLinkToCustomer(customerId)}
+                  disabled={messageSending}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-enb-teal/10 text-enb-teal border border-enb-teal/20 text-sm font-semibold"
+                >
+                  {messageSending
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <MessageCircle className="w-4 h-4" />
+                  }
+                  {messageSending ? 'Sending...' : 'Send Link to Customer via Message'}
+                </button>
+              )}
+              {messageSent && (
+                <div className="flex items-center justify-center gap-2 py-3 text-sm text-enb-green font-medium">
+                  <Check className="w-4 h-4" /> Link sent to customer's inbox ✓
+                </div>
+              )}
+
+              {/* Reminder — submit trade job action to record in portfolio */}
+              <div className="bg-enb-gold/10 border border-enb-gold/20 rounded-xl p-3 text-xs text-enb-text-secondary">
+                <p className="font-semibold text-enb-gold mb-1">📋 Don't forget:</p>
+                After completing the work, go to <strong>Community Action → Trade Job</strong> and submit your before/after photos. This records the job in your verified portfolio and earns you ENB tokens.
+              </div>
             </>
           )}
         </div>
