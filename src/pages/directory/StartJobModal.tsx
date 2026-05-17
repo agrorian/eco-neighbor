@@ -100,7 +100,7 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
     if (!user || !jobCode) return;
     setMessageSending(true);
     const url = `${window.location.origin}/job/${jobCode}`;
-    const content = `Here is your Job Code link to confirm our carpentry work agreement: ${url}\n\nJob Code: ${jobCode}\n\nPlease open this link, enter your details to confirm the job. شکریہ 🔑`;
+    const content = `<p>Here is your Job Code link to confirm our job agreement:</p><p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p><p>Job Code: <strong>${jobCode}</strong></p><p>Please open this link and enter your details to confirm the job. شکریہ 🔑</p>`;
     await supabase.from('messages').insert({
       sender_id: user.id,
       recipient_id: recipientId,
