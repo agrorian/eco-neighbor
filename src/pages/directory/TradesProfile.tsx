@@ -172,8 +172,40 @@ export default function TradesProfile() {
     </div>
   );
 
-  // Dynamic hire button text based on trade type
-  const HIRE_TEXT: Record<string, string> = {
+  // Pre-drafted service request messages per trade type
+  const REQUEST_MESSAGE: Record<string, string> = {
+    plumbing:         `السلام علیکم! I found your profile on Eco-Neighbor. I need plumbing work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🔧`,
+    electrical:       `السلام علیکم! I found your profile on Eco-Neighbor. I need electrical work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ ⚡`,
+    carpentry:        `السلام علیکم! I found your profile on Eco-Neighbor. I need carpentry work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🪚`,
+    masonry:          `السلام علیکم! I found your profile on Eco-Neighbor. I need masonry / plastering work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🧱`,
+    painting:         `السلام علیکم! I found your profile on Eco-Neighbor. I need painting work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🎨`,
+    welding:          `السلام علیکم! I found your profile on Eco-Neighbor. I need welding work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🔥`,
+    auto_repair:      `السلام علیکم! I found your profile on Eco-Neighbor. I need auto repair work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🚗`,
+    appliance_repair: `السلام علیکم! I found your profile on Eco-Neighbor. I need appliance repair work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🔌`,
+    general:          `السلام علیکم! I found your profile on Eco-Neighbor. I need your services. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🛠️`,
+  };
+
+  const [requestSending, setRequestSending] = useState(false);
+
+  const handleServiceRequest = async () => {
+    if (!currentUser || !userId) return;
+    setRequestSending(true);
+
+    const message = REQUEST_MESSAGE[primaryTrade] || REQUEST_MESSAGE.general;
+
+    await supabase.from('messages').insert({
+      sender_id: currentUser.id,
+      recipient_id: userId,
+      message_type: 'direct',
+      content: message,
+      channel_id: null,
+      team_id: null,
+    });
+
+    setRequestSending(false);
+    // Navigate directly to the conversation with this tradesperson
+    navigate(`/messages/${userId}`);
+  };
     plumbing:         'Request Plumbing Work',
     electrical:       'Request Electrical Work',
     carpentry:        'Request Carpentry Work',
@@ -298,15 +330,21 @@ export default function TradesProfile() {
         </Card>
       </div>
 
-      {/* Customer view — message to request services */}
+      {/* Customer view — one tap sends pre-drafted message and opens conversation */}
       {!isOwnProfile && (
         <div className="grid grid-cols-3 gap-2">
           <button
-            onClick={() => navigate(`/messages/${userId}`)}
-            className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-enb-green text-white shadow-lg shadow-enb-green/20 col-span-2"
+            onClick={handleServiceRequest}
+            disabled={requestSending}
+            className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-enb-green text-white shadow-lg shadow-enb-green/20 col-span-2 disabled:opacity-60"
           >
-            <span className="text-2xl">💬</span>
-            <span className="text-sm font-bold text-center leading-tight">{hireButtonText}</span>
+            {requestSending
+              ? <span className="text-lg animate-spin">⏳</span>
+              : <span className="text-2xl">💬</span>
+            }
+            <span className="text-sm font-bold text-center leading-tight">
+              {requestSending ? 'Sending...' : hireButtonText}
+            </span>
           </button>
           <button
             onClick={() => navigate(`/messages/${userId}`)}
