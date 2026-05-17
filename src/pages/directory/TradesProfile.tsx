@@ -172,6 +172,8 @@ export default function TradesProfile() {
     </div>
   );
 
+  const primaryTrade = person.trade_types?.[0] || 'general';
+
   // Pre-drafted service request messages per trade type
   const REQUEST_MESSAGE: Record<string, string> = {
     plumbing:         `السلام علیکم! I found your profile on Eco-Neighbor. I need plumbing work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🔧`,
@@ -206,6 +208,7 @@ export default function TradesProfile() {
     // Navigate directly to the conversation with this tradesperson
     navigate(`/messages/${userId}`);
   };
+  const HIRE_TEXT: Record<string, string> = {
     plumbing:         'Request Plumbing Work',
     electrical:       'Request Electrical Work',
     carpentry:        'Request Carpentry Work',
@@ -216,7 +219,6 @@ export default function TradesProfile() {
     appliance_repair: 'Request Appliance Repair',
     general:          'Request Their Services',
   };
-  const primaryTrade = person.trade_types?.[0] || 'general';
   const hireButtonText = HIRE_TEXT[primaryTrade] || 'Request Their Services';
 
   const avail = AVAILABILITY_CONFIG[person.trade_availability] || AVAILABILITY_CONFIG.not_set;
