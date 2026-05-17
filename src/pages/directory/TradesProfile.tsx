@@ -172,6 +172,21 @@ export default function TradesProfile() {
     </div>
   );
 
+  // Dynamic hire button text based on trade type
+  const HIRE_TEXT: Record<string, string> = {
+    plumbing:         'Request Plumbing Work',
+    electrical:       'Request Electrical Work',
+    carpentry:        'Request Carpentry Work',
+    masonry:          'Request Masonry / Plastering Work',
+    painting:         'Request Painting Work',
+    welding:          'Request Welding Work',
+    auto_repair:      'Request Auto Repair',
+    appliance_repair: 'Request Appliance Repair',
+    general:          'Request Their Services',
+  };
+  const primaryTrade = person.trade_types?.[0] || 'general';
+  const hireButtonText = HIRE_TEXT[primaryTrade] || 'Request Their Services';
+
   const avail = AVAILABILITY_CONFIG[person.trade_availability] || AVAILABILITY_CONFIG.not_set;
   const scheduleText = formatSchedule(person.trade_availability_schedule);
   const showRating = person.total_job_ratings >= 3;
@@ -283,15 +298,15 @@ export default function TradesProfile() {
         </Card>
       </div>
 
-      {/* Action buttons — not shown on own profile */}
+      {/* Customer view — message to request services */}
       {!isOwnProfile && (
         <div className="grid grid-cols-3 gap-2">
           <button
-            onClick={() => setShowJobModal(true)}
-            className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-enb-green text-white shadow-lg shadow-enb-green/20 col-span-2"
+            onClick={() => navigate(`/messages/${userId}`)}
+            className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-enb-green text-white shadow-lg shadow-enb-green/20 col-span-2"
           >
-            <span className="text-2xl">💼</span>
-            <span className="text-sm font-bold">Hire This Person</span>
+            <span className="text-2xl">💬</span>
+            <span className="text-sm font-bold text-center leading-tight">{hireButtonText}</span>
           </button>
           <button
             onClick={() => navigate(`/messages/${userId}`)}
@@ -301,6 +316,16 @@ export default function TradesProfile() {
             <span className="text-xs font-semibold">Message</span>
           </button>
         </div>
+      )}
+
+      {/* Own profile — Start a Job generates the job code */}
+      {isOwnProfile && (
+        <button
+          onClick={() => setShowJobModal(true)}
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-enb-green text-white font-bold text-sm shadow-lg shadow-enb-green/20"
+        >
+          <span className="text-xl">🔑</span> Start a Job — Generate Code
+        </button>
       )}
 
       {/* WhatsApp */}
@@ -323,8 +348,9 @@ export default function TradesProfile() {
 
         {jobs.length === 0 ? (
           <Card className="border-gray-100 p-8 text-center">
-            <p className="text-4xl mb-2">📋</p>
-            <p className="text-sm text-enb-text-secondary">Portfolio loading...</p>
+            <p className="text-4xl mb-2">🔨</p>
+            <p className="text-sm font-semibold text-enb-text-primary">No verified jobs yet</p>
+            <p className="text-xs text-gray-400 mt-1">Submit a trade job action to build your portfolio</p>
           </Card>
         ) : (
           <div className="space-y-3">
