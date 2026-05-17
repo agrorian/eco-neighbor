@@ -97,11 +97,19 @@ const ACTION_CONFIG: Record<string, {
     hint: 'Photo at the recycling centre with your items visible. Include the centre name/sign if possible.',
     photoLabel: 'Photo at Recycling Centre', photoLabelUr: 'ری سائیکلنگ سینٹر پر تصویر',
     fields: [
-      { id: 'material_type', label: 'Material Type', labelUr: 'مواد کی قسم', type: 'multiselect', required: true,
-        options: ['Plastic bottles', 'Cardboard/Paper', 'Glass', 'Metal/Cans', 'Electronics', 'Mixed recyclables'],
-        optionsUr: ['پلاسٹک بوتلیں', 'گتہ / کاغذ', 'شیشہ', 'دھات / کین', 'الیکٹرونکس', 'ملا جلا کچرہ'] },
-      { id: 'weight_kg', label: 'Approximate weight (kg)', labelUr: 'اندازاً وزن (کلو)', type: 'number', placeholder: 'e.g. 5', required: false },
-      { id: 'centre_name', label: 'Recycling centre / drop-off point', labelUr: 'ری سائیکلنگ سینٹر کا نام', type: 'text', placeholder: 'e.g. Chaklala Waste Collection Point', placeholderUr: 'مثلاً: چکلالہ کچرہ جمع مرکز', required: true },
+      { id: 'material_type', label: 'Material Type', labelUr: 'مواد کی قسم', type: 'visual_select_multi', required: true,
+        visualOptions: [
+          { value: 'Plastic bottles',    emoji: '🍶', label: 'Plastic',     labelUr: 'پلاسٹک' },
+          { value: 'Cardboard/Paper',    emoji: '📦', label: 'Cardboard',   labelUr: 'گتہ' },
+          { value: 'Glass',              emoji: '🪟', label: 'Glass',       labelUr: 'شیشہ' },
+          { value: 'Metal/Cans',         emoji: '🥫', label: 'Metal/Cans',  labelUr: 'دھات / کین' },
+          { value: 'Electronics',        emoji: '📱', label: 'Electronics', labelUr: 'الیکٹرونکس' },
+          { value: 'Mixed recyclables',  emoji: '♻️', label: 'Mixed',       labelUr: 'ملا جلا' },
+        ],
+      },
+      { id: 'weight_kg', label: 'Approximate weight', labelUr: 'اندازاً وزن', type: 'stepper', required: false,
+        min: 1, max: 100, unit: 'kg', unitUr: 'کلو', quickPicks: [1, 2, 5, 10, 20] },
+      { id: 'centre_name', label: 'Recycling centre / drop-off point', labelUr: 'ری سائیکلنگ سینٹر کا نام', type: 'text', placeholder: 'e.g. Karachi Waste Collection Point', placeholderUr: 'مثلاً: کراچی کچرہ جمع مرکز', required: true },
     ],
   },
 
@@ -118,14 +126,35 @@ const ACTION_CONFIG: Record<string, {
     hint: 'Photo of the food being shared and the recipients (or the handover moment).',
     photoLabel: 'Photo of Food & Recipients', photoLabelUr: 'کھانے اور وصول کنندگان کی تصویر',
     fields: [
-      { id: 'food_type', label: 'Type of food shared', labelUr: 'کھانے کی قسم', type: 'text', placeholder: 'e.g. Cooked rice, bread, vegetables', placeholderUr: 'مثلاً: پکے چاول، روٹی، سبزیاں', required: true },
-      { id: 'portions', label: 'Number of portions / people fed', labelUr: 'حصوں کی تعداد / کھانے والے لوگ', type: 'number', placeholder: 'e.g. 10', required: true },
-      { id: 'food_condition', label: 'Food condition', labelUr: 'کھانے کی حالت', type: 'select', required: true,
-        options: ['Freshly cooked', 'Same-day packaged', 'Surplus from event', 'Donated dry goods'],
-        optionsUr: ['تازہ پکا ہوا', 'اسی دن پیک کیا گیا', 'تقریب سے بچا ہوا', 'عطیہ کردہ خشک اشیاء'] },
-      { id: 'recipient_type', label: 'Recipients', labelUr: 'وصول کنندگان', type: 'select', required: true,
-        options: ['Families', 'Daily wage workers', 'Elderly residents', 'Children', 'Mixed community'],
-        optionsUr: ['خاندان', 'یومیہ مزدور', 'بزرگ افراد', 'بچے', 'ملا جلا معاشرہ'] },
+      { id: 'food_type', label: 'Type of food', labelUr: 'کھانے کی قسم', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Cooked rice / biryani', emoji: '🍚', label: 'Rice / Biryani',  labelUr: 'چاول / بریانی' },
+          { value: 'Bread / roti',          emoji: '🍞', label: 'Bread / Roti',    labelUr: 'روٹی' },
+          { value: 'Curry / dal',           emoji: '🥘', label: 'Curry / Dal',     labelUr: 'سالن / دال' },
+          { value: 'Fruits / vegetables',   emoji: '🥗', label: 'Fruits / Veg',    labelUr: 'پھل / سبزی' },
+          { value: 'Packaged / boxed',      emoji: '📦', label: 'Packaged',        labelUr: 'پیک شدہ' },
+          { value: 'Mixed / other',         emoji: '🍱', label: 'Mixed / Other',   labelUr: 'ملا جلا / دیگر' },
+        ],
+      },
+      { id: 'portions', label: 'People fed', labelUr: 'کھانے والے لوگ', type: 'stepper', required: true,
+        min: 1, max: 500, unit: 'people', unitUr: 'افراد', quickPicks: [5, 10, 20, 30, 50] },
+      { id: 'food_condition', label: 'Food condition', labelUr: 'کھانے کی حالت', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Freshly cooked',      emoji: '🔥', label: 'Freshly cooked',   labelUr: 'تازہ پکا ہوا' },
+          { value: 'Same-day packaged',   emoji: '📦', label: 'Same-day packed',  labelUr: 'اسی دن پیک' },
+          { value: 'Surplus from event',  emoji: '🎉', label: 'Event surplus',    labelUr: 'تقریب سے بچا' },
+          { value: 'Donated dry goods',   emoji: '🌾', label: 'Dry goods',        labelUr: 'خشک اشیاء' },
+        ],
+      },
+      { id: 'recipient_type', label: 'Recipients', labelUr: 'وصول کنندگان', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Families',           emoji: '👨‍👩‍👧', label: 'Families',       labelUr: 'خاندان' },
+          { value: 'Daily wage workers', emoji: '👷',    label: 'Workers',        labelUr: 'مزدور' },
+          { value: 'Elderly residents',  emoji: '👴',    label: 'Elderly',        labelUr: 'بزرگ' },
+          { value: 'Children',           emoji: '👦',    label: 'Children',       labelUr: 'بچے' },
+          { value: 'Mixed community',    emoji: '👥',    label: 'Mixed',          labelUr: 'ملا جلا' },
+        ],
+      },
     ],
   },
 
@@ -134,12 +163,21 @@ const ACTION_CONFIG: Record<string, {
     hint: 'Photo of the session in progress showing you teaching and attendees participating.',
     photoLabel: 'Photo of Workshop in Progress', photoLabelUr: 'ورکشاپ کی تصویر',
     fields: [
-      { id: 'skill_topic', label: 'Skill / topic taught', type: 'text', placeholder: 'e.g. Basic electrical safety, Urdu literacy, ENB app usage', required: true },
-      { id: 'attendees', label: 'Number of attendees', type: 'number', placeholder: 'e.g. 12', required: true },
-      { id: 'duration', label: 'Duration (minutes)', type: 'number', placeholder: 'e.g. 60', required: true },
-      { id: 'audience_type', label: 'Audience', type: 'select', required: true,
-        options: ['Youth (under 18)', 'Adults', 'Women only', 'Tradespeople', 'Mixed community'] },
-      { id: 'notes', label: 'What was covered', type: 'textarea', placeholder: 'Brief summary of what was taught...', required: false },
+      { id: 'skill_topic', label: 'Skill / topic taught', labelUr: 'سکھایا گیا ہنر / موضوع', type: 'text', placeholder: 'e.g. Basic electrical safety, Urdu literacy, ENB app usage', placeholderUr: 'مثلاً: بنیادی بجلی کی حفاظت، اردو خواندگی، ENB ایپ', required: true },
+      { id: 'attendees', label: 'Attendees', labelUr: 'شرکاء کی تعداد', type: 'stepper', required: true,
+        min: 1, max: 200, unit: 'people', unitUr: 'افراد', quickPicks: [5, 10, 15, 20, 30] },
+      { id: 'duration', label: 'Duration', labelUr: 'دورانیہ', type: 'stepper', required: true,
+        min: 15, max: 240, unit: 'min', unitUr: 'منٹ', quickPicks: [30, 45, 60, 90, 120] },
+      { id: 'audience_type', label: 'Audience', labelUr: 'سامعین', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Youth (under 18)', emoji: '👦', label: 'Youth',        labelUr: 'نوجوان' },
+          { value: 'Adults',           emoji: '👨', label: 'Adults',       labelUr: 'بالغ' },
+          { value: 'Women only',       emoji: '👩', label: 'Women only',   labelUr: 'صرف خواتین' },
+          { value: 'Tradespeople',     emoji: '🔧', label: 'Tradespeople', labelUr: 'ہنرمند' },
+          { value: 'Mixed community',  emoji: '👥', label: 'Mixed',        labelUr: 'ملا جلا' },
+        ],
+      },
+      { id: 'notes', label: 'What was covered', labelUr: 'کیا سکھایا گیا', type: 'textarea', placeholder: 'Brief summary of what was taught...', placeholderUr: 'پڑھائے گئے مواد کا مختصر خلاصہ...', required: false },
     ],
   },
 
@@ -148,13 +186,34 @@ const ACTION_CONFIG: Record<string, {
     hint: 'Clear photo of the issue. Include context (street sign, landmark) so location can be verified.',
     photoLabel: 'Photo of the Issue', photoLabelUr: 'مسئلے کی تصویر',
     fields: [
-      { id: 'issue_type', label: 'Type of issue', type: 'select', required: true,
-        options: ['Broken road / pothole', 'Damaged footpath', 'Leaking water pipe', 'Broken streetlight', 'Sewage overflow', 'Illegal dumping', 'Damaged public property', 'Other'] },
-      { id: 'severity', label: 'Severity', type: 'select', required: true,
-        options: ['Minor — cosmetic damage', 'Moderate — inconvenient', 'Serious — safety hazard', 'Critical — immediate danger'] },
-      { id: 'landmark', label: 'Nearest landmark or street', type: 'text', placeholder: 'e.g. Near Masjid Al-Noor, Chaklala Scheme 3', required: true },
-      { id: 'reported_before', label: 'Has this been reported before?', type: 'select', required: false,
-        options: ['No — first report', 'Yes — still unresolved', 'Unknown'] },
+      { id: 'issue_type', label: 'Type of issue', labelUr: 'مسئلے کی قسم', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Broken road / pothole',    emoji: '🕳️', label: 'Pothole',      labelUr: 'گڑھا / ٹوٹی سڑک' },
+          { value: 'Damaged footpath',         emoji: '🚶', label: 'Footpath',     labelUr: 'خراب فٹ پاتھ' },
+          { value: 'Leaking water pipe',       emoji: '💧', label: 'Water pipe',   labelUr: 'ٹپکتا پائپ' },
+          { value: 'Broken streetlight',       emoji: '💡', label: 'Streetlight',  labelUr: 'خراب لائٹ' },
+          { value: 'Sewage overflow',          emoji: '🚽', label: 'Sewage',       labelUr: 'سیوریج' },
+          { value: 'Illegal dumping',          emoji: '🗑️', label: 'Dumping',      labelUr: 'غیر قانونی کوڑا' },
+          { value: 'Damaged public property',  emoji: '🏚️', label: 'Property',     labelUr: 'سرکاری جائیداد' },
+          { value: 'Other',                    emoji: '❓', label: 'Other',        labelUr: 'دیگر' },
+        ],
+      },
+      { id: 'severity', label: 'Severity', labelUr: 'سنگینی', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'Minor — cosmetic damage',    emoji: '🟢', label: 'Minor',      labelUr: 'معمولی' },
+          { value: 'Moderate — inconvenient',    emoji: '🟡', label: 'Moderate',   labelUr: 'درمیانہ' },
+          { value: 'Serious — safety hazard',    emoji: '🟠', label: 'Serious',    labelUr: 'سنگین' },
+          { value: 'Critical — immediate danger',emoji: '🔴', label: 'Critical',   labelUr: 'انتہائی خطرناک' },
+        ],
+      },
+      { id: 'landmark', label: 'Nearest landmark or street', labelUr: 'قریبی پہچانی جگہ یا گلی', type: 'text', placeholder: 'e.g. Near Masjid Al-Noor, Karachi', placeholderUr: 'مثلاً: مسجد النور کے قریب، کراچی', required: true },
+      { id: 'reported_before', label: 'Reported before?', labelUr: 'کیا پہلے رپورٹ ہو چکا؟', type: 'visual_select', required: false,
+        visualOptions: [
+          { value: 'No — first report',    emoji: '🆕', label: 'First time',        labelUr: 'پہلی بار' },
+          { value: 'Yes — still unresolved', emoji: '⚠️', label: 'Yes, unresolved', labelUr: 'ہاں، حل نہیں' },
+          { value: 'Unknown',              emoji: '❓', label: 'Not sure',          labelUr: 'معلوم نہیں' },
+        ],
+      },
     ],
   },
 
@@ -383,7 +442,7 @@ interface FieldDef {
   id: string;
   label: string;           // English label
   labelUr?: string;        // Urdu label
-  type: 'text' | 'number' | 'textarea' | 'select' | 'multiselect' | 'visual_select' | 'stepper';
+  type: 'text' | 'number' | 'textarea' | 'select' | 'multiselect' | 'visual_select' | 'visual_select_multi' | 'stepper';
   placeholder?: string;
   placeholderUr?: string;
   options?: string[];           // for select / multiselect (English)
@@ -514,6 +573,37 @@ function ActionFields({ fields, values, onChange, isUrdu }: {
                     <span className={`text-xs font-semibold text-center leading-tight ${isSelected ? 'text-white' : 'text-enb-text-primary'}`}>
                       {isUrdu && opt.labelUr ? opt.labelUr : opt.label}
                     </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Visual tile grid MULTI (emoji + label, multi-select) ─── */}
+          {field.type === 'visual_select_multi' && (
+            <div className="grid grid-cols-3 gap-2">
+              {field.visualOptions!.map(opt => {
+                const selected: string[] = Array.isArray(values[field.id]) ? values[field.id] : [];
+                const isSelected = selected.includes(opt.value);
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) onChange(field.id, selected.filter(s => s !== opt.value));
+                      else onChange(field.id, [...selected, opt.value]);
+                    }}
+                    className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 transition-all
+                      ${isSelected
+                        ? 'bg-enb-green border-enb-green text-white shadow-sm'
+                        : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green/40'
+                      }`}
+                  >
+                    <span className="text-2xl leading-none" role="img" aria-hidden="true">{opt.emoji}</span>
+                    <span className={`text-xs font-semibold text-center leading-tight ${isSelected ? 'text-white' : 'text-enb-text-primary'}`}>
+                      {isUrdu && opt.labelUr ? opt.labelUr : opt.label}
+                    </span>
+                    {isSelected && <span className="text-[10px]">✓</span>}
                   </button>
                 );
               })}
@@ -737,6 +827,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       // Steppers always have a value (they initialise to min on first +/− tap)
       // Treat as met if the field has a value OR it's a stepper type
       if (f.type === 'stepper') return fieldValues[f.id] !== undefined || (f.min ?? 1) >= 1;
+      if (f.type === 'visual_select_multi') { const v = fieldValues[f.id]; return Array.isArray(v) && v.length > 0; }
       const val = fieldValues[f.id];
       if (Array.isArray(val)) return val.length > 0;
       return val !== undefined && val !== '' && val !== null;

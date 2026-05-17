@@ -4,19 +4,20 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import { useT } from '@/contexts/LanguageContext';
 
 const LICENSE_CATEGORIES = [
-  { id: 'motorcycle', label: 'Motorcycle', unlocks: ['Bike'], icon: '🛵' },
-  { id: 'ltv', label: 'LTV — Light Transport Vehicle', unlocks: ['Car', 'Rickshaw', 'Auto-rickshaw'], icon: '🚗' },
-  { id: 'htv', label: 'HTV — Heavy Transport Vehicle', unlocks: ['Van/Minivan', 'Bus/Coaster'], icon: '🚌' },
+  { id: 'motorcycle', label: 'Motorcycle',                   labelUr: 'موٹرسائیکل',              unlocks: ['Bike'],                          unlocksUr: ['بائیک'],                                      icon: '🛵' },
+  { id: 'ltv',        label: 'LTV — Light Transport Vehicle', labelUr: 'ہلکی ٹرانسپورٹ گاڑی',    unlocks: ['Car', 'Rickshaw', 'Auto-rickshaw'], unlocksUr: ['کار', 'رکشہ', 'آٹو رکشہ'],                   icon: '🚗' },
+  { id: 'htv',        label: 'HTV — Heavy Transport Vehicle', labelUr: 'بھاری ٹرانسپورٹ گاڑی',   unlocks: ['Van/Minivan', 'Bus/Coaster'],       unlocksUr: ['وین / منی وین', 'بس / کوسٹر'],               icon: '🚌' },
 ];
 
 const PERKS = [
-  { icon: '💰', text: 'Earn $ENB per km — dynamic formula based on vehicle, passengers & rating' },
-  { icon: '⭐', text: 'Build your public Captain profile with verified ratings and reviews' },
-  { icon: '🏆', text: 'ENB Captain badge on your community profile' },
-  { icon: '📱', text: 'Passengers can message and rate you directly in-app' },
-  { icon: '🌿', text: 'Contribute to verified carbon offset records (Verra VCS — coming)' },
+  { icon: '💰', en: 'Earn $ENB per km — dynamic formula based on vehicle, passengers & rating', ur: 'فی کلومیٹر $ENB کمائیں — گاڑی، مسافر اور ریٹنگ کی بنیاد پر' },
+  { icon: '⭐', en: 'Build your public Captain profile with verified ratings and reviews', ur: 'تصدیق شدہ ریٹنگز کے ساتھ اپنا عوامی کیپٹن پروفائل بنائیں' },
+  { icon: '🏆', en: 'ENB Captain badge on your community profile', ur: 'آپ کے پروفائل پر ENB کیپٹن بیج' },
+  { icon: '📱', en: 'Passengers can message and rate you directly in-app', ur: 'مسافر آپ کو براہ راست ایپ میں پیغام اور ریٹنگ دے سکتے ہیں' },
+  { icon: '🌿', en: 'Contribute to verified carbon offset records (Verra VCS — coming)', ur: 'تصدیق شدہ کاربن آفسیٹ ریکارڈ میں حصہ ڈالیں (Verra VCS — جلد آ رہا ہے)' },
 ];
 
 type AppStatus = 'none' | 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -37,6 +38,7 @@ interface Props {
 
 export default function CaptainOnboarding({ onApproved }: Props) {
   const { user } = useUserStore();
+  const { isUrdu } = useT();
   const [app, setApp] = useState<CaptainApp | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -201,36 +203,37 @@ export default function CaptainOnboarding({ onApproved }: Props) {
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Become an ENB Captain</h2>
-            <p className="text-white/80 text-sm">Verified community ride-sharing</p>
+            <h2 className="text-lg font-bold">{isUrdu ? 'ENB کیپٹن بنیں' : 'Become an ENB Captain'}</h2>
+            <p className="text-white/80 text-sm">{isUrdu ? 'تصدیق شدہ کمیونٹی سواری' : 'Verified community ride-sharing'}</p>
           </div>
         </div>
         <p className="text-white/90 text-sm leading-relaxed">
-          ENB Captains are verified drivers who earn $ENB for every passenger they carry. 
-          Apply once, ride forever.
+          {isUrdu
+            ? 'ENB کیپٹن تصدیق شدہ ڈرائیور ہوتے ہیں جو ہر مسافر کے لیے $ENB کماتے ہیں۔ ایک بار درخواست دیں، ہمیشہ کے لیے سواری کریں۔'
+            : 'ENB Captains are verified drivers who earn $ENB for every passenger they carry. Apply once, ride forever.'}
         </p>
       </div>
 
       {/* Perks */}
       <Card className="border-gray-100 p-4 space-y-3">
-        <p className="text-sm font-semibold text-enb-text-primary">Captain Benefits</p>
+        <p className="text-sm font-semibold text-enb-text-primary">{isUrdu ? 'کیپٹن فوائد' : 'Captain Benefits'}</p>
         {PERKS.map((p, i) => (
           <div key={i} className="flex items-start gap-3">
             <span className="text-lg shrink-0">{p.icon}</span>
-            <p className="text-sm text-enb-text-secondary">{p.text}</p>
+            <p className="text-sm text-enb-text-secondary">{isUrdu ? p.ur : p.en}</p>
           </div>
         ))}
       </Card>
 
       {/* Vehicle unlock preview */}
       <Card className="border-gray-100 p-4 space-y-3">
-        <p className="text-sm font-semibold text-enb-text-primary">Vehicles by License Type</p>
+        <p className="text-sm font-semibold text-enb-text-primary">{isUrdu ? 'لائسنس کے مطابق گاڑیاں' : 'Vehicles by License Type'}</p>
         {LICENSE_CATEGORIES.map(cat => (
           <div key={cat.id} className="flex items-start gap-3">
             <span className="text-lg shrink-0">{cat.icon}</span>
             <div>
-              <p className="text-sm font-medium text-enb-text-primary">{cat.label}</p>
-              <p className="text-xs text-gray-400">Unlocks: {cat.unlocks.join(', ')}</p>
+              <p className="text-sm font-medium text-enb-text-primary">{isUrdu ? cat.labelUr : cat.label}</p>
+              <p className="text-xs text-gray-400">{isUrdu ? 'کھلتی ہیں: ' : 'Unlocks: '}{isUrdu ? cat.unlocksUr.join('، ') : cat.unlocks.join(', ')}</p>
             </div>
           </div>
         ))}
@@ -242,12 +245,12 @@ export default function CaptainOnboarding({ onApproved }: Props) {
           onClick={() => setShowForm(true)}
           className="w-full h-12 bg-enb-green hover:bg-enb-green/90 text-white text-base font-semibold shadow-lg shadow-enb-green/20"
         >
-          Apply Now — Become an ENB Captain
+          {isUrdu ? 'ابھی درخواست دیں — ENB کیپٹن بنیں' : 'Apply Now — Become an ENB Captain'}
         </Button>
       ) : (
         <Card className="border-enb-green/20 p-5 space-y-5">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-enb-text-primary">Captain Application</h3>
+            <h3 className="font-bold text-enb-text-primary">{isUrdu ? 'کیپٹن درخواست' : 'Captain Application'}</h3>
             <button onClick={() => setShowForm(false)} className="text-gray-400">
               <X className="w-5 h-5" />
             </button>
@@ -256,9 +259,9 @@ export default function CaptainOnboarding({ onApproved }: Props) {
           {/* License categories */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-enb-text-primary">
-              License Categories <span className="text-red-500">*</span>
+              {isUrdu ? 'لائسنس کی اقسام' : 'License Categories'} <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-400">Select all that apply to your license</p>
+            <p className="text-xs text-gray-400">{isUrdu ? "اپنے لائسنس کے مطابق سب کا انتخاب کریں" : "Select all that apply to your license"}</p>
             {LICENSE_CATEGORIES.map(cat => (
               <button
                 key={cat.id}
@@ -273,9 +276,9 @@ export default function CaptainOnboarding({ onApproved }: Props) {
               >
                 <span className="text-lg">{cat.icon}</span>
                 <div>
-                  <div>{cat.label}</div>
+                  <div>{isUrdu ? cat.labelUr : cat.label}</div>
                   <div className={`text-xs font-normal ${licenseCategories.includes(cat.id) ? 'text-white/70' : 'text-gray-400'}`}>
-                    Unlocks: {cat.unlocks.join(', ')}
+                    {isUrdu ? 'کھلتی ہیں: ' : 'Unlocks: '}{isUrdu ? cat.unlocksUr.join('، ') : cat.unlocks.join(', ')}
                   </div>
                 </div>
                 {licenseCategories.includes(cat.id) && <CheckCircle className="w-4 h-4 ml-auto shrink-0" />}
@@ -285,12 +288,12 @@ export default function CaptainOnboarding({ onApproved }: Props) {
 
           {/* Document uploads */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-enb-text-primary">Documents Required</label>
+            <label className="text-sm font-medium text-enb-text-primary">{isUrdu ? 'ضروری دستاویزات' : 'Documents Required'}</label>
 
             {[
-              { field: 'cnic_front', label: 'CNIC — Front', url: cnicFrontUrl, required: true },
-              { field: 'cnic_back', label: 'CNIC — Back', url: cnicBackUrl, required: false },
-              { field: 'license_front', label: 'Driving License', url: licenseFrontUrl, required: true },
+              { field: 'cnic_front', label: isUrdu ? 'شناختی کارڈ — سامنے' : 'CNIC — Front', url: cnicFrontUrl, required: true },
+              { field: 'cnic_back', label: isUrdu ? 'شناختی کارڈ — پیچھے' : 'CNIC — Back', url: cnicBackUrl, required: false },
+              { field: 'license_front', label: isUrdu ? 'ڈرائیونگ لائسنس' : 'Driving License', url: licenseFrontUrl, required: true },
             ].map(doc => (
               <div key={doc.field}>
                 <p className="text-xs text-gray-500 mb-1">
@@ -320,7 +323,7 @@ export default function CaptainOnboarding({ onApproved }: Props) {
                     {uploading === doc.field
                       ? <Loader2 className="w-4 h-4 animate-spin" />
                       : <Upload className="w-4 h-4" />}
-                    {uploading === doc.field ? 'Uploading...' : `Upload ${doc.label}`}
+                    {uploading === doc.field ? (isUrdu ? 'اپلوڈ ہو رہا ہے...' : 'Uploading...') : `${isUrdu ? 'اپلوڈ کریں: ' : 'Upload '}${doc.label}`}
                   </button>
                 )}
               </div>
@@ -330,12 +333,12 @@ export default function CaptainOnboarding({ onApproved }: Props) {
           {/* Vehicle description */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-enb-text-primary">
-              Vehicle Description <span className="text-gray-400 font-normal">(optional)</span>
+              {isUrdu ? 'گاڑی کی تفصیل' : 'Vehicle Description'} <span className="text-gray-400 font-normal">({isUrdu ? 'اختیاری' : 'optional'})</span>
             </label>
             <input
               value={vehicleDesc}
               onChange={e => setVehicleDesc(e.target.value)}
-              placeholder="e.g. White Toyota Corolla 2019, Registration ABC-123"
+              placeholder={isUrdu ? "مثلاً: سفید ٹویوٹا کرولا 2019، نمبر پلیٹ ABC-123" : "e.g. White Toyota Corolla 2019, Registration ABC-123"}
               className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-enb-green"
             />
           </div>
@@ -343,12 +346,12 @@ export default function CaptainOnboarding({ onApproved }: Props) {
           {/* Motivation */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-enb-text-primary">
-              Why do you want to be an ENB Captain? <span className="text-gray-400 font-normal">(optional)</span>
+              {isUrdu ? 'آپ ENB کیپٹن کیوں بننا چاہتے ہیں؟' : 'Why do you want to be an ENB Captain?'} <span className="text-gray-400 font-normal">({isUrdu ? 'اختیاری' : 'optional'})</span>
             </label>
             <textarea
               value={motivation}
               onChange={e => setMotivation(e.target.value)}
-              placeholder="Tell us a bit about yourself and why you'd like to join..."
+              placeholder={isUrdu ? "اپنے بارے میں بتائیں اور شامل ہونے کی وجہ..." : "Tell us a bit about yourself and why you'd like to join..."}
               className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none h-20 focus:outline-none focus:border-enb-green"
             />
           </div>
@@ -363,12 +366,12 @@ export default function CaptainOnboarding({ onApproved }: Props) {
             className="w-full h-12 bg-enb-green hover:bg-enb-green/90 text-white font-semibold disabled:opacity-50"
           >
             {submitting
-              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
-              : 'Submit Captain Application'}
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{isUrdu ? 'جمع ہو رہا ہے...' : 'Submitting...'}</>
+              : (isUrdu ? 'کیپٹن درخواست جمع کریں' : 'Submit Captain Application')}
           </Button>
 
           <p className="text-xs text-gray-400 text-center">
-            Your documents are stored securely and only visible to ENB administrators.
+            {isUrdu ? 'آپ کے دستاویزات محفوظ ہیں اور صرف ENB منتظمین دیکھ سکتے ہیں۔' : 'Your documents are stored securely and only visible to ENB administrators.'}
           </p>
         </Card>
       )}
