@@ -258,7 +258,7 @@ export default function BusinessDirectory() {
       ) : viewMode === 'list' ? (
         <div className="space-y-4">
           {filtered.map((business) => (
-            <Link to={`/directory/${business.id}`} key={business.id}>
+            <Link to={`/directory/business/${business.id}`} key={business.id}>
               <Card className="overflow-hidden hover:shadow-md transition-shadow border-gray-100 mb-4">
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-enb-green/10 flex items-center justify-center text-enb-green font-bold text-lg flex-shrink-0">
@@ -317,7 +317,7 @@ export default function BusinessDirectory() {
                 </button>
               </div>
               <div className="flex gap-2 mt-3">
-                <Link to={`/directory/${mapSelectedBusiness.id}`} className="flex-1">
+                <Link to={`/directory/business/${mapSelectedBusiness.id}`} className="flex-1">
                   <button className="w-full bg-enb-green text-white text-sm font-semibold py-2 rounded-xl hover:bg-enb-green/90 transition-colors">
                     View Full Details →
                   </button>

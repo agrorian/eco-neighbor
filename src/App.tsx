@@ -16,6 +16,11 @@ import Wallet from '@/pages/Wallet';
 import BusinessDirectory from '@/pages/directory/BusinessDirectory';
 import BusinessProfile from '@/pages/directory/BusinessProfile';
 import PartnerSignup from '@/pages/directory/PartnerSignup';
+import DirectoryHub from '@/pages/directory/DirectoryHub';
+import TradesDirectory from '@/pages/directory/TradesDirectory';
+import TradesProfile from '@/pages/directory/TradesProfile';
+import JobConfirmation from '@/pages/JobConfirmation';
+import JobRating from '@/pages/JobRating';
 import ScanRedemption from '@/pages/dashboard/ScanRedemption';
 import Leaderboard from '@/pages/Leaderboard';
 import ImpactDashboard from '@/pages/community/ImpactDashboard';
@@ -50,6 +55,7 @@ const FounderSale = lazy(() => import('@/pages/FounderSale'));
 const FounderHardship = lazy(() => import('@/pages/FounderHardship'));
 const PartnerFloat = lazy(() => import('@/pages/PartnerFloat'));
 const ModQueue = lazy(() => import('@/pages/admin/ModQueue'));
+const ModPerformance = lazy(() => import('@/pages/admin/ModPerformance'));
 const EscalationQueue = lazy(() => import('@/pages/admin/EscalationQueue'));
 const MyHistory = lazy(() => import('@/pages/MyHistory'));
 const SubmissionDetail = lazy(() => import('@/pages/SubmissionDetail'));
@@ -88,11 +94,7 @@ export default function App() {
   const { user, setUser } = useUserStore();
   const [showSplash, setShowSplash] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-  // Tracks whether localStorage has a valid session — prevents Welcome page flash
-  // during the 100-300ms between authChecked=true and store being populated.
   const [sessionExists, setSessionExists] = useState(false);
-  // Race guard: prevents getSession() and onAuthStateChange from both
-  // calling loadUserProfile simultaneously on hard refresh.
   const isLoadingProfile = useRef(false);
 
   const rowToUser = (data: any, fallbackEmail: string) => ({
@@ -119,9 +121,12 @@ export default function App() {
     cnic_photo_url: data.cnic_photo_url || undefined,
     cnic_verified: data.cnic_verified === true,
     cnic_submitted_at: data.cnic_submitted_at || undefined,
-    // ── v1.7.0 carpool passenger rating ──────────────────────────────────────
+    // ── v1.7.0 carpool ───────────────────────────────────────────────────────
     avg_passenger_rating: Number(data.avg_passenger_rating) || 0,
     total_rides_as_passenger: Number(data.total_rides_as_passenger) || 0,
+    is_carpool_rider: data.is_carpool_rider === true,
+    avg_carpool_rating: Number(data.avg_carpool_rating) || 0,
+    total_carpool_rides: Number(data.total_carpool_rides) || 0,
     // ── v1.8.0 trades ecosystem ───────────────────────────────────────────────
     trade_types: data.trade_types || [],
     total_verified_jobs: Number(data.total_verified_jobs) || 0,
@@ -137,12 +142,6 @@ export default function App() {
     if (isLoadingProfile.current) return;
     isLoadingProfile.current = true;
     try {
-      // FIX 1: Use maybeSingle() not single().
-      // .single() throws PGRST116 on 0 rows, which the original code treated as
-      // "new user" and ran INSERT with full_name:''. That created the blank row
-      // that showed as phantom U.
-      // .maybeSingle() returns {data:null, error:null} on 0 rows — distinguishable
-      // from a real error {data:null, error:non-null}.
       const { data, error } = await supabase
         .from('users').select('*').eq('id', userId).maybeSingle();
 
@@ -152,38 +151,23 @@ export default function App() {
       }
 
       if (error) {
-        // RLS or network error — JWT may not be attached yet.
-        // FIX 2: NEVER setUser(null) on error. Leave store untouched and retry.
         console.warn('[ENB] Profile read error, retrying in 800ms:', error.message);
         await new Promise(r => setTimeout(r, 800));
         const { data: retryData } = await supabase
           .from('users').select('*').eq('id', userId).maybeSingle();
-        if (retryData) {
-          setUser(rowToUser(retryData, userEmail));
-        }
-        // Retry failed: leave store untouched. Next TOKEN_REFRESHED will retry.
+        if (retryData) setUser(rowToUser(retryData, userEmail));
         return;
       }
 
-      // data===null AND error===null: JWT race — request fired before auth headers
-      // attached, RLS saw anonymous user, returned 0 rows silently.
-      // FIX 3: NEVER INSERT here. The row exists — we just can't read it yet.
-      // Retry with backoff until JWT settles.
       console.warn('[ENB] 0 rows — JWT race. Retrying with backoff...');
       for (const delay of [500, 1500, 3000]) {
         await new Promise(r => setTimeout(r, delay));
         const { data: retryData } = await supabase
           .from('users').select('*').eq('id', userId).maybeSingle();
-        if (retryData) {
-          setUser(rowToUser(retryData, userEmail));
-          return;
-        }
+        if (retryData) { setUser(rowToUser(retryData, userEmail)); return; }
       }
-      // All retries failed. Store left untouched. Never INSERT, never setUser(null).
       console.error('[ENB] All retries failed. Store unchanged.');
-
     } catch (err) {
-      // FIX 4: NEVER setUser(null) in catch. Leave store untouched.
       console.error('[ENB] Profile load exception — store unchanged:', err);
     } finally {
       isLoadingProfile.current = false;
@@ -196,8 +180,6 @@ export default function App() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        // Session found — flag it so we show a spinner instead of Welcome page
-        // during the window between authChecked=true and store being populated.
         setSessionExists(true);
         loadUserProfile(session.user.id, session.user.email ?? '').then(() => setAuthChecked(true));
       } else {
@@ -206,23 +188,13 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // FIX 5: Handle SIGNED_IN and TOKEN_REFRESHED — not just SIGNED_OUT.
-      // Original code only handled SIGNED_OUT, so token refreshes and account
-      // switches never recovered a blank store.
-
-      // SIGNED_OUT: ignore Supabase-fired events (tab switch, rotation).
-      // Explicit logout is handled by AccountSwitcher/More.tsx via logout() directly.
       if (event === 'SIGNED_OUT') return;
-      // USER_UPDATED fires on every users table UPDATE — ignore to prevent loops.
       if (event === 'USER_UPDATED') return;
-
       if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
         const refreshedId = session.user.id;
         if (!refreshedId) return;
         const currentUserId = useUserStore.getState().user?.id;
-        // Same user, token silently refreshed — store is correct, do nothing.
         if (currentUserId && currentUserId === refreshedId) return;
-        // No user in store, or different user (account switch) — load profile.
         loadUserProfile(refreshedId, session.user.email ?? '');
       }
     });
@@ -237,8 +209,6 @@ export default function App() {
   };
 
   if (showSplash) return <SplashScreen onComplete={handleSplashComplete} />;
-  // Session exists but profile not yet in store — show spinner, not Welcome page.
-  // This eliminates the 1-2 second flash of the Welcome screen on hard refresh.
   if (sessionExists && !user) {
     return (
       <div className="min-h-screen bg-enb-surface flex items-center justify-center flex-col gap-3">
@@ -267,13 +237,18 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/dev-history" element={<VersionHistory />} />
           <Route path="/account-recovery" element={<AccountRecovery />} />
-          <Route path="/confirm-ride/:token" element={<ConfirmRide />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/token-disclaimer" element={<TokenDisclaimer />} />
 
+          {/* ── Public routes — no login required ──────────────────────────── */}
+          <Route path="/confirm-ride/:token" element={<ConfirmRide />} />
+          <Route path="/job/:code" element={<JobConfirmation />} />
+          <Route path="/job/:code/rate" element={<JobRating />} />
+
           {user ? (
             <>
+              {/* ── Admin routes ─────────────────────────────────────────── */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="queue" element={<SubmissionQueue />} />
@@ -288,7 +263,10 @@ export default function App() {
                 <Route path="announcements" element={<AnnouncementsPage />} />
                 <Route path="org-structure" element={<OrgStructurePage />} />
                 <Route path="captains" element={<AdminCaptains />} />
+                <Route path="mod-performance" element={<ModPerformance />} />
               </Route>
+
+              {/* ── Member routes ─────────────────────────────────────────── */}
               <Route path="/*" element={
                 <Layout>
                   <Suspense fallback={<PageLoader />}>
@@ -296,9 +274,15 @@ export default function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/submit" element={<SubmitAction />} />
                       <Route path="/wallet" element={<Wallet />} />
-                      <Route path="/directory" element={<BusinessDirectory />} />
-                      <Route path="/directory/:id" element={<BusinessProfile />} />
+
+                      {/* Directory — hub + sub-directories */}
+                      <Route path="/directory" element={<DirectoryHub />} />
+                      <Route path="/directory/business" element={<BusinessDirectory />} />
+                      <Route path="/directory/business/:id" element={<BusinessProfile />} />
+                      <Route path="/directory/trades" element={<TradesDirectory />} />
+                      <Route path="/directory/trades/:userId" element={<TradesProfile />} />
                       <Route path="/partner-signup" element={<PartnerSignup />} />
+
                       <Route path="/scan" element={<ScanRedemption />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
                       <Route path="/impact" element={<ImpactDashboard />} />
