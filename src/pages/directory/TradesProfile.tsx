@@ -101,6 +101,7 @@ export default function TradesProfile() {
   const [error, setError] = useState('');
   const [showJobModal, setShowJobModal] = useState(false);
   const [showAvailPicker, setShowAvailPicker] = useState(false);
+  const [requestSending, setRequestSending] = useState(false);
 
   const isOwnProfile = currentUser?.id === userId;
 
@@ -186,8 +187,6 @@ export default function TradesProfile() {
     appliance_repair: `السلام علیکم! I found your profile on Eco-Neighbor. I need appliance repair work done. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🔌`,
     general:          `السلام علیکم! I found your profile on Eco-Neighbor. I need your services. Are you available? Please let me know your availability and we can discuss the details. شکریہ 🛠️`,
   };
-
-  const [requestSending, setRequestSending] = useState(false);
 
   const handleServiceRequest = async () => {
     if (!currentUser || !userId) return;
