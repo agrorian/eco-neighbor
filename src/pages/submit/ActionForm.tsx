@@ -69,10 +69,20 @@ const ACTION_CONFIG: Record<string, {
     hint: 'Take a before photo showing the litter, and an after photo showing the clean area.',
     photoLabel: 'Before & After Photos',
     fields: [
-      { id: 'area_size', label: 'Area Cleaned', type: 'select', required: true,
-        options: ['Small (under 50m²)', 'Medium (50–200m²)', 'Large (200m²+)', 'Road/Street stretch', 'Park or open ground'] },
-      { id: 'waste_bags', label: 'Bags of waste collected', type: 'number', placeholder: 'e.g. 3', required: true },
-      { id: 'duration', label: 'Time spent (minutes)', type: 'number', placeholder: 'e.g. 45', required: true },
+      { id: 'area_size', label: 'Area Cleaned', type: 'visual_select', required: true,
+        visualOptions: [
+          { value: 'small',  emoji: '🏠', label: 'Small\nUnder 50m²' },
+          { value: 'medium', emoji: '🛣️', label: 'Medium\n50–200m²' },
+          { value: 'large',  emoji: '🌍', label: 'Large\n200m²+' },
+          { value: 'road',   emoji: '🚗', label: 'Road /\nStreet' },
+          { value: 'park',   emoji: '🌳', label: 'Park /\nOpen ground' },
+          { value: 'other',  emoji: '📍', label: 'Other\nArea' },
+        ],
+      },
+      { id: 'waste_bags', label: 'Bags of waste collected', type: 'stepper', required: true,
+        min: 1, max: 50, unit: 'bags', quickPicks: [1, 2, 3, 5, 10] },
+      { id: 'duration', label: 'Time spent', type: 'stepper', required: true,
+        min: 5, max: 240, unit: 'min', quickPicks: [15, 30, 45, 60, 90] },
       { id: 'notes', label: 'Any additional notes', type: 'textarea', placeholder: 'Type of waste found, any hazardous items, etc.', required: false },
     ],
   },
@@ -210,9 +220,14 @@ const ACTION_CONFIG: Record<string, {
 interface FieldDef {
   id: string;
   label: string;
-  type: 'text' | 'number' | 'textarea' | 'select' | 'multiselect';
+  type: 'text' | 'number' | 'textarea' | 'select' | 'multiselect' | 'visual_select' | 'stepper';
   placeholder?: string;
-  options?: string[];
+  options?: string[];           // for select / multiselect
+  visualOptions?: { value: string; emoji: string; label: string }[];  // for visual_select
+  min?: number;                 // for stepper
+  max?: number;                 // for stepper
+  unit?: string;                // for stepper (e.g. 'bags', 'min', 'trees')
+  quickPicks?: number[];        // for stepper — one-tap preset values
   required: boolean;
 }
 
@@ -302,6 +317,88 @@ function ActionFields({ fields, values, onChange }: {
               })}
             </div>
           )}
+
+          {/* ── Visual tile grid (emoji + label, single select) ────────── */}
+          {field.type === 'visual_select' && (
+            <div className="grid grid-cols-2 gap-2">
+              {field.visualOptions!.map(opt => {
+                const isSelected = values[field.id] === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => onChange(field.id, opt.value)}
+                    className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 transition-all
+                      ${isSelected
+                        ? 'bg-enb-green border-enb-green text-white shadow-sm'
+                        : 'bg-white border-gray-200 text-enb-text-primary hover:border-enb-green/40'
+                      }`}
+                  >
+                    <span className="text-2xl leading-none" role="img" aria-hidden="true">{opt.emoji}</span>
+                    <span className={`text-xs font-semibold text-center leading-tight ${isSelected ? 'text-white' : 'text-enb-text-primary'}`}>
+                      {opt.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Stepper (− / number / +) with optional quick-pick chips ── */}
+          {field.type === 'stepper' && (() => {
+            const current = Number(values[field.id] || field.min || 1);
+            const min = field.min ?? 1;
+            const max = field.max ?? 999;
+            const unit = field.unit || '';
+            return (
+              <div className="space-y-2">
+                {/* Quick pick chips */}
+                {field.quickPicks && (
+                  <div className="flex gap-2 flex-wrap">
+                    {field.quickPicks.map(qp => (
+                      <button
+                        key={qp}
+                        type="button"
+                        onClick={() => onChange(field.id, qp)}
+                        className={`px-3 py-1 rounded-full border text-sm font-medium transition-all ${
+                          current === qp
+                            ? 'bg-enb-green text-white border-enb-green'
+                            : 'bg-white border-gray-200 text-enb-text-secondary hover:border-enb-green/40'
+                        }`}
+                      >
+                        {qp}{unit ? ` ${unit}` : ''}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Stepper row */}
+                <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-2xl px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => onChange(field.id, Math.max(min, current - 1))}
+                    disabled={current <= min}
+                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center
+                      text-xl font-bold text-enb-text-primary disabled:opacity-30 hover:bg-gray-50 transition-colors"
+                  >
+                    −
+                  </button>
+                  <div className="flex-1 text-center">
+                    <span className="text-3xl font-bold text-enb-text-primary">{current}</span>
+                    {unit && <span className="text-sm text-enb-text-secondary ml-1">{unit}</span>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onChange(field.id, Math.min(max, current + 1))}
+                    disabled={current >= max}
+                    className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center
+                      text-xl font-bold text-enb-text-primary disabled:opacity-30 hover:bg-gray-50 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       ))}
     </div>
@@ -459,6 +556,9 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   const requiredFieldsMet = config.fields
     .filter(f => f.required)
     .every(f => {
+      // Steppers always have a value (they initialise to min on first +/− tap)
+      // Treat as met if the field has a value OR it's a stepper type
+      if (f.type === 'stepper') return fieldValues[f.id] !== undefined || (f.min ?? 1) >= 1;
       const val = fieldValues[f.id];
       if (Array.isArray(val)) return val.length > 0;
       return val !== undefined && val !== '' && val !== null;
@@ -510,10 +610,18 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     const uploadedUrls = photos.filter(p => p.cloudinaryUrl).map(p => p.cloudinaryUrl as string);
 
     // Serialise custom fields into a structured description string
+    // Coerce stepper values to numbers so custom_fields JSONB is typed correctly
+    const normalisedValues = { ...fieldValues };
+    config.fields.forEach(f => {
+      if (f.type === 'stepper' && normalisedValues[f.id] !== undefined) {
+        normalisedValues[f.id] = Number(normalisedValues[f.id]) || (f.min ?? 1);
+      }
+    });
+
     const fieldLines = config.fields
-      .filter(f => fieldValues[f.id] !== undefined && fieldValues[f.id] !== '')
+      .filter(f => normalisedValues[f.id] !== undefined && normalisedValues[f.id] !== '')
       .map(f => {
-        const val = Array.isArray(fieldValues[f.id]) ? fieldValues[f.id].join(', ') : fieldValues[f.id];
+        const val = Array.isArray(normalisedValues[f.id]) ? normalisedValues[f.id].join(', ') : normalisedValues[f.id];
         return `${f.label}: ${val}`;
       });
 
@@ -526,7 +634,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       photoCount: photos.length,
       description: structuredDescription,
       customFields: {
-        ...fieldValues,
+        ...normalisedValues,
         ...(isTradeJob && selectedTrade ? {
           trade_type: selectedTrade.id,
           trade_before_after: selectedTrade.beforeAfter,
