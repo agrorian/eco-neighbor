@@ -19,8 +19,45 @@ export function isTransformationAction(actionType: string): boolean {
 export const AFTER_UNLOCK_HOURS = 4;
 export const AFTER_UNLOCK_MS = AFTER_UNLOCK_HOURS * 60 * 60 * 1000;
 
-/** After GPS must be within 100 metres of Before GPS */
+// ── GPS CONSTANTS — TAXONOMY ────────────────────────────────────────────────
+// ENB uses four distinct GPS checks. Each has a different threshold and scope.
+// Never conflate them — they answer different questions.
+//
+// 1. MAX_GPS_DRIFT_METRES (20m)
+//    Before→After location drift for transformation actions.
+//    "Did the user return to the same spot for their After photo?"
+//    Whitepaper canonical: 20m. Used in: AfterPhotoSubmission.tsx only.
+//    Stored in: submissions.gps_out_of_range (boolean)
+//
+// 2. GPS_ACCURACY_THRESHOLD_M (100m)
+//    Device GPS signal quality at submission time.
+//    "Is this device's GPS signal reliable enough to trust?"
+//    >100m = WiFi/indoor positioning — forces human review regardless of AI verdict.
+//    Used in: ActionForm.tsx, SubmitAction.tsx.
+//    Stored in: submissions.gps_accuracy_m (numeric, raw metres)
+//
+// 3. GPS_DUPLICATE_RADIUS_M (10m)
+//    Repeat submission fraud detection.
+//    "Has this user submitted the same action from this exact spot recently?"
+//    Checks last 30 days, same action_type, within 10m → flags for human review.
+//    Used in: SubmitAction.tsx.
+//    Stored in: submissions.gps_duplicate_flag (boolean)
+//
+// 4. GPS boundary polygon check (Phase 2 — not yet implemented)
+//    Neighbourhood boundary enforcement.
+//    "Is this submission inside the user's registered neighbourhood?"
+//    Requires neighbourhood_boundaries table with polygon data per neighbourhood.
+//    Stored in: submissions.gps_outside_boundary (boolean, Phase 2 column)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Before→After drift tolerance for transformation actions (whitepaper canonical: 20m) */
 export const MAX_GPS_DRIFT_METRES = 20;
+
+/** Device GPS accuracy threshold — submissions above this go to human review (100m) */
+export const GPS_ACCURACY_THRESHOLD_M = 100;
+
+/** Duplicate submission detection radius — same location, same action, last 30 days (10m) */
+export const GPS_DUPLICATE_RADIUS_M = 10;
 
 export type SubmissionPhase = 'before' | 'after' | null;
 
@@ -44,7 +81,7 @@ export interface TransformationSubmission {
 }
 
 /**
- * Returns time remaining until after_unlocks_at as { hrs, mins, totalMs }
+ * Returns time remaining until after_unlocks_at as { hrs, mins, secs, totalMs }
  * If already unlocked, totalMs <= 0
  */
 export function getTimeUntilUnlock(afterUnlocksAt: string): {
@@ -69,7 +106,8 @@ export function isUnlocked(afterUnlocksAt: string | null): boolean {
 }
 
 /**
- * Haversine distance in metres between two GPS points
+ * Haversine distance in metres between two GPS points.
+ * Used for: Before→After drift check, duplicate GPS detection.
  */
 export function gpsDistanceMetres(
   lat1: number, lng1: number,
