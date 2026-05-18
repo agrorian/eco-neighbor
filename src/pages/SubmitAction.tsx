@@ -6,7 +6,7 @@ import ActionSelector from './submit/ActionSelector';
 import ActionForm from './submit/ActionForm';
 import SubmissionReview from './submit/SubmissionReview';
 import SubmissionSuccess from './submit/SubmissionSuccess';
-import { isTransformationAction, AFTER_UNLOCK_MS } from '@/lib/beforeAfter';
+import { isTransformationAction, AFTER_UNLOCK_MS, GPS_ACCURACY_THRESHOLD_M, GPS_DUPLICATE_RADIUS_M } from '@/lib/beforeAfter';
 import { getGeminiPrompt, AUTO_APPROVE_THRESHOLD } from '@/lib/geminiPrompts';
 
 
@@ -15,7 +15,7 @@ type Step = 'select' | 'form' | 'review' | 'success';
 const ACTION_REWARDS: Record<string, { enb: number; rep: number }> = {
   neighbourhood_cleanup: { enb: 1000, rep: 500 },
   recycling_dropoff:     { enb: 500,  rep: 200 },
-  carpool:               { enb: 0,    rep: 150 }, // ENB calculated dynamically from ride session
+  carpool:               { enb: 0,    rep: 150 },
   food_sharing:          { enb: 800,  rep: 300 },
   skill_workshop:        { enb: 1500, rep: 1000 },
   infrastructure_report: { enb: 300,  rep: 100 },
@@ -25,6 +25,7 @@ const ACTION_REWARDS: Record<string, { enb: number; rep: number }> = {
   waste_reporting:       { enb: 500,  rep: 200 },
 };
 
+// GPS_ACCURACY_THRESHOLD_M and GPS_DUPLICATE_RADIUS_M imported from @/lib/beforeAfter
 
 // ── Gemini helpers (single-phase AI review) ──────────────────────────────────
 function toOptimizedUrl(url: string): string {
@@ -59,6 +60,8 @@ async function runSinglePhaseGeminiReview(
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return { verdict: 'uncertain', reason: 'AI review not configured', confidence: 0 };
 
+  // ── LAPSE 2 FIX: GPS coordinates are now included in metadata and passed
+  // to the prompt builder so Gemini can flag location-inconsistent photos.
   const { prompt } = getGeminiPrompt(actionType, metadata);
 
   const photoData = await Promise.all(photoUrls.slice(0, 3).map(urlToInlineData));
@@ -93,11 +96,54 @@ async function runSinglePhaseGeminiReview(
   }
 }
 
+// ── LAPSE 5 FIX: Check whether this submission is a GPS duplicate ──────────
+// Queries the last 30 days of the user's submissions for the same action_type.
+// Returns true if any prior submission is within GPS_DUPLICATE_RADIUS_M metres.
+// Uses the Haversine formula to calculate distance between two GPS coordinates.
+function haversineDistanceM(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000; // Earth radius in metres
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+async function checkGpsDuplicate(
+  userId: string,
+  actionType: string,
+  lat: number,
+  lng: number,
+): Promise<boolean> {
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('gps_lat, gps_lng')
+      .eq('user_id', userId)
+      .eq('action_type', actionType)
+      .gte('submitted_at', thirtyDaysAgo)
+      .not('gps_lat', 'is', null)
+      .not('gps_lng', 'is', null);
+
+    if (error || !data) return false;
+
+    return data.some(prev => {
+      if (prev.gps_lat == null || prev.gps_lng == null) return false;
+      const dist = haversineDistanceM(lat, lng, Number(prev.gps_lat), Number(prev.gps_lng));
+      return dist <= GPS_DUPLICATE_RADIUS_M;
+    });
+  } catch {
+    return false; // Never block a submission on duplicate check failure
+  }
+}
+
 // Action types that use Before/After flow (AI runs in AfterPhotoSubmission)
 const BEFORE_AFTER_ACTIONS = ['neighbourhood_cleanup', 'tree_planting'];
 // Action types with GPS+session data as primary evidence (no photo AI needed)
 const GPS_ONLY_ACTIONS = ['carpool'];
-// All other actions get single-phase AI review here in SubmitAction
 
 export default function SubmitAction() {
   const { user } = useUserStore();
@@ -124,7 +170,6 @@ export default function SubmitAction() {
     setSubmitError('');
 
     try {
-      // actionKey is the single source of truth — formData.actionType takes priority
       const actionKey = formData.actionType || selectedAction;
       const rewards = ACTION_REWARDS[actionKey];
       if (!rewards) {
@@ -142,6 +187,10 @@ export default function SubmitAction() {
         if (parts.length === 2) { lat = parseFloat(parts[0]); lng = parseFloat(parts[1]); }
       }
 
+      // ── LAPSE 1 FIX: read accuracy from formData ─────────────────────────
+      const gpsAccuracyM: number | null = formData.gpsAccuracyM ?? null;
+      const gpsLowAccuracy: boolean = formData.gpsLowAccuracy === true;
+
       const isTransformation = isTransformationAction(actionKey);
       const isReporting = ['infrastructure_report', 'waste_reporting'].includes(actionKey);
       const now = new Date();
@@ -149,7 +198,7 @@ export default function SubmitAction() {
         ? new Date(now.getTime() + AFTER_UNLOCK_MS).toISOString()
         : null;
 
-      // ── Dynamic ENB for carpool ──────────────────────────────────────────────
+      // ── Dynamic ENB for carpool ──────────────────────────────────────────
       let enbAwarded = rewards.enb;
       const isCarpool = actionKey === 'carpool';
       const rideSession = formData.rideSession;
@@ -169,7 +218,43 @@ export default function SubmitAction() {
         enbAwarded = Math.min(Math.round(base * rideSession.calculatedDistanceKm * pMult), cap);
       }
 
-      // ── Gemini AI review for single-phase actions ──────────────────────────
+      // ── LAPSE 5 FIX: check for GPS duplicate submissions ─────────────────
+      let gpsDuplicateFlag = false;
+      if (lat !== null && lng !== null) {
+        gpsDuplicateFlag = await checkGpsDuplicate(user.id, actionKey, lat, lng);
+      }
+
+      // ── Build enriched metadata for Gemini AI review ───────────────────
+      // This metadata powers the AI-first fraud detection system.
+      // Gemini receives: GPS, accuracy, duplicate flag, time, user trust level.
+      // The more context Gemini has, the more autonomously it can decide.
+      let userVerifiedCount = 0;
+      try {
+        const { count } = await supabase
+          .from('submissions')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'approved');
+        userVerifiedCount = count || 0;
+      } catch {
+        userVerifiedCount = 0; // Never block submission on this query failure
+      }
+
+      const geminiMetadata: Record<string, any> = {
+        ...(formData.customFields || {}),
+        // GPS context (Lapse 2 fix)
+        gps_lat: lat,
+        gps_lng: lng,
+        gps_accuracy_m: gpsAccuracyM,
+        gps_low_accuracy: gpsLowAccuracy,
+        gps_duplicate_flag: gpsDuplicateFlag,
+        // Submission time context
+        submitted_at: now.toISOString(),
+        // User trust level
+        user_verified_count: userVerifiedCount,
+      };
+
+      // ── Gemini AI review for single-phase actions ────────────────────────
       let aiVerdict: 'approve' | 'reject' | 'uncertain' = 'uncertain';
       let aiReason = 'AI review not applicable';
       let aiConfidence = 0;
@@ -191,19 +276,30 @@ export default function SubmitAction() {
           const aiResult = await runSinglePhaseGeminiReview(
             photoUrlsForAI,
             actionKey,
-            formData.customFields || {},
+            geminiMetadata, // ← LAPSE 2 FIX: enriched metadata with GPS
           );
           aiVerdict = aiResult.verdict;
           aiReason = aiResult.reason;
           aiConfidence = aiResult.confidence;
-          if (aiVerdict === 'approve' && aiConfidence >= AUTO_APPROVE_THRESHOLD) {
+
+          // ── LAPSE 1 FIX: override auto-approve if GPS accuracy is poor ──
+          // Low-accuracy submissions must be seen by a human moderator even
+          // if Gemini is confident. GPS drift of 500m+ can mask indoor fraud.
+          const gpsOverridesAutoDecision = gpsLowAccuracy || gpsDuplicateFlag;
+
+          if (!gpsOverridesAutoDecision && aiVerdict === 'approve' && aiConfidence >= AUTO_APPROVE_THRESHOLD) {
             aiAutoStatus = 'approved';
-          } else if (aiVerdict === 'reject' && aiConfidence >= AUTO_APPROVE_THRESHOLD) {
+          } else if (!gpsOverridesAutoDecision && aiVerdict === 'reject' && aiConfidence >= AUTO_APPROVE_THRESHOLD) {
             aiAutoStatus = 'rejected';
           } else {
             aiAutoStatus = 'pending';
           }
         } catch {
+          aiAutoStatus = 'pending';
+        }
+      } else {
+        // For Before/After and GPS-only actions, still respect GPS overrides
+        if (gpsLowAccuracy || gpsDuplicateFlag) {
           aiAutoStatus = 'pending';
         }
       }
@@ -218,6 +314,10 @@ export default function SubmitAction() {
         gps_lat: lat,
         gps_lng: lng,
         gps_address: formData.gpsAddress || formData.location || null,
+        // ── LAPSE 1 FIX: store accuracy and flags ────────────────────────
+        gps_accuracy_m: gpsAccuracyM,
+        gps_duplicate_flag: gpsDuplicateFlag,
+        // gps_outside_boundary defaults to false — Lapse 3 (Phase 2)
         status: aiAutoStatus,
         ai_review_verdict: aiVerdict,
         ai_review_reason: aiReason,
@@ -233,7 +333,7 @@ export default function SubmitAction() {
         report_status: isReporting ? 'open' : null,
         reviewer_consent: formData.consentGiven === true,
         custom_fields: formData.customFields || null,
-        // ── Carpool session fields ──────────────────────────────────────────
+        // ── Carpool session fields ────────────────────────────────────────
         ...(isCarpool && rideSession ? {
           origin_lat:              rideSession.originLat,
           origin_lng:              rideSession.originLng,
@@ -258,9 +358,6 @@ export default function SubmitAction() {
       if (error) throw error;
 
       // ── Wire linked job code → job_requests.submission_id ───────────────
-      // When a tradesperson submits a trade_job and enters their job code,
-      // we update job_requests.submission_id so the pending job moves to Portfolio
-      // once the submission is approved.
       if (actionKey === 'trade_job' && formData.linkedJobCode) {
         try {
           const { data: newSub } = await supabase
@@ -277,16 +374,14 @@ export default function SubmitAction() {
               .from('job_requests')
               .update({ submission_id: newSub.id })
               .eq('job_code', formData.linkedJobCode.trim().toUpperCase())
-              .eq('tradesperson_id', user.id); // safety: only own jobs
+              .eq('tradesperson_id', user.id);
           }
         } catch {
-          // Silent — submission already recorded; job_code link is best-effort
+          // Silent — job_code link is best-effort
         }
       }
 
       // ── Save captain's passenger rating if provided ──────────────────────
-      // Runs after insert succeeds. Looks up the new submission by ride_token.
-      // Non-fatal — a failed rating save does not block the submission success screen.
       if (isCarpool && rideSession?.passengerRating && user?.id) {
         try {
           const { data: sub } = await supabase
@@ -305,7 +400,7 @@ export default function SubmitAction() {
             });
           }
         } catch {
-          // Silent — passenger rating failure must not block submission confirmation
+          // Silent
         }
       }
 

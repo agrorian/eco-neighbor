@@ -12,7 +12,6 @@ function loadRecaptchaScript(): Promise<void> {
   return new Promise((resolve) => {
     if ((window as any).grecaptcha) { resolve(); return; }
     if (document.getElementById('recaptcha-script')) {
-      // Already injected — wait for it
       const interval = setInterval(() => {
         if ((window as any).grecaptcha) { clearInterval(interval); resolve(); }
       }, 100);
@@ -38,6 +37,7 @@ async function getRecaptchaToken(action: string): Promise<string> {
   });
 }
 
+import { GPS_ACCURACY_THRESHOLD_M } from '@/lib/beforeAfter';
 import CarpoolSession, { RideSession } from '@/pages/submit/CarpoolSession';
 import TradeJobSelector, { TRADE_TYPES, TradeType } from '@/pages/submit/TradeJobSelector';
 import CaptainOnboarding from '@/pages/submit/CaptainOnboarding';
@@ -49,6 +49,8 @@ interface ActionFormProps {
 }
 
 const MAX_PHOTOS = 5;
+
+// GPS_ACCURACY_THRESHOLD_M imported from @/lib/beforeAfter — single source of truth
 
 interface PhotoItem {
   preview: string;
@@ -117,7 +119,7 @@ const ACTION_CONFIG: Record<string, {
     title: 'Carpool', titleUr: 'کارپول',
     hint: 'Start a verified ride session. GPS tracks your route automatically — no photos or manual distance entry required.',
     photoLabel: '',
-    fields: [],  // Carpool uses CarpoolSession component — not the standard field renderer
+    fields: [],
     isCarpoolSession: true,
   },
 
@@ -219,9 +221,9 @@ const ACTION_CONFIG: Record<string, {
 
   trade_job: {
     title: 'Trade Job', titleUr: 'ہنر کا کام',
-    hint: '',  // Visual selector replaces text hint for trade jobs
+    hint: '',
     photoLabel: 'Photo of Completed Work', photoLabelUr: 'مکمل کام کی تصویر',
-    isTradeJobSelector: true,  // Uses TradeJobSelector component instead of dropdown
+    isTradeJobSelector: true,
     fields: [
       { id: 'trade_type', label: 'Trade / skill used', type: 'select', required: true,
         options: ['Plumbing', 'Electrical', 'Carpentry / woodwork', 'Masonry / construction', 'Painting / decorating', 'Welding / metalwork', 'Auto repair', 'Appliance repair', 'Other trade'] },
@@ -244,8 +246,6 @@ const ACTION_CONFIG: Record<string, {
           { value: 'Not yet confirmed',               emoji: '⏳', label: 'Not yet',        labelUr: 'ابھی نہیں' },
         ],
       },
-      // Optional: link to the job code generated via StartJobModal so the pending
-      // job moves from "Pending" to "Portfolio" when this submission is approved.
       { id: 'linked_job_code', label: 'Link to Job Code (optional)', labelUr: 'جاب کوڈ (اختیاری)', type: 'text',
         placeholder: 'e.g. ENB-A1B2-C3D4 — leave blank if not applicable', placeholderUr: 'مثلاً: ENB-A1B2-C3D4 — خالی چھوڑیں اگر نہیں', required: false },
     ],
@@ -347,20 +347,15 @@ const ACTION_CONFIG: Record<string, {
 
 
 // ─── Photo guide data — bilingual, visual-first ──────────────────────────────
-// Each action defines its photo requirements as emoji scenes + bilingual text.
-// beforeAfter=true  → two-panel guide (orange before / green after)
-// beforeAfter=false → single green evidence panel
-// beforeAfter=null  → no guide (carpool — GPS only)
-
 interface PhotoGuideData {
   beforeAfter: boolean | null;
-  beforeScene?: string;   // emoji illustration of BEFORE state
-  afterScene?: string;    // emoji illustration of AFTER / evidence state
+  beforeScene?: string;
+  afterScene?: string;
   beforeHint_en?: string;
   beforeHint_ur?: string;
   afterHint_en?: string;
   afterHint_ur?: string;
-  singleHint_en?: string; // for single-panel actions
+  singleHint_en?: string;
   singleHint_ur?: string;
 }
 
@@ -380,9 +375,7 @@ const PHOTO_GUIDES: Record<string, PhotoGuideData> = {
     singleHint_en: 'Take a photo at the recycling centre with your items clearly visible. Include the drop-off sign or location name if possible.',
     singleHint_ur: 'ری سائیکلنگ سینٹر پر اپنے سامان کے ساتھ تصویر لیں۔ ہو سکے تو جگہ کا نام یا بورڈ بھی دکھائیں۔',
   },
-  carpool: {
-    beforeAfter: null, // GPS session — no photo needed
-  },
+  carpool: { beforeAfter: null },
   food_sharing: {
     beforeAfter: false,
     afterScene: '🍱🤲👥',
@@ -401,9 +394,7 @@ const PHOTO_GUIDES: Record<string, PhotoGuideData> = {
     singleHint_en: 'Take a clear photo of the issue — broken road, leaking pipe, damaged streetlight. Include a nearby landmark or street sign.',
     singleHint_ur: 'مسئلے کی واضح تصویر لیں — ٹوٹی سڑک، ٹپکتا پائپ، خراب بلب۔ قریبی نشانی یا گلی کا نام بھی دکھائیں۔',
   },
-  trade_job: {
-    beforeAfter: null, // TradeJobSelector handles this with per-trade guidance
-  },
+  trade_job: { beforeAfter: null },
   youth_mentoring: {
     beforeAfter: false,
     afterScene: '🤝💡📚',
@@ -433,14 +424,12 @@ function PhotoGuide({ actionType, isUrdu }: { actionType: string; isUrdu: boolea
   if (!guide || guide.beforeAfter === null) return null;
 
   if (guide.beforeAfter) {
-    // Two-panel Before / After guide
     return (
       <div className="space-y-2">
         <p className={`text-xs font-semibold text-enb-text-secondary uppercase tracking-wide ${isUrdu ? 'text-sm normal-case' : ''}`}>
           {isUrdu ? 'تصویر کی ہدایات' : 'Photo Instructions'}
         </p>
         <div className="grid grid-cols-2 gap-2">
-          {/* Before panel */}
           <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 space-y-2">
             <div className="text-xl leading-none">{guide.beforeScene}</div>
             <div className={`text-[10px] font-bold text-orange-700 uppercase tracking-wide ${isUrdu ? 'text-xs normal-case' : ''}`}>
@@ -456,7 +445,6 @@ function PhotoGuide({ actionType, isUrdu }: { actionType: string; isUrdu: boolea
               </span>
             </div>
           </div>
-          {/* After panel */}
           <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-3 space-y-2">
             <div className="text-xl leading-none">{guide.afterScene}</div>
             <div className={`text-[10px] font-bold text-enb-green uppercase tracking-wide ${isUrdu ? 'text-xs normal-case' : ''}`}>
@@ -477,7 +465,6 @@ function PhotoGuide({ actionType, isUrdu }: { actionType: string; isUrdu: boolea
     );
   }
 
-  // Single evidence panel
   return (
     <div className="bg-enb-green/5 border border-enb-green/20 rounded-xl p-3 space-y-2">
       <div className="flex items-center gap-2">
@@ -491,7 +478,7 @@ function PhotoGuide({ actionType, isUrdu }: { actionType: string; isUrdu: boolea
       </p>
       <div className="flex items-center gap-1.5 text-enb-green pt-1">
         <span className="text-base">📷</span>
-        <span className={`text-xs font-semibold ${isUrdu ? '' : ''}`}>
+        <span className="text-xs font-semibold">
           {isUrdu ? 'واضح تصویر لیں' : 'Take a clear photo'}
         </span>
       </div>
@@ -502,23 +489,23 @@ function PhotoGuide({ actionType, isUrdu }: { actionType: string; isUrdu: boolea
 // ─── Field types ────────────────────────────────────────────────────────────
 interface FieldDef {
   id: string;
-  label: string;           // English label
-  labelUr?: string;        // Urdu label
+  label: string;
+  labelUr?: string;
   type: 'text' | 'number' | 'textarea' | 'select' | 'multiselect' | 'visual_select' | 'visual_select_multi' | 'stepper';
   placeholder?: string;
   placeholderUr?: string;
-  options?: string[];           // for select / multiselect (English)
-  optionsUr?: string[];         // Urdu equivalents — same order as options (English)
-  visualOptions?: {             // for visual_select
+  options?: string[];
+  optionsUr?: string[];
+  visualOptions?: {
     value: string;
     emoji: string;
-    label: string;             // English
-    labelUr?: string;          // Urdu
+    label: string;
+    labelUr?: string;
   }[];
   min?: number;
   max?: number;
-  unit?: string;               // English unit label
-  unitUr?: string;             // Urdu unit label
+  unit?: string;
+  unitUr?: string;
   quickPicks?: number[];
   required: boolean;
 }
@@ -615,7 +602,6 @@ function ActionFields({ fields, values, onChange, isUrdu }: {
             </div>
           )}
 
-          {/* ── Visual tile grid (emoji + label, single select) ────────── */}
           {field.type === 'visual_select' && (
             <div className="grid grid-cols-2 gap-2">
               {field.visualOptions!.map(opt => {
@@ -641,7 +627,6 @@ function ActionFields({ fields, values, onChange, isUrdu }: {
             </div>
           )}
 
-          {/* ── Visual tile grid MULTI (emoji + label, multi-select) ─── */}
           {field.type === 'visual_select_multi' && (
             <div className="grid grid-cols-3 gap-2">
               {field.visualOptions!.map(opt => {
@@ -672,7 +657,6 @@ function ActionFields({ fields, values, onChange, isUrdu }: {
             </div>
           )}
 
-          {/* ── Stepper (− / number / +) with optional quick-pick chips ── */}
           {field.type === 'stepper' && (() => {
             const current = Number(values[field.id] || field.min || 1);
             const min = field.min ?? 1;
@@ -680,7 +664,6 @@ function ActionFields({ fields, values, onChange, isUrdu }: {
             const unit = (isUrdu && field.unitUr) ? field.unitUr : (field.unit || '');
             return (
               <div className="space-y-2">
-                {/* Quick pick chips */}
                 {field.quickPicks && (
                   <div className="flex gap-2 flex-wrap">
                     {field.quickPicks.map(qp => (
@@ -699,7 +682,6 @@ function ActionFields({ fields, values, onChange, isUrdu }: {
                     ))}
                   </div>
                 )}
-                {/* Stepper row */}
                 <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-2xl px-4 py-3">
                   <button
                     type="button"
@@ -749,6 +731,9 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   const [gpsLat, setGpsLat] = useState<number | null>(null);
   const [gpsLng, setGpsLng] = useState<number | null>(null);
   const [gpsAddress, setGpsAddress] = useState<string | null>(null);
+  // ── LAPSE 1 FIX: store GPS accuracy in metres ────────────────────────────
+  const [gpsAccuracyM, setGpsAccuracyM] = useState<number | null>(null);
+  const [gpsLowAccuracy, setGpsLowAccuracy] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
@@ -771,7 +756,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     return () => { stopCamera(); };
   }, []);
 
-  // Attach stream AFTER cameraActive=true renders <video> into DOM
   useEffect(() => {
     if (cameraActive && videoRef.current && streamRef.current) {
       const v = videoRef.current;
@@ -807,7 +791,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       }
       streamRef.current = stream;
-      // srcObject assigned in useEffect after setCameraActive(true) renders <video>
       setCameraActive(true);
     } catch (err: any) {
       setCameraError(
@@ -832,7 +815,7 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       if (!blob) return;
       const file = new File([blob], `action_${Date.now()}.jpg`, { type: 'image/jpeg' });
       const preview = canvas.toDataURL('image/jpeg', 0.8);
-      if (preview.length < 1000) return; // sanity check — black frame guard
+      if (preview.length < 1000) return;
       const newPhoto: PhotoItem = { preview, cloudinaryUrl: null, uploading: true, file };
       setPhotos(prev => [...prev, newPhoto]);
       stopCamera();
@@ -868,13 +851,21 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     setPhotos(prev => prev.filter(p => p.preview !== preview));
   };
 
+  // ── LAPSE 1 FIX: capture accuracy and flag if poor ───────────────────────
   const handleGetLocation = () => {
     setLoadingLocation(true);
+    setGpsLowAccuracy(false);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const accuracy = pos.coords.accuracy; // metres — always present
         setGpsLat(pos.coords.latitude);
         setGpsLng(pos.coords.longitude);
+        setGpsAccuracyM(accuracy);
         setGpsAddress(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+        // Flag visually if accuracy is poor — will also force human review in SubmitAction
+        if (accuracy > GPS_ACCURACY_THRESHOLD_M) {
+          setGpsLowAccuracy(true);
+        }
         setLoadingLocation(false);
       },
       () => setLoadingLocation(false),
@@ -882,12 +873,9 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     );
   };
 
-  // Check all required custom fields are filled
   const requiredFieldsMet = config.fields
     .filter(f => f.required)
     .every(f => {
-      // Steppers always have a value (they initialise to min on first +/− tap)
-      // Treat as met if the field has a value OR it's a stepper type
       if (f.type === 'stepper') return fieldValues[f.id] !== undefined || (f.min ?? 1) >= 1;
       if (f.type === 'visual_select_multi') { const v = fieldValues[f.id]; return Array.isArray(v) && v.length > 0; }
       const val = fieldValues[f.id];
@@ -900,7 +888,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
   const [selectedTrade, setSelectedTrade] = useState<TradeType | null>(null);
   const isTradeJob = actionType === 'trade_job';
 
-  // ── Carpool session state ─────────────────────────────────────────────────
   const [carpoolVehicle, setCarpoolVehicle] = useState('Car');
   const [carpoolPassengers, setCarpoolPassengers] = useState(1);
   const [carpoolSessionActive, setCarpoolSessionActive] = useState(false);
@@ -921,7 +908,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     if (RECAPTCHA_SITE_KEY) {
       try {
         recaptchaToken = await getRecaptchaToken('submit_action');
-        // Score is server-side validated via reCAPTCHA; use behavioural proxy for Supabase record
         const timeMs = Date.now() - formStartTime;
         captchaScore = parseFloat(
           (Math.min(timeMs / 10000, 1) * 0.4 + Math.min(touchEvents / 5, 1) * 0.3 + 0.3).toFixed(2)
@@ -932,7 +918,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         return;
       }
     } else {
-      // No key configured — still compute behavioural score
       const timeMs = Date.now() - formStartTime;
       captchaScore = parseFloat(
         (Math.min(timeMs / 10000, 1) * 0.4 + Math.min(touchEvents / 5, 1) * 0.3 + 0.3).toFixed(2)
@@ -940,8 +925,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
     }
     const uploadedUrls = photos.filter(p => p.cloudinaryUrl).map(p => p.cloudinaryUrl as string);
 
-    // Serialise custom fields into a structured description string
-    // Coerce stepper values to numbers so custom_fields JSONB is typed correctly
     const normalisedValues = { ...fieldValues };
     config.fields.forEach(f => {
       if (f.type === 'stepper' && normalisedValues[f.id] !== undefined) {
@@ -971,11 +954,13 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           trade_before_after: selectedTrade.beforeAfter,
         } : {}),
       },
-      // Pass linked_job_code so SubmitAction can wire submission_id → job_requests
       linkedJobCode: isTradeJob ? (fieldValues['linked_job_code'] || null) : null,
       gpsLat,
       gpsLng,
       gpsAddress,
+      // ── LAPSE 1 FIX: pass accuracy to SubmitAction ───────────────────────
+      gpsAccuracyM,
+      gpsLowAccuracy,
       imageSource: 'CAMERA',
       captchaScore,
       recaptchaToken,
@@ -999,7 +984,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
             onRideComplete={(session) => {
               setCarpoolSession(session);
               setCarpoolSessionActive(false);
-              // Build submission payload and pass to parent
               onSubmit({
                 actionType: 'carpool',
                 description: [
@@ -1026,6 +1010,8 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
                 gpsLat: session.originLat,
                 gpsLng: session.originLng,
                 gpsAddress: `${session.originLat.toFixed(5)}, ${session.originLng.toFixed(5)}`,
+                gpsAccuracyM: session.originAccuracyM || null,
+                gpsLowAccuracy: session.originAccuracyM != null && session.originAccuracyM > GPS_ACCURACY_THRESHOLD_M,
                 imageSource: 'GPS_SESSION',
                 captchaScore: 0.9,
                 recaptchaToken: '',
@@ -1040,12 +1026,10 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       );
     }
 
-    // Pre-ride setup screen — only shown after Captain approval sets approvedVehicles
     const VEHICLES = approvedVehicles.length > 0 ? approvedVehicles : [];
     const maxPassengers = carpoolVehicle === 'Bike' ? 1 : 8;
     const canStartRide = carpoolPassengers >= 1 && VEHICLES.length > 0;
 
-    // Show CaptainOnboarding if not yet approved
     if (!captainApproved) {
       return (
         <div className="space-y-4">
@@ -1080,7 +1064,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           {config.hint}
         </div>
 
-        {/* Vehicle type */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-enb-text-primary">Vehicle Type <span className="text-red-500">*</span></label>
           <div className="grid grid-cols-2 gap-2">
@@ -1105,7 +1088,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           </div>
         </div>
 
-        {/* Passenger count */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-enb-text-primary">
             Passengers (excluding you) <span className="text-red-500">*</span>
@@ -1126,7 +1108,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           )}
         </div>
 
-        {/* Estimated ENB preview */}
         <div className="bg-enb-gold/10 border border-enb-gold/20 rounded-xl p-4 text-center">
           <p className="text-xs text-gray-500 mb-1">Estimated reward per km</p>
           <p className="text-xl font-bold text-enb-gold">
@@ -1162,7 +1143,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         <div className="w-16" />
       </div>
 
-      {/* Photo guidance — visual emoji panels, bilingual */}
       <PhotoGuide actionType={actionType} isUrdu={isUrdu} />
 
       {/* ── Photo Section ── */}
@@ -1181,7 +1161,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
               className="w-full max-h-64 object-cover rounded-xl"
             />
             <canvas ref={canvasRef} className="hidden" />
-            {/* Loading overlay while stream initialises */}
             {!videoReady && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/60">
                 <Loader2 className="w-8 h-8 text-white animate-spin" />
@@ -1257,14 +1236,44 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
         <label className="text-sm font-medium text-enb-text-primary">{isUrdu ? 'جی پی ایس مقام' : 'GPS Location'} <span className="text-red-500">*</span></label>
         <div
           onClick={!gpsAddress ? handleGetLocation : undefined}
-          className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${gpsAddress ? 'bg-enb-green/10 border-enb-green/20 text-enb-green' : 'bg-white border-gray-200 text-gray-500 cursor-pointer hover:bg-gray-50'}`}
+          className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${
+            gpsAddress
+              ? gpsLowAccuracy
+                ? 'bg-amber-50 border-amber-300 text-amber-700'
+                : 'bg-enb-green/10 border-enb-green/20 text-enb-green'
+              : 'bg-white border-gray-200 text-gray-500 cursor-pointer hover:bg-gray-50'
+          }`}
         >
           {loadingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
-          <span className="text-sm font-medium">
-            {gpsAddress ? `📍 ${gpsAddress}` : loadingLocation ? (isUrdu ? 'تلاش ہو رہا ہے...' : 'Detecting...') : (isUrdu ? 'جی پی ایس مقام حاصل کریں' : 'Tap to detect GPS location')}
+          <span className="text-sm font-medium flex-1">
+            {gpsAddress
+              ? `📍 ${gpsAddress}`
+              : loadingLocation
+              ? (isUrdu ? 'تلاش ہو رہا ہے...' : 'Detecting...')
+              : (isUrdu ? 'جی پی ایس مقام حاصل کریں' : 'Tap to detect GPS location')}
           </span>
-          {gpsAddress && <CheckCircle className="w-4 h-4 ml-auto" />}
+          {gpsAddress && !gpsLowAccuracy && <CheckCircle className="w-4 h-4 ml-auto" />}
+          {gpsLowAccuracy && <AlertTriangle className="w-4 h-4 ml-auto text-amber-500" />}
         </div>
+        {/* ── LAPSE 1 FIX: show accuracy badge and low-accuracy warning ──────── */}
+        {gpsAccuracyM !== null && (
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              gpsLowAccuracy
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-enb-green/10 text-enb-green'
+            }`}>
+              {isUrdu ? 'درستگی' : 'Accuracy'}: ±{Math.round(gpsAccuracyM)}m
+            </span>
+            {gpsLowAccuracy && (
+              <span className="text-xs text-amber-600">
+                {isUrdu
+                  ? 'کم درستگی — انسانی جائزے کے لیے بھیجا جائے گا'
+                  : 'Low accuracy — will be sent for human review'}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Trade Job: visual selector ── */}
@@ -1347,7 +1356,6 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
           : (isUrdu ? 'جمع کریں' : 'Review Submission')}
       </Button>
 
-      {/* Validation hint */}
       {!canSubmit && photos.length > 0 && !anyUploading && (
         <p className="text-xs text-center text-gray-400">
           {!gpsLat ? (isUrdu ? '📍 جی پی ایس مقام ضروری ہے' : '📍 GPS location required') :
