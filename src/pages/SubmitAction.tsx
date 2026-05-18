@@ -371,7 +371,7 @@ export default function SubmitAction() {
         // ── GPS flags (Lapses 1, 3, 5) ───────────────────────────────────
         gps_accuracy_m: gpsAccuracyM,
         gps_duplicate_flag: gpsDuplicateFlag,
-        gps_out_of_range: gpsOutsideBoundary,  // reusing existing column for boundary flag
+        gps_outside_boundary: gpsOutsideBoundary,  // boundary polygon check — separate from gps_out_of_range (Before/After drift)
         status: aiAutoStatus,
         ai_review_verdict: aiVerdict,
         ai_review_reason: aiReason,

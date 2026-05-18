@@ -129,9 +129,12 @@ function GpsMapTile({ lat, lng, accuracyM, submissionId }: GpsMapTileProps) {
 function GpsBadges({ sub }: { sub: any }) {
   const accuracyM: number | null = sub?.gps_accuracy_m ?? null;
   const isDuplicate: boolean = sub?.gps_duplicate_flag === true;
-  const isOutOfRange: boolean = sub?.gps_out_of_range === true;
+  // gps_out_of_range = Before/After drift (set by AfterPhotoSubmission.tsx, transformation actions only)
+  const isBeforeAfterDrift: boolean = sub?.gps_out_of_range === true;
+  // gps_outside_boundary = boundary polygon check (set by SubmitAction.tsx, all actions)
+  const isOutsideBoundary: boolean = sub?.gps_outside_boundary === true;
 
-  if (accuracyM == null && !isDuplicate && !isOutOfRange) return null;
+  if (accuracyM == null && !isDuplicate && !isBeforeAfterDrift && !isOutsideBoundary) return null;
 
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -152,8 +155,14 @@ function GpsBadges({ sub }: { sub: any }) {
           🔁 Duplicate location — same action within 30 days
         </span>
       )}
-      {/* Before/After drift flag */}
-      {isOutOfRange && (
+      {/* Outside neighbourhood boundary flag */}
+      {isOutsideBoundary && (
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 flex items-center gap-1">
+          🗺️ Outside registered neighbourhood boundary
+        </span>
+      )}
+      {/* Before/After drift flag — transformation actions only */}
+      {isBeforeAfterDrift && (
         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 flex items-center gap-1">
           📍 After photo &gt;20m from Before location
         </span>
@@ -450,7 +459,7 @@ export default function ModQueue() {
                         {/* GPS link — now accompanied by map tile below */}
                         {sub?.gps_lat && sub?.gps_lng ? (
                           <a
-                            href={`https://maps.google.com/?q=${sub.gps_lat},${sub.gps_lng}`}
+                            href={`https://www.google.com/maps?q=${sub.gps_lat},${sub.gps_lng}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-enb-green flex items-center gap-1 mt-1 hover:underline"
