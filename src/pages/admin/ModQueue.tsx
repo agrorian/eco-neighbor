@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Shield, CheckCircle, XCircle, Loader2, RefreshCw, MapPin, AlertTriangle, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,6 +22,146 @@ interface Assignment {
   submission?: any;
 }
 
+// ── LAPSE 4 FIX: Small Leaflet map tile showing GPS pin for moderators ────────
+// Moderators previously saw raw GPS numbers. Now they see a map pin on a real
+// street tile so they can immediately assess whether the location is plausible.
+// Uses the same CDN Leaflet pattern as CarpoolSession.tsx.
+// Map is intentionally small (160px tall) — it is context, not the main content.
+// ─────────────────────────────────────────────────────────────────────────────
+function loadLeaflet(): Promise<any> {
+  return new Promise((resolve) => {
+    if ((window as any).L) { resolve((window as any).L); return; }
+    // CSS
+    if (!document.getElementById('leaflet-css-modqueue')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css-modqueue';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+    // JS
+    if (!document.getElementById('leaflet-js-modqueue')) {
+      const script = document.createElement('script');
+      script.id = 'leaflet-js-modqueue';
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => resolve((window as any).L);
+      document.head.appendChild(script);
+    } else {
+      // Script tag exists but L not ready yet — poll
+      const interval = setInterval(() => {
+        if ((window as any).L) { clearInterval(interval); resolve((window as any).L); }
+      }, 100);
+    }
+  });
+}
+
+interface GpsMapTileProps {
+  lat: number;
+  lng: number;
+  accuracyM?: number | null;
+  submissionId: string; // used as map container key to avoid duplicate IDs
+}
+
+function GpsMapTile({ lat, lng, accuracyM, submissionId }: GpsMapTileProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+
+  const initMap = useCallback(async () => {
+    if (!mapRef.current || mapInstanceRef.current) return;
+    const L = await loadLeaflet();
+
+    const map = L.map(mapRef.current, {
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,       // static tile — moderator opens Google Maps link to interact
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+    }).setView([lat, lng], 17);
+
+    mapInstanceRef.current = map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Accuracy circle — shows uncertainty radius if poor GPS signal
+    if (accuracyM != null && accuracyM > 0) {
+      L.circle([lat, lng], {
+        radius: accuracyM,
+        color: accuracyM > 100 ? '#F59E0B' : '#1A6B3C',
+        fillColor: accuracyM > 100 ? '#FEF3C7' : '#D1FAE5',
+        fillOpacity: 0.3,
+        weight: 1.5,
+      }).addTo(map);
+    }
+
+    // Pin marker — ENB green for good accuracy, amber for poor
+    const pinColor = (accuracyM != null && accuracyM > 100) ? '#F59E0B' : '#1A6B3C';
+    const icon = L.divIcon({
+      html: `<div style="width:16px;height:16px;background:${pinColor};border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.45);"></div>`,
+      className: '',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+    });
+    L.marker([lat, lng], { icon }).addTo(map);
+  }, [lat, lng, accuracyM]);
+
+  useEffect(() => {
+    initMap();
+    return () => {
+      mapInstanceRef.current?.remove();
+      mapInstanceRef.current = null;
+    };
+  }, [initMap]);
+
+  return (
+    <div
+      ref={mapRef}
+      id={`modqueue-map-${submissionId}`}
+      style={{ height: '160px', width: '100%', borderRadius: '12px', overflow: 'hidden', zIndex: 0 }}
+      className="border border-gray-200 bg-gray-100"
+    />
+  );
+}
+
+// ── GPS badges for moderators ─────────────────────────────────────────────────
+function GpsBadges({ sub }: { sub: any }) {
+  const accuracyM: number | null = sub?.gps_accuracy_m ?? null;
+  const isDuplicate: boolean = sub?.gps_duplicate_flag === true;
+  const isOutOfRange: boolean = sub?.gps_out_of_range === true;
+
+  if (accuracyM == null && !isDuplicate && !isOutOfRange) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {/* GPS accuracy badge */}
+      {accuracyM != null && (
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+          accuracyM > 100
+            ? 'bg-amber-100 text-amber-700'
+            : 'bg-green-100 text-green-700'
+        }`}>
+          {accuracyM > 100 ? '⚠️' : '📡'} GPS ±{Math.round(accuracyM)}m
+          {accuracyM > 100 && ' — poor signal'}
+        </span>
+      )}
+      {/* GPS duplicate flag */}
+      {isDuplicate && (
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700 flex items-center gap-1">
+          🔁 Duplicate location — same action within 30 days
+        </span>
+      )}
+      {/* Before/After drift flag */}
+      {isOutOfRange && (
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 flex items-center gap-1">
+          📍 After photo &gt;20m from Before location
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function ModQueue() {
   const { user } = useUserStore();
   const { l } = useT();
@@ -33,7 +173,6 @@ export default function ModQueue() {
   const [timers, setTimers] = useState<Record<string, number>>({});
   const timerRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({});
   // Tracks whether PairedSubmissionView found an After record in the DB for each assignment.
-  // This bypasses the stale after_submitted flag on the Before record (RLS update race condition).
   const [afterExists, setAfterExists] = useState<Record<string, boolean>>({});
 
   useEffect(() => { fetchAssignments(); }, []);
@@ -64,7 +203,7 @@ export default function ModQueue() {
   };
 
   const fetchAssignments = async () => {
-    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
+    if (!user?.id) return;
     setLoading(true);
 
     const { data: assgn } = await supabase
@@ -86,9 +225,6 @@ export default function ModQueue() {
           .select('*')
           .in('id', subIds);
 
-        // For After-phase submissions, resolve to their Before (parent) record
-        // so PairedSubmissionView always receives a Before record.
-        // The After data is fetched inside PairedSubmissionView via parent_submission_id.
         const afterSubs = (subs || []).filter(s => s.submission_phase === 'after' && s.parent_submission_id);
         let parentMap = new Map<string, any>();
 
@@ -103,8 +239,6 @@ export default function ModQueue() {
 
         const subMap = new Map((subs || []).map(s => [s.id, s]));
 
-        // Deduplicate: if an After assignment resolved to the same Before parent
-        // as an existing Before assignment, keep only one card (the Before assignment).
         const seenSubmissionIds = new Set<string>();
         const deduped = pending
           .map(a => {
@@ -133,7 +267,7 @@ export default function ModQueue() {
   };
 
   const submitDecision = async (assignment: Assignment) => {
-    if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
+    if (!user?.id) return;
     const dec = decisions[assignment.id];
     if (!dec?.decision || !dec?.reason || dec.reason.length < 10) return;
 
@@ -161,9 +295,6 @@ export default function ModQueue() {
       showToast('\u2705 Both mods agreed \u2014 submission approved! +500 ENB earned.');
 
       // ── Post-approval: fire rating link notification for trade jobs ──────
-      // If the approved submission is a trade_job, find the linked job_request
-      // and send the customer an inbox DM with the /job/:code/rate link.
-      // Non-fatal — a failure here must never block the approval flow.
       try {
         const { data: sub } = await supabase
           .from('submissions')
@@ -181,17 +312,17 @@ export default function ModQueue() {
           if (jobReq?.customer_user_id && jobReq?.job_code) {
             const ratingUrl = `${window.location.origin}/job/${jobReq.job_code}/rate`;
             await supabase.from('messages').insert({
-              sender_id:      jobReq.tradesperson_id,
-              recipient_id:   jobReq.customer_user_id,
-              message_type:   'direct',
-              content: `\u2705 <strong>Job completed & verified!</strong><br/>Your job has been approved by the ENB moderation team. Please take a moment to rate the work:<br/><br/><a href="${ratingUrl}" style="color:#1A6B3C;font-weight:600;">\u2b50 Rate this job</a>`,
-              channel_id:     null,
-              team_id:        null,
+              sender_id:    jobReq.tradesperson_id,
+              recipient_id: jobReq.customer_user_id,
+              message_type: 'direct',
+              content: `\u2705 <strong>Job completed &amp; verified!</strong><br/>Your job has been approved by the ENB moderation team. Please take a moment to rate the work:<br/><br/><a href="${ratingUrl}" style="color:#1A6B3C;font-weight:600;">\u2b50 Rate this job</a>`,
+              channel_id:   null,
+              team_id:      null,
             });
           }
         }
       } catch {
-        // Silent — approval already recorded above, this is a best-effort notification
+        // Silent — approval already recorded above
       }
     } else if (result?.status === 'rejected') {
       showToast('❌ Both mods agreed — submission rejected. +200 ENB earned.');
@@ -252,10 +383,6 @@ export default function ModQueue() {
           const dec = decisions[a.id] || { decision: '', reason: '' };
           const isProcessing = submitting === a.id;
           const isTransformation = sub?.action_type ? isTransformationAction(sub.action_type) : false;
-          // afterPending: true only if PairedSubmissionView confirmed no After record exists in DB.
-          // We use afterExists[a.id] (set by onAfterResolved callback) rather than the stale
-          // after_submitted flag on the Before record, which may not be updated due to RLS.
-          // While loading (afterExists[a.id] is undefined), default to NOT blocking decisions.
           const afterPending = isTransformation && afterExists[a.id] === false;
 
           return (
@@ -264,7 +391,6 @@ export default function ModQueue() {
               {/* ── TRANSFORMATION: Paired Before/After view ─────────────── */}
               {isTransformation ? (
                 <CardContent className="p-5 space-y-4">
-                  {/* Action header */}
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-bold text-enb-text-primary text-lg">
@@ -281,8 +407,10 @@ export default function ModQueue() {
                     </span>
                   </div>
 
+                  {/* GPS badges for transformation submissions */}
+                  <GpsBadges sub={sub} />
+
                   {afterPending ? (
-                    /* After not yet submitted — show Before details + waiting notice */
                     <div className="space-y-3">
                       <PairedSubmissionView
                         beforeSubmission={sub}
@@ -294,7 +422,6 @@ export default function ModQueue() {
                       </div>
                     </div>
                   ) : (
-                    /* After submitted — show full paired view */
                     <PairedSubmissionView
                       beforeSubmission={sub}
                       onAfterResolved={(has) => setAfterExists(prev => ({ ...prev, [a.id]: has }))}
@@ -315,10 +442,12 @@ export default function ModQueue() {
                   )}
                   <CardContent className="p-5 space-y-4">
                     <div className="flex justify-between items-start">
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-enb-text-primary capitalize text-lg">
                           {sub?.action_type?.replace(/_/g, ' ')}
                         </h3>
+
+                        {/* GPS link — now accompanied by map tile below */}
                         {sub?.gps_lat && sub?.gps_lng ? (
                           <a
                             href={`https://maps.google.com/?q=${sub.gps_lat},${sub.gps_lng}`}
@@ -327,9 +456,9 @@ export default function ModQueue() {
                             className="text-xs text-enb-green flex items-center gap-1 mt-1 hover:underline"
                             onClick={e => e.stopPropagation()}
                           >
-                            <MapPin className="w-3 h-3" />
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
                             {sub.gps_address || `${Number(sub.gps_lat).toFixed(5)}, ${Number(sub.gps_lng).toFixed(5)}`}
-                            <span className="text-[10px] text-gray-400">(tap to verify)</span>
+                            <span className="text-[10px] text-gray-400 ml-1">↗ open in Google Maps</span>
                           </a>
                         ) : (
                           <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
@@ -337,7 +466,7 @@ export default function ModQueue() {
                           </p>
                         )}
                       </div>
-                      <div className="text-right">
+                      <div className="text-right ml-3 flex-shrink-0">
                         <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-lg block">
                           {sub?.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
                         </span>
@@ -346,6 +475,35 @@ export default function ModQueue() {
                         </span>
                       </div>
                     </div>
+
+                    {/* ── LAPSE 4 FIX: GPS map tile ──────────────────────────
+                        Shows a static OpenStreetMap tile with a pin at the
+                        submission coordinates. Moderators can immediately see
+                        whether the pin is on a street, inside a building, in a
+                        residential compound, or in an implausible location.
+                        Accuracy circle shown when gps_accuracy_m is available.
+                        Amber pin + amber circle = poor GPS accuracy (>100m).
+                        Green pin + green circle = good GPS accuracy.
+                        Clicking the GPS link above opens Google Maps for full
+                        interactive verification.
+                    ─────────────────────────────────────────────────────── */}
+                    {sub?.gps_lat && sub?.gps_lng && (
+                      <div className="space-y-1.5">
+                        <GpsMapTile
+                          lat={Number(sub.gps_lat)}
+                          lng={Number(sub.gps_lng)}
+                          accuracyM={sub.gps_accuracy_m ?? null}
+                          submissionId={sub.id}
+                        />
+                        <p className="text-[10px] text-gray-400 text-center">
+                          📍 Submission location — tap link above to open in Google Maps
+                        </p>
+                      </div>
+                    )}
+
+                    {/* GPS flags badges */}
+                    <GpsBadges sub={sub} />
+
                     {sub?.description && (
                       <p className="text-sm text-enb-text-secondary bg-gray-50 rounded-lg p-3">{sub.description}</p>
                     )}
@@ -353,84 +511,80 @@ export default function ModQueue() {
                 </>
               )}
 
-              {/* ── DECISION SECTION (same for all submission types) ───────── */}
+              {/* ── DECISION SECTION ──────────────────────────────────────── */}
               <CardContent className="px-5 pb-5 pt-0 space-y-4 border-t border-gray-100">
-                {/* Block decisions until After is submitted for transformation actions */}
                 {afterPending ? (
                   <p className="text-sm text-center text-gray-400 py-2">
                     Decisions locked until After photos are submitted.
                   </p>
                 ) : (
                   <>
-                {a.escalation_flag && (
-                  <div className="flex items-center gap-2 text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm">
-                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                    <span>This submission is escalated — moderators disagreed. Senior review required.</span>
-                  </div>
-                )}
-
-                {/* Approve / Reject buttons */}
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    size="sm"
-                    onClick={() => setDecisions(d => ({ ...d, [a.id]: { ...dec, decision: 'APPROVE' } }))}
-                    className={`flex-1 transition-all ${dec.decision === 'APPROVE'
-                      ? 'bg-enb-green text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-enb-green/10 hover:text-enb-green'}`}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-1" /> Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => setDecisions(d => ({ ...d, [a.id]: { ...dec, decision: 'REJECT' } }))}
-                    className={`flex-1 transition-all ${dec.decision === 'REJECT'
-                      ? 'bg-red-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'}`}
-                  >
-                    <XCircle className="w-4 h-4 mr-1" /> Reject
-                  </Button>
-                </div>
-
-                {/* Reason + submit */}
-                {dec.decision && (
-                  <div className="space-y-3">
-                    <Input
-                      placeholder="Reason for your decision (minimum 10 characters)"
-                      value={dec.reason}
-                      onChange={e => setDecisions(d => ({ ...d, [a.id]: { ...dec, reason: e.target.value } }))}
-                      className={dec.reason.length > 0 && dec.reason.length < 10 ? 'border-red-300' : ''}
-                    />
-                    {dec.reason.length > 0 && dec.reason.length < 10 && (
-                      <p className="text-xs text-red-500">{10 - dec.reason.length} more characters needed</p>
-                    )}
-                    {/* 30-second minimum review timer */}
-                    {(timers[a.id] || 0) < 30 && (
-                      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                        <div className="flex-1 bg-amber-200 rounded-full h-1.5">
-                          <div
-                            className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
-                            style={{ width: `${((timers[a.id] || 0) / 30) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-amber-700 font-medium whitespace-nowrap">
-                          {30 - (timers[a.id] || 0)}s — review carefully
-                        </span>
+                    {a.escalation_flag && (
+                      <div className="flex items-center gap-2 text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        <span>This submission is escalated — moderators disagreed. Senior review required.</span>
                       </div>
                     )}
-                    <Button
-                      onClick={() => submitDecision(a)}
-                      disabled={dec.reason.length < 10 || isProcessing || (timers[a.id] || 0) < 30}
-                      className="w-full bg-enb-text-primary text-white hover:bg-enb-text-primary/90 disabled:opacity-50"
-                    >
-                      {isProcessing
-                        ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
-                        : (timers[a.id] || 0) < 30
-                          ? `Please review for ${30 - (timers[a.id] || 0)} more seconds`
-                          : `Submit ${dec.decision === 'APPROVE' ? 'Approval' : 'Rejection'}`}
-                    </Button>
-                  </div>
-                )}
-                </>
+
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => setDecisions(d => ({ ...d, [a.id]: { ...dec, decision: 'APPROVE' } }))}
+                        className={`flex-1 transition-all ${dec.decision === 'APPROVE'
+                          ? 'bg-enb-green text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-enb-green/10 hover:text-enb-green'}`}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setDecisions(d => ({ ...d, [a.id]: { ...dec, decision: 'REJECT' } }))}
+                        className={`flex-1 transition-all ${dec.decision === 'REJECT'
+                          ? 'bg-red-500 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'}`}
+                      >
+                        <XCircle className="w-4 h-4 mr-1" /> Reject
+                      </Button>
+                    </div>
+
+                    {dec.decision && (
+                      <div className="space-y-3">
+                        <Input
+                          placeholder="Reason for your decision (minimum 10 characters)"
+                          value={dec.reason}
+                          onChange={e => setDecisions(d => ({ ...d, [a.id]: { ...dec, reason: e.target.value } }))}
+                          className={dec.reason.length > 0 && dec.reason.length < 10 ? 'border-red-300' : ''}
+                        />
+                        {dec.reason.length > 0 && dec.reason.length < 10 && (
+                          <p className="text-xs text-red-500">{10 - dec.reason.length} more characters needed</p>
+                        )}
+                        {(timers[a.id] || 0) < 30 && (
+                          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                            <div className="flex-1 bg-amber-200 rounded-full h-1.5">
+                              <div
+                                className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
+                                style={{ width: `${((timers[a.id] || 0) / 30) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-amber-700 font-medium whitespace-nowrap">
+                              {30 - (timers[a.id] || 0)}s — review carefully
+                            </span>
+                          </div>
+                        )}
+                        <Button
+                          onClick={() => submitDecision(a)}
+                          disabled={dec.reason.length < 10 || isProcessing || (timers[a.id] || 0) < 30}
+                          className="w-full bg-enb-text-primary text-white hover:bg-enb-text-primary/90 disabled:opacity-50"
+                        >
+                          {isProcessing
+                            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
+                            : (timers[a.id] || 0) < 30
+                              ? `Please review for ${30 - (timers[a.id] || 0)} more seconds`
+                              : `Submit ${dec.decision === 'APPROVE' ? 'Approval' : 'Rejection'}`}
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
