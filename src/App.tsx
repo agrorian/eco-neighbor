@@ -56,6 +56,7 @@ const FounderHardship = lazy(() => import('@/pages/FounderHardship'));
 const PartnerFloat = lazy(() => import('@/pages/PartnerFloat'));
 const ModQueue = lazy(() => import('@/pages/admin/ModQueue'));
 const ModPerformance = lazy(() => import('@/pages/admin/ModPerformance'));
+const ModAssignments = lazy(() => import('@/pages/admin/ModAssignments'));
 const EscalationQueue = lazy(() => import('@/pages/admin/EscalationQueue'));
 const MyHistory = lazy(() => import('@/pages/MyHistory'));
 const SubmissionDetail = lazy(() => import('@/pages/SubmissionDetail'));
@@ -264,6 +265,7 @@ export default function App() {
                 <Route path="org-structure" element={<OrgStructurePage />} />
                 <Route path="captains" element={<AdminCaptains />} />
                 <Route path="mod-performance" element={<ModPerformance />} />
+                <Route path="mod-assignments" element={<ModAssignments />} />
               </Route>
 
               {/* ── Member routes ─────────────────────────────────────────── */}
