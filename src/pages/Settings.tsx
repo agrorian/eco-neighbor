@@ -273,7 +273,7 @@ export default function Settings() {
         <LogOut className="w-4 h-4 mr-2" /> {l('settings', 'logOut')}
       </Button>
 
-      <p className="text-center text-xs text-gray-400">Eco-Neighbor · ENB Token · App v1.8.0</p>
+      <p className="text-center text-xs text-gray-400">Eco-Neighbor · ENB Token · App v1.9.0</p>
     </div>
   );
 }
