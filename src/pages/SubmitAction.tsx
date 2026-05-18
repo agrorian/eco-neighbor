@@ -140,6 +140,44 @@ async function checkGpsDuplicate(
   }
 }
 
+// ── LAPSE 3 FIX: Neighbourhood boundary point-in-polygon check ───────────────
+// Queries the neighbourhood_boundaries table (PostGIS) to determine whether
+// the submission GPS falls inside the user's registered area.
+// Uses three-tier fallback: town/tehsil (level 7) → district (level 6) → skip.
+// Never hard-rejects — sets gps_outside_boundary flag for human moderator review.
+// Returns: true = outside boundary (flag), false = inside, null = no polygon found
+async function checkGpsBoundary(
+  userNeighbourhood: string | null,
+  userCity: string | null,
+  lat: number,
+  lng: number,
+): Promise<boolean | null> {
+  if (!userNeighbourhood && !userCity) return null;
+
+  try {
+    // Try town/tehsil level first (most precise)
+    const searchTerms = [userNeighbourhood, userCity].filter(Boolean);
+    
+    for (const term of searchTerms) {
+      const { data, error } = await supabase.rpc('check_point_in_boundary', {
+        p_lat: lat,
+        p_lng: lng,
+        p_name: term,
+      });
+      
+      if (!error && data !== null) {
+        // data = true means point IS inside boundary
+        // We return true if OUTSIDE (flag = true means problem)
+        return !data;
+      }
+    }
+    
+    return null; // No matching boundary found — skip check
+  } catch {
+    return null; // Never block submission on boundary check failure
+  }
+}
+
 // Action types that use Before/After flow (AI runs in AfterPhotoSubmission)
 const BEFORE_AFTER_ACTIONS = ['neighbourhood_cleanup', 'tree_planting'];
 // Action types with GPS+session data as primary evidence (no photo AI needed)
@@ -224,6 +262,22 @@ export default function SubmitAction() {
         gpsDuplicateFlag = await checkGpsDuplicate(user.id, actionKey, lat, lng);
       }
 
+      // ── LAPSE 3 FIX: neighbourhood boundary check ─────────────────────────
+      // Check if submission GPS falls inside the user's registered area.
+      // Uses PostGIS ST_Contains via check_point_in_boundary RPC.
+      // null = no polygon found for this area (common for unmapped areas)
+      // true = outside boundary → flag for human review
+      // false = inside boundary → clean
+      let gpsOutsideBoundary: boolean = false;
+      if (lat !== null && lng !== null) {
+        const neighbourhood = user.neighbourhood || null;
+        const city = user.city || null;
+        const boundaryResult = await checkGpsBoundary(neighbourhood, city, lat, lng);
+        if (boundaryResult === true) {
+          gpsOutsideBoundary = true;
+        }
+      }
+
       // ── Build enriched metadata for Gemini AI review ───────────────────
       // This metadata powers the AI-first fraud detection system.
       // Gemini receives: GPS, accuracy, duplicate flag, time, user trust level.
@@ -285,7 +339,7 @@ export default function SubmitAction() {
           // ── LAPSE 1 FIX: override auto-approve if GPS accuracy is poor ──
           // Low-accuracy submissions must be seen by a human moderator even
           // if Gemini is confident. GPS drift of 500m+ can mask indoor fraud.
-          const gpsOverridesAutoDecision = gpsLowAccuracy || gpsDuplicateFlag;
+          const gpsOverridesAutoDecision = gpsLowAccuracy || gpsDuplicateFlag || gpsOutsideBoundary;
 
           if (!gpsOverridesAutoDecision && aiVerdict === 'approve' && aiConfidence >= AUTO_APPROVE_THRESHOLD) {
             aiAutoStatus = 'approved';
@@ -314,10 +368,10 @@ export default function SubmitAction() {
         gps_lat: lat,
         gps_lng: lng,
         gps_address: formData.gpsAddress || formData.location || null,
-        // ── LAPSE 1 FIX: store accuracy and flags ────────────────────────
+        // ── GPS flags (Lapses 1, 3, 5) ───────────────────────────────────
         gps_accuracy_m: gpsAccuracyM,
         gps_duplicate_flag: gpsDuplicateFlag,
-        // gps_outside_boundary defaults to false — Lapse 3 (Phase 2)
+        gps_out_of_range: gpsOutsideBoundary,  // reusing existing column for boundary flag
         status: aiAutoStatus,
         ai_review_verdict: aiVerdict,
         ai_review_reason: aiReason,
