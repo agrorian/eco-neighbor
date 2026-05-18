@@ -155,24 +155,46 @@ async function checkGpsBoundary(
   if (!userNeighbourhood && !userCity) return null;
 
   try {
-    // Try town/tehsil level first (most precise)
-    const searchTerms = [userNeighbourhood, userCity].filter(Boolean);
-    
+    // Extract clean search terms from potentially long formatted strings.
+    // neighbourhood may be "Malir Model, Karachi, PK-SD, Pakistan" — extract
+    // just the first meaningful word/phrase before the first comma.
+    // city is typically clean ("Karachi") — use as-is.
+    const cleanNeighbourhood = userNeighbourhood
+      ? userNeighbourhood.split(',')[0].trim()
+      : null;
+    const cleanCity = userCity ? userCity.trim() : null;
+
+    // Build search terms — try neighbourhood first (most precise),
+    // then city. Skip terms that are too short to be meaningful.
+    const searchTerms = [cleanNeighbourhood, cleanCity]
+      .filter((t): t is string => !!t && t.length > 2);
+
     for (const term of searchTerms) {
       const { data, error } = await supabase.rpc('check_point_in_boundary', {
         p_lat: lat,
         p_lng: lng,
         p_name: term,
       });
-      
-      if (!error && data !== null) {
-        // data = true means point IS inside boundary
-        // We return true if OUTSIDE (flag = true means problem)
-        return !data;
+
+      if (error || data === null) continue; // No boundary found for this term — try next
+
+      if (data === true) {
+        // Point is confirmed inside this boundary — definitely not outside, stop checking
+        return false;
       }
+
+      // data === false: point is outside this named boundary.
+      // Only flag if the term was a specific neighbourhood match (not just city).
+      // City-level mismatches are too broad — Malir is part of greater Karachi
+      // but a separate administrative district. Don't flag city-level mismatches.
+      if (term === cleanNeighbourhood && cleanNeighbourhood !== cleanCity) {
+        return true; // Outside their specific registered neighbourhood
+      }
+      // City-level mismatch — inconclusive, try next term or skip
     }
-    
-    return null; // No matching boundary found — skip check
+
+    // No conclusive match found — cannot determine, skip flagging
+    return null;
   } catch {
     return null; // Never block submission on boundary check failure
   }
