@@ -169,7 +169,10 @@ export default function AfterPhotoSubmission({
         if (beforeLat != null && beforeLng != null) {
           const dist = gpsDistanceMetres(beforeLat, beforeLng, lat, lng);
           if (dist > MAX_GPS_DRIFT_METRES) {
-            setGpsWarning(`⚠️ You appear to be ${Math.round(dist)}m from the original location (max ${MAX_GPS_DRIFT_METRES}m). This will be flagged for moderators.`);
+            const distDisplay = dist >= 1000
+              ? `${(dist / 1000).toFixed(1)} km`
+              : `${Math.round(dist)} m`;
+            setGpsWarning(`⚠️ You appear to be ${distDisplay} from the original location (max ${MAX_GPS_DRIFT_METRES}m). This will be flagged for moderators.`);
           }
         }
         try {
