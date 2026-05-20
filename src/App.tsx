@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { useUserStore } from '@/store/user';
 import Layout from '@/components/layout/Layout';
 import SplashScreen from '@/components/SplashScreen';
-import { supabase, supabaseTest } from '@/lib/supabase';
+import { supabase, supabaseTest, setDbEnvironment } from '@/lib/supabase';
 import ConfirmRide from '@/pages/submit/ConfirmRide';
 import RiderProfile from '@/pages/submit/RiderProfile';
 import AdminCaptains from '@/pages/submit/AdminCaptains';
@@ -161,6 +161,7 @@ export default function App() {
       if (publicData) {
         // User exists in Genesis/real environment
         setUser(rowToUser(publicData, userEmail, 'real'));
+        setDbEnvironment('real');
         return;
       }
 
@@ -177,6 +178,7 @@ export default function App() {
         // Test-only user — set environment to 'test' so all their queries
         // route to test schema via getDb()
         setUser(rowToUser(testData, userEmail, 'test'));
+        setDbEnvironment('test');
         return;
       }
 
@@ -190,11 +192,11 @@ export default function App() {
         await new Promise(r => setTimeout(r, delay));
         const { data: retryPublic } = await supabase
           .from('users').select('*').eq('id', userId).maybeSingle();
-        if (retryPublic) { setUser(rowToUser(retryPublic, userEmail, 'real')); return; }
+        if (retryPublic) { setUser(rowToUser(retryPublic, userEmail, 'real')); setDbEnvironment('real'); return; }
 
         const { data: retryTest } = await supabaseTest
           .from('users').select('*').eq('id', userId).maybeSingle();
-        if (retryTest) { setUser(rowToUser(retryTest, userEmail, 'test')); return; }
+        if (retryTest) { setUser(rowToUser(retryTest, userEmail, 'test')); setDbEnvironment('test'); return; }
       }
       console.error('[ENB] All retries failed. Store unchanged.');
     } catch (err) {

@@ -8,6 +8,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { useUserStore } from '@/store/user';
+import { setDbEnvironment } from '@/lib/supabase';
 
 export type Environment = 'real' | 'test';
 
@@ -31,11 +32,10 @@ export function EnvironmentProvider({ children }: { children: ReactNode }) {
 
   const setEnvironment = useCallback((env: Environment) => {
     setEnvironmentState(env);
-    // Sync to user store so supabase client can read it
-    const { user, setUser } = useUserStore.getState();
-    if (user) {
-      setUser(prev => prev ? { ...prev, environment: env } : prev);
-    }
+    setDbEnvironment(env);
+    // Sync to user store
+    const { setUser } = useUserStore.getState();
+    setUser(prev => prev ? { ...prev, environment: env } : prev);
   }, []);
 
   const toggleEnvironment = useCallback(() => {
