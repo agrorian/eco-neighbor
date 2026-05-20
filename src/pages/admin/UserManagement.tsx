@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Zap, MoreVertical, User, Shield, AlertTriangle, Loader2, CheckCircle, Clock, XCircle, ExternalLink, Pencil, Save, X, Trash2 } from 'lucide-react';
+import { Search, Zap, MoreVertical, User, Shield, AlertTriangle, Loader2, CheckCircle, Clock, XCircle, ExternalLink, Pencil, Save, X, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -48,6 +48,27 @@ export default function UserManagement() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
+
+  // ── Sort state ────────────────────────────────────────────────────────────
+  type SortField = 'serial' | 'full_name' | 'role' | 'tier' | 'rep_score' | 'enb_local_bal' | 'cnic_verified' | 'is_active' | 'joined_at';
+  const [sortField, setSortField] = useState<SortField>('rep_score');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir(field === 'full_name' ? 'asc' : 'desc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ChevronsUpDown className="w-3 h-3 opacity-30 ml-1 inline" />;
+    return sortDir === 'asc'
+      ? <ChevronUp className="w-3 h-3 ml-1 inline text-enb-green" />
+      : <ChevronDown className="w-3 h-3 ml-1 inline text-enb-green" />;
+  };
 
   const openEdit = (u: DBUser) => {
     setEditTarget(u);
@@ -273,10 +294,49 @@ export default function UserManagement() {
     return map;
   }, [users]);
 
-  const filteredUsers = users.filter(u =>
-    (u.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = useMemo(() => {
+    const filtered = users.filter(u =>
+      (u.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return [...filtered].sort((a, b) => {
+      let aVal: any;
+      let bVal: any;
+
+      if (sortField === 'serial') {
+        aVal = serialMap[a.id] ?? 999;
+        bVal = serialMap[b.id] ?? 999;
+      } else if (sortField === 'full_name') {
+        aVal = (a.full_name || a.email || '').toLowerCase();
+        bVal = (b.full_name || b.email || '').toLowerCase();
+      } else if (sortField === 'role') {
+        const roleOrder: Record<string, number> = { super_admin: 0, admin: 1, founder: 2, moderator: 3, onboarding_team: 4, business: 5, member: 6 };
+        aVal = roleOrder[a.role] ?? 99;
+        bVal = roleOrder[b.role] ?? 99;
+      } else if (sortField === 'tier') {
+        const tierOrder: Record<string, number> = { 'Founder Tier': 0, Pillar: 1, Guardian: 2, Helper: 3, Newcomer: 4 };
+        aVal = tierOrder[a.tier] ?? 99;
+        bVal = tierOrder[b.tier] ?? 99;
+      } else if (sortField === 'cnic_verified') {
+        aVal = a.cnic_submitted_at ? (a.cnic_verified ? 0 : 1) : 2;
+        bVal = b.cnic_submitted_at ? (b.cnic_verified ? 0 : 1) : 2;
+      } else if (sortField === 'is_active') {
+        aVal = a.is_active !== false ? 0 : 1;
+        bVal = b.is_active !== false ? 0 : 1;
+      } else if (sortField === 'joined_at') {
+        aVal = a.joined_at || '';
+        bVal = b.joined_at || '';
+      } else {
+        aVal = (a as any)[sortField] ?? 0;
+        bVal = (b as any)[sortField] ?? 0;
+      }
+
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [users, searchTerm, sortField, sortDir, serialMap]);
 
   const ROLE_COLORS: Record<string, string> = {
     super_admin: 'bg-red-100 text-red-800', admin: 'bg-purple-100 text-purple-800',
@@ -309,15 +369,47 @@ export default function UserManagement() {
           <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="px-2 py-4 font-medium text-gray-500 w-[40px] text-center">#</th>
-                <th className="px-3 py-4 font-medium text-gray-500 w-[200px]">User</th>
-                <th className="px-2 py-4 font-medium text-gray-500 w-[110px]">Role</th>
-                <th className="px-2 py-4 font-medium text-gray-500 w-[90px]">Tier</th>
-                <th className="px-2 py-4 font-medium text-gray-500 text-right w-[65px]">Rep</th>
-                <th className="px-2 py-4 font-medium text-gray-500 text-right w-[90px]">ENB Bal</th>
-                <th className="px-2 py-4 font-medium text-gray-500 text-center w-[80px]">Identity</th>
-                <th className="px-2 py-4 font-medium text-gray-500 text-center w-[70px]">Status</th>
-                <th className="px-2 py-4 font-medium text-gray-500 text-right w-[55px]">Act</th>
+                <th className="px-2 py-4 w-[40px] text-center">
+                  <button onClick={() => handleSort('serial')} className="font-medium text-gray-500 hover:text-enb-green transition-colors text-xs">
+                    #<SortIcon field="serial" />
+                  </button>
+                </th>
+                <th className="px-3 py-4 w-[200px]">
+                  <button onClick={() => handleSort('full_name')} className="font-medium text-gray-500 hover:text-enb-green transition-colors text-xs">
+                    User<SortIcon field="full_name" />
+                  </button>
+                </th>
+                <th className="px-2 py-4 w-[110px]">
+                  <button onClick={() => handleSort('role')} className="font-medium text-gray-500 hover:text-enb-green transition-colors text-xs">
+                    Role<SortIcon field="role" />
+                  </button>
+                </th>
+                <th className="px-2 py-4 w-[90px]">
+                  <button onClick={() => handleSort('tier')} className="font-medium text-gray-500 hover:text-enb-green transition-colors text-xs">
+                    Tier<SortIcon field="tier" />
+                  </button>
+                </th>
+                <th className="px-2 py-4 text-right w-[65px]">
+                  <button onClick={() => handleSort('rep_score')} className="font-medium text-gray-500 hover:text-enb-green transition-colors text-xs">
+                    Rep<SortIcon field="rep_score" />
+                  </button>
+                </th>
+                <th className="px-2 py-4 text-right w-[90px]">
+                  <button onClick={() => handleSort('enb_local_bal')} className="font-medium text-gray-500 hover:text-enb-green transition-colors text-xs">
+                    ENB Bal<SortIcon field="enb_local_bal" />
+                  </button>
+                </th>
+                <th className="px-2 py-4 text-center w-[80px]">
+                  <button onClick={() => handleSort('cnic_verified')} className="font-medium text-gray-500 hover:text-enb-green transition-colors text-xs">
+                    Identity<SortIcon field="cnic_verified" />
+                  </button>
+                </th>
+                <th className="px-2 py-4 text-center w-[70px]">
+                  <button onClick={() => handleSort('is_active')} className="font-medium text-gray-500 hover:text-enb-green transition-colors text-xs">
+                    Status<SortIcon field="is_active" />
+                  </button>
+                </th>
+                <th className="px-2 py-4 text-right w-[55px] font-medium text-gray-500 text-xs">Act</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
