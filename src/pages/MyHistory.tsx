@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 import { Link } from 'react-router-dom';
 import {
   History, MapPin, AlertTriangle, CheckCircle, XCircle,

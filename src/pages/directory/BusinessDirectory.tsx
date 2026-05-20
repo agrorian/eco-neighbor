@@ -3,7 +3,7 @@ import { Search, Map as MapIcon, List, Star, Tag, Loader2, ArrowLeft } from 'luc
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 import { useT } from '@/contexts/LanguageContext';
 
 import { BUSINESS_CATEGORIES } from '@/lib/constants';

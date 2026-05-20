@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, Navigate } from 'react-router-dom';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 
 export default function FounderSale() {
   const { user } = useUserStore();

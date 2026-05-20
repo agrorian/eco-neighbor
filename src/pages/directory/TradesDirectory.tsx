@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Map as MapIcon, List, Loader2, ArrowLeft, Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { TRADE_PROFESSION_LIST, TRADE_PROFESSIONS } from '@/lib/constants';
 

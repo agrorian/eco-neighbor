@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Car, MessageCircle, Phone, MessageSquare, ArrowLeft, Loader2, AlertTriangle, CheckCircle, Lock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import StarRating from '@/components/StarRating';
 

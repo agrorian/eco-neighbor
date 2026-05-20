@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Users, RefreshCw, Loader2, CheckCircle, XCircle, Clock, AlertTriangle, MapPin, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 import { formatActionLabel } from '@/lib/beforeAfter';
 
 interface ModAssignment {

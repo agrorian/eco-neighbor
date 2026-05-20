@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { useUserStore } from '@/store/user';
 import Layout from '@/components/layout/Layout';
 import SplashScreen from '@/components/SplashScreen';
-import { supabase, supabaseTest, setDbEnvironment } from '@/lib/supabase';
+import { supabase, supabaseTest, setDbEnvironment , getDb} from '@/lib/supabase';
 import ConfirmRide from '@/pages/submit/ConfirmRide';
 import RiderProfile from '@/pages/submit/RiderProfile';
 import AdminCaptains from '@/pages/submit/AdminCaptains';

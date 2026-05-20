@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 import { useT } from '@/contexts/LanguageContext';
 
 const METRICS = [

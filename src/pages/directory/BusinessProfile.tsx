@@ -5,7 +5,7 @@ import {
   CheckCircle, Tag, Coins, Loader2, AlertCircle, Star, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 
 interface BusinessData {
   id: string;

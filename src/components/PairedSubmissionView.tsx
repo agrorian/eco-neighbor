@@ -4,7 +4,7 @@
  * Used inside SubmissionQueue / ModQueue for transformation actions.
  */
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 import { gpsDistanceMetres, formatActionLabel } from '@/lib/beforeAfter';
 import { Clock, MapPin, Camera, AlertTriangle, CheckCircle, Loader2, ImageOff } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';

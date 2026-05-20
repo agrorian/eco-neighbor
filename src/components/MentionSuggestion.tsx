@@ -5,7 +5,7 @@
 import { ReactRenderer } from '@tiptap/react';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 import 'tippy.js/dist/tippy.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

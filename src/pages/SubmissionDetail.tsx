@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase , getDb} from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { isTransformationAction, isUnlocked, formatActionLabel } from '@/lib/beforeAfter';
 import CountdownTimer from '@/components/CountdownTimer';
