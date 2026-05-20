@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { Camera, MapPin, CheckCircle, Loader2, AlertCircle, X, Plus, Users, Clock, Weight, TreePine, Car, Wrench, Package, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -830,7 +831,9 @@ export default function ActionForm({ actionType, onSubmit, onBack }: ActionFormP
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', preset);
-      formData.append('folder', 'enb/submissions/before');
+      const { user: _uEnv } = useUserStore.getState();
+      const _envFolder = _uEnv?.environment === 'test' ? 'enb/test/submissions/before' : 'enb/real/submissions/before';
+      formData.append('folder', _envFolder);
       const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: 'POST', body: formData,
       });

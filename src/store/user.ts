@@ -1,7 +1,9 @@
+// src/store/user.ts
 import { create } from 'zustand';
 
 export type UserRole = 'member' | 'business' | 'admin' | 'moderator' | 'organiser' | 'founder' | 'super_admin';
 export type UserTier = 'Newcomer' | 'Helper' | 'Guardian' | 'Pillar' | 'Founder';
+export type UserEnvironment = 'real' | 'test';
 
 // ── ENB DOCTRINE: Single source of truth for tier thresholds ─────────────────
 export function getTier(repScore: number): UserTier {
@@ -64,6 +66,9 @@ interface UserState {
     trade_availability?: string;
     trade_availability_until?: string;
     trade_availability_schedule?: Record<string, { from: string; to: string }> | null;
+    // ── v2.0.0 environment separation ────────────────────────────────────────
+    environment?: UserEnvironment;
+    is_test_account?: boolean;
   } | null;
   setUser: (user: UserState['user'] | ((prev: UserState['user']) => UserState['user'])) => void;
   logout: () => void;
@@ -76,9 +81,6 @@ export const useUserStore = create<UserState>((set) => ({
       set((state) => ({ user: userOrUpdater(state.user) }));
     } else {
       // ── Phantom guard: never write a user object with empty full_name ──────
-      // If full_name is blank but we already have a correct name in the store,
-      // keep the existing name. This prevents realtime payload nulls from
-      // wiping a correctly loaded full_name and showing the phantom U avatar.
       if (userOrUpdater && !userOrUpdater.full_name) {
         console.trace('[ENB] setUser called with empty full_name — check caller', userOrUpdater);
         set((state) => ({

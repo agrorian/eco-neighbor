@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
+import { useUserStore } from '@/store/user';
 import { gpsDistanceMetres, MAX_GPS_DRIFT_METRES } from '@/lib/beforeAfter';
 
 interface Photo {
@@ -30,7 +31,9 @@ async function uploadToCloudinary(dataUrl: string): Promise<string> {
   const form = new FormData();
   form.append('file', blob, 'after_photo.jpg');
   form.append('upload_preset', preset);
-  form.append('folder', 'enb/submissions/after');
+  const { user: _uEnv } = useUserStore.getState();
+  const _envFolder = _uEnv?.environment === 'test' ? 'enb/test/submissions/after' : 'enb/real/submissions/after';
+  form.append('folder', _envFolder);
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
     method: 'POST', body: form,
   });

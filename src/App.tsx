@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { EnvironmentProvider } from '@/contexts/EnvironmentContext';
 import { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { useUserStore } from '@/store/user';
 import Layout from '@/components/layout/Layout';
 import SplashScreen from '@/components/SplashScreen';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseTest } from '@/lib/supabase';
 import ConfirmRide from '@/pages/submit/ConfirmRide';
 import RiderProfile from '@/pages/submit/RiderProfile';
 import AdminCaptains from '@/pages/submit/AdminCaptains';
@@ -98,7 +99,9 @@ export default function App() {
   const [sessionExists, setSessionExists] = useState(false);
   const isLoadingProfile = useRef(false);
 
-  const rowToUser = (data: any, fallbackEmail: string) => ({
+  // ── ENB DOCTRINE v2.0.0: rowToUser is the ONLY place DB data becomes store ─
+  // environment field added — determines which schema client this user queries
+  const rowToUser = (data: any, fallbackEmail: string, env: 'real' | 'test' = 'real') => ({
     id: data.id,
     email: data.email || fallbackEmail,
     full_name: data.full_name || '',
@@ -136,36 +139,62 @@ export default function App() {
     trade_availability: data.trade_availability || 'not_set',
     trade_availability_until: data.trade_availability_until || undefined,
     trade_availability_schedule: data.trade_availability_schedule || null,
+    // ── v2.0.0 environment ───────────────────────────────────────────────────
+    environment: (data.environment as 'real' | 'test') || env,
+    is_test_account: data.is_test_account === true,
   });
 
+  // ── v2.0.0: Environment-aware profile loader ──────────────────────────────
+  // Step 1: Try public schema (Genesis/real environment)
+  // Step 2: If no row found → try test schema (Category B test-only users)
+  // This handles the shared auth.users reality — test-only users still have
+  // auth records but no public.users row after the Genesis wipe.
   const loadUserProfile = async (userId: string, userEmail: string) => {
     if (!userId || userId === 'undefined') return;
     if (isLoadingProfile.current) return;
     isLoadingProfile.current = true;
     try {
-      const { data, error } = await supabase
+      // ── Try public schema first ───────────────────────────────────────────
+      const { data: publicData, error: publicError } = await supabase
         .from('users').select('*').eq('id', userId).maybeSingle();
 
-      if (data) {
-        setUser(rowToUser(data, userEmail));
+      if (publicData) {
+        // User exists in Genesis/real environment
+        setUser(rowToUser(publicData, userEmail, 'real'));
         return;
       }
 
-      if (error) {
-        console.warn('[ENB] Profile read error, retrying in 800ms:', error.message);
-        await new Promise(r => setTimeout(r, 800));
-        const { data: retryData } = await supabase
-          .from('users').select('*').eq('id', userId).maybeSingle();
-        if (retryData) setUser(rowToUser(retryData, userEmail));
+      if (publicError) {
+        console.warn('[ENB] Public profile read error:', publicError.message);
+      }
+
+      // ── No public.users row — try test schema ─────────────────────────────
+      // This user is Category B (test-only) — route them to test environment
+      const { data: testData, error: testError } = await supabaseTest
+        .from('users').select('*').eq('id', userId).maybeSingle();
+
+      if (testData) {
+        // Test-only user — set environment to 'test' so all their queries
+        // route to test schema via getDb()
+        setUser(rowToUser(testData, userEmail, 'test'));
         return;
       }
 
-      console.warn('[ENB] 0 rows — JWT race. Retrying with backoff...');
+      if (testError) {
+        console.warn('[ENB] Test profile read error:', testError.message);
+      }
+
+      // ── Neither schema has this user — JWT race, retry with backoff ───────
+      console.warn('[ENB] 0 rows in both schemas — JWT race. Retrying...');
       for (const delay of [500, 1500, 3000]) {
         await new Promise(r => setTimeout(r, delay));
-        const { data: retryData } = await supabase
+        const { data: retryPublic } = await supabase
           .from('users').select('*').eq('id', userId).maybeSingle();
-        if (retryData) { setUser(rowToUser(retryData, userEmail)); return; }
+        if (retryPublic) { setUser(rowToUser(retryPublic, userEmail, 'real')); return; }
+
+        const { data: retryTest } = await supabaseTest
+          .from('users').select('*').eq('id', userId).maybeSingle();
+        if (retryTest) { setUser(rowToUser(retryTest, userEmail, 'test')); return; }
       }
       console.error('[ENB] All retries failed. Store unchanged.');
     } catch (err) {
@@ -204,6 +233,30 @@ export default function App() {
     return () => { subscription.unsubscribe(); clearTimeout(authTimeout); };
   }, []);
 
+  // ── ENB DOCTRINE v2.0.0: Global users subscription is environment-aware ──
+  // We subscribe to the schema that matches the user's environment.
+  // public schema → real users, test schema → test users.
+  // Only one subscription at a time — doctrine: zero subscriptions outside App.tsx.
+  useEffect(() => {
+    if (!user?.id) return;
+    const schema = user.environment === 'test' ? 'test' : 'public';
+    const client = user.environment === 'test' ? supabaseTest : supabase;
+
+    const channel = client
+      .channel(`user-changes-${schema}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema, table: 'users', filter: `id=eq.${user.id}` },
+        (payload) => {
+          // ── ENB DOCTRINE: Functional update — never stale closure ──────────
+          setUser(prev => prev ? { ...prev, ...(payload.new as any) } : prev);
+        }
+      )
+      .subscribe();
+
+    return () => { client.removeChannel(channel); };
+  }, [user?.id, user?.environment]);
+
   const handleSplashComplete = () => {
     setShowSplash(false);
     sessionStorage.setItem('hasSeenSplash', 'true');
@@ -229,6 +282,7 @@ export default function App() {
 
   return (
     <LanguageProvider>
+    <EnvironmentProvider>
     <Router>
       <div className="font-sans text-enb-text-primary selection:bg-enb-green/20">
         <Routes>
@@ -335,6 +389,7 @@ export default function App() {
         </Routes>
       </div>
     </Router>
+    </EnvironmentProvider>
     </LanguageProvider>
   );
 }

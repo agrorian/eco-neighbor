@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote, Flag, Bell, MessageSquare, BookOpen, User } from 'lucide-react';
-import { useUserStore } from '@/store/user';
+import { AlertTriangle, Home, PlusCircle, Wallet, Store, Trophy, ArrowRightLeft, Settings, Shield, Users, CheckSquare, Megaphone, ClipboardList, BarChart2, Globe, Apple, Vote, Flag, Bell, MessageSquare, BookOpen, User, FlaskConical, CheckCircle } from 'lucide-react';
+import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
+import { useEnvironment } from '@/contexts/EnvironmentContext';
 import AccountSwitcher from '@/components/AccountSwitcher';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useT } from '@/contexts/LanguageContext';
@@ -12,6 +13,7 @@ export default function DesktopSidebar() {
   const location = useLocation();
   const { user } = useUserStore();
   const { l } = useT();
+  const { environment, isTestEnvironment, toggleEnvironment } = useEnvironment();
 
   if (!user) return null;
 
@@ -80,8 +82,14 @@ export default function DesktopSidebar() {
     : (isBusiness && isBusinessSection) ? businessNav
     : [...memberNav, ...roleBasedNav, ...modNav, ...onboardingNav, ...volunteerNav, ...partnerNav];
 
+  // ── v2.0.0: When in test environment, sidebar shifts down 36px for banner ─
+  const sidebarTopOffset = isTestEnvironment ? '36px' : '0px';
+
   return (
-    <aside className="hidden md:flex flex-col w-72 h-screen bg-white border-r border-enb-border fixed left-0 top-0 z-50">
+    <aside
+      className="hidden md:flex flex-col w-72 bg-white border-r border-enb-border fixed left-0 z-50"
+      style={{ top: sidebarTopOffset, height: isTestEnvironment ? 'calc(100vh - 36px)' : '100vh' }}
+    >
 
       {/* Logo — always LTR regardless of language direction */}
       <div className="px-5 py-5 border-b border-enb-border" dir="ltr">
@@ -95,15 +103,43 @@ export default function DesktopSidebar() {
               className="text-xs text-enb-text-muted font-medium"
               dir="ltr"
               style={{ unicodeBidi: 'embed', direction: 'ltr', display: 'block' }}
-            >$ENB · App v1.9.0</span>
+            >$ENB · App v2.0.0</span>
           </div>
           <InboxBell />
         </div>
       </div>
 
+      {/* ── v2.0.0: Environment toggle — super_admin only ──────────────────── */}
+      {user.role === 'super_admin' && (
+        <div className="px-4 pt-3 pb-1">
+          <button
+            onClick={toggleEnvironment}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+              isTestEnvironment
+                ? 'bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100'
+                : 'bg-enb-green/10 border border-enb-green/20 text-enb-green hover:bg-enb-green/20'
+            }`}
+          >
+            {isTestEnvironment ? (
+              <>
+                <FlaskConical className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <span>Test Environment</span>
+                <span className="ml-auto text-xs font-normal opacity-70">→ Real</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-4 h-4 text-enb-green flex-shrink-0" />
+                <span>Real Environment</span>
+                <span className="ml-auto text-xs font-normal opacity-70">→ Test</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Admin toggle */}
       {['admin', 'super_admin'].includes(user.role) && (
-        <div className="px-4 pt-4 pb-2 flex gap-2">
+        <div className="px-4 pt-2 pb-2 flex gap-2">
           <Link to="/" className={`flex-1 text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${!isAdminSection ? 'bg-enb-green text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
             Member View
           </Link>
