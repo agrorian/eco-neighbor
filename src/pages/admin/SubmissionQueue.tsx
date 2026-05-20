@@ -42,13 +42,13 @@ export default function SubmissionQueue() {
       // Admin queue only shows fresh submissions not yet assigned to any moderator.
       // Mod-assigned submissions belong to ModQueue (pending decisions) or
       // EscalationQueue (disagreement) — not here.
-      const { data: assigned } = await supabase
+      const { data: assigned } = await getDb()
         .from('moderator_assignments')
         .select('submission_id');
       const assignedIds = (assigned || []).map((e: any) => e.submission_id).filter(Boolean);
 
       // Step 2: fetch pending submissions excluding all mod-assigned ones
-      let query = supabase
+      let query = getDb()
         .from('submissions')
         .select('id, user_id, action_type, description, photo_urls, gps_address, gps_lat, gps_lng, status, enb_awarded, rep_awarded, submitted_at')
         .eq('status', 'pending');
@@ -73,7 +73,7 @@ export default function SubmissionQueue() {
 
       // Step 2: fetch user details separately to avoid join issues
       const userIds = [...new Set(subs.map(s => s.user_id))];
-      const { data: users } = await supabase
+      const { data: users } = await getDb()
         .from('users')
         .select('id, full_name, email, whatsapp_number')
         .in('id', userIds);

@@ -92,7 +92,7 @@ export default function Governance() {
 
   const fetchProposals = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('governance_proposals')
       .select('*')
       .order('created_at', { ascending: false });
@@ -104,7 +104,7 @@ export default function Governance() {
   };
 
   const fetchUserVotes = async () => {
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('governance_votes')
       .select('proposal_id, vote')
       .eq('user_id', user.id);

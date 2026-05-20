@@ -93,7 +93,7 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
       if (data.session.user.id !== user.id) return;
       // Verify session email matches store email — guards against phantom state
       if (data.session.user.email !== user.email) return;
-      const { data: freshProfile } = await supabase
+      const { data: freshProfile } = await getDb()
         .from('users')
         .select('full_name, role, profile_pic_url')
         .eq('id', user.id)
@@ -124,7 +124,7 @@ export default function AccountSwitcher({ compact = false }: AccountSwitcherProp
       }
 
       // Fetch user profile for the switched account
-      const { data: profile } = await supabase
+      const { data: profile } = await getDb()
         .from('users')
         .select('*')
         .eq('id', data.session.user.id)

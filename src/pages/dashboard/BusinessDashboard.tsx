@@ -88,7 +88,7 @@ export default function BusinessDashboard() {
     if (!user) return;
 
     // Real-time updates when business_partners row changes
-    const channel = supabase
+    const channel = getDb()
       .channel(`biz-dashboard-${user.id}`)
       .on('postgres_changes', {
         event: 'UPDATE',
@@ -107,7 +107,7 @@ export default function BusinessDashboard() {
     if (!user) return;
     setLoading(true);
 
-    const { data: biz } = await supabase
+    const { data: biz } = await getDb()
       .from('business_partners')
       .select('business_name, category, enb_float, enb_global_bal, total_swaps_accepted, total_enb_local_received, is_verified')
       .eq('owner_user_id', user.id)

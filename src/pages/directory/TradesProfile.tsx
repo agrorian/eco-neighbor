@@ -201,7 +201,7 @@ export default function TradesProfile() {
     const load = async () => {
       setLoading(true);
 
-      const { data: p } = await supabase
+      const { data: p } = await getDb()
         .from('users')
         .select('id, full_name, profile_pic_url, neighbourhood, city, profession, whatsapp_number, trade_types, total_verified_jobs, avg_job_rating, total_job_ratings, trade_availability, trade_availability_until, trade_availability_schedule, cnic_verified, joined_at, avg_carpool_rating, rep_score')
         .eq('id', userId)
@@ -226,7 +226,7 @@ export default function TradesProfile() {
       });
 
       // Approved trade job submissions — the portfolio
-      const { data: jobData } = await supabase
+      const { data: jobData } = await getDb()
         .from('submissions')
         .select('id, action_type, description, photo_urls, gps_address, submitted_at, reviewed_at, status')
         .eq('user_id', userId)
@@ -237,7 +237,7 @@ export default function TradesProfile() {
       if (jobData) setJobs(jobData);
 
       // Customer ratings from job_requests
-      const { data: ratingData } = await supabase
+      const { data: ratingData } = await getDb()
         .from('job_requests')
         .select('submission_id, job_rating, job_rating_comment, would_hire_again, customer_name, rated_at')
         .eq('tradesperson_id', userId)
@@ -247,7 +247,7 @@ export default function TradesProfile() {
 
       // Pending jobs — confirmed by customer but not yet submitted
       if (isOwnProfile) {
-        const { data: pendingData } = await supabase
+        const { data: pendingData } = await getDb()
           .from('job_requests')
           .select('id, job_code, trade_type, customer_name, customer_phone, customer_confirmed_at, problem_description, agreed_price')
           .eq('tradesperson_id', userId)

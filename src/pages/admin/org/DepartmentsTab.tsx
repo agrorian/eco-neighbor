@@ -252,7 +252,7 @@ export default function DepartmentsTab() {
   const [showNew, setShowNew] = useState(false);
 
   const fetchDepts = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('departments')
       .select('*')
       .order('name');

@@ -326,7 +326,7 @@ export default function RegionsTab() {
   const [search, setSearch] = useState('');
 
   const fetchRegions = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('regions')
       .select('*')
       .order('level')

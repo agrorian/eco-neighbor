@@ -84,7 +84,7 @@ export default function OnboardingQueue() {
 
   const fetchApplications = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('partner_applications')
       .select('*')
       .eq('status', activeTab)

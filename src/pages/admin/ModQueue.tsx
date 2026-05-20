@@ -215,7 +215,7 @@ export default function ModQueue() {
     if (!user?.id) return;
     setLoading(true);
 
-    const { data: assgn } = await supabase
+    const { data: assgn } = await getDb()
       .from('moderator_assignments')
       .select('*')
       .or(`mod1_id.eq.${user.id},mod2_id.eq.${user.id}`)
@@ -229,7 +229,7 @@ export default function ModQueue() {
 
       if (pending.length > 0) {
         const subIds = pending.map(a => a.submission_id);
-        const { data: subs } = await supabase
+        const { data: subs } = await getDb()
           .from('submissions')
           .select('*')
           .in('id', subIds);
@@ -239,7 +239,7 @@ export default function ModQueue() {
 
         if (afterSubs.length > 0) {
           const parentIds = [...new Set(afterSubs.map(s => s.parent_submission_id))];
-          const { data: parents } = await supabase
+          const { data: parents } = await getDb()
             .from('submissions')
             .select('*')
             .in('id', parentIds);
@@ -287,7 +287,7 @@ export default function ModQueue() {
       ? { decision1: dec.decision, reason1: dec.reason, mod1_reviewed_at: reviewedAt }
       : { decision2: dec.decision, reason2: dec.reason, mod2_reviewed_at: reviewedAt };
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await getDb()
       .from('moderator_assignments')
       .update(update)
       .eq('id', assignment.id);
@@ -305,14 +305,14 @@ export default function ModQueue() {
 
       // ── Post-approval: fire rating link notification for trade jobs ──────
       try {
-        const { data: sub } = await supabase
+        const { data: sub } = await getDb()
           .from('submissions')
           .select('action_type, id')
           .eq('id', assignment.submission_id)
           .single();
 
         if (sub?.action_type === 'trade_job') {
-          const { data: jobReq } = await supabase
+          const { data: jobReq } = await getDb()
             .from('job_requests')
             .select('job_code, customer_user_id, tradesperson_id')
             .eq('submission_id', assignment.submission_id)

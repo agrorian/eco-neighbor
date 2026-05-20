@@ -15,7 +15,7 @@ export default function FounderSale() {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('founder_sale_windows')
         .select('*')
         .eq('founder_id', user.id)

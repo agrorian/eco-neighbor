@@ -152,7 +152,7 @@ export default function AnnouncementsPage() {
 
   // ── Fetch announcements ──────────────────────────────────────────────────
   const fetchMessages = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('messages')
       .select('*')
       .eq('message_type', 'broadcast')
@@ -171,7 +171,7 @@ export default function AnnouncementsPage() {
       if (saved) setDrafts(JSON.parse(saved));
     } catch {}
 
-    const channel = supabase
+    const channel = getDb()
       .channel('announcements-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages',
         filter: 'message_type=eq.broadcast' }, fetchMessages)

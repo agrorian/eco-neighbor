@@ -238,7 +238,7 @@ export default function BridgeManager() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      let query = getDb()
         .from('bridge_requests')
         .select(`
           *,
@@ -289,7 +289,7 @@ export default function BridgeManager() {
     if (!user?.id) return;
     setProcessing(requestId);
     try {
-      const { error } = await supabase
+      const { error } = await getDb()
         .from('bridge_requests')
         .update({
           status: 'rejected',

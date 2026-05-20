@@ -69,7 +69,7 @@ export default function ImpactDashboard() {
       const totalEnb = (enbData || []).reduce((sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0);
 
       // Step 3: Food donations
-      const { data: foodData, count: foodCount } = await supabase
+      const { data: foodData, count: foodCount } = await getDb()
         .from('food_donations')
         .select('quantity_kg', { count: 'exact' })
         .eq('status', 'completed');
@@ -94,14 +94,14 @@ export default function ImpactDashboard() {
         const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59).toISOString();
         const label = d.toLocaleString('default', { month: 'short' });
 
-        const { count: aCount } = await supabase
+        const { count: aCount } = await getDb()
           .from('submissions')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'approved')
           .gte('reviewed_at', monthStart)
           .lte('reviewed_at', monthEnd);
 
-        const { data: tData } = await supabase
+        const { data: tData } = await getDb()
           .from('transactions')
           .select('enb_amount')
           .eq('type', 'earn')

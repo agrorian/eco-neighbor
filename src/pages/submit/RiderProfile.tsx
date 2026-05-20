@@ -47,7 +47,7 @@ export default function RiderProfile() {
     const fetchRider = async () => {
       setLoading(true);
 
-      const { data: riderData, error: riderErr } = await supabase
+      const { data: riderData, error: riderErr } = await getDb()
         .from('users')
         .select('id, full_name, profile_pic_url, whatsapp_number, neighbourhood, city, is_carpool_rider, total_carpool_rides, avg_carpool_rating, avg_passenger_rating, total_rides_as_passenger, captain_applications(status, approved_vehicle_types, license_categories)')
         .eq('id', userId)
@@ -61,7 +61,7 @@ export default function RiderProfile() {
       setRider(riderData);
 
       // Fetch reviews from ride_confirmations joined with submissions
-      const { data: confirmData } = await supabase
+      const { data: confirmData } = await getDb()
         .from('ride_confirmations')
         .select(`
           id, rating, comment, confirmed_at, confirmation_type, passenger_user_id,
@@ -82,7 +82,7 @@ export default function RiderProfile() {
 
         let nameMap: Record<string, string> = {};
         if (passengerIds.length > 0) {
-          const { data: passengers } = await supabase
+          const { data: passengers } = await getDb()
             .from('users')
             .select('id, full_name')
             .in('id', passengerIds);

@@ -116,7 +116,7 @@ export const mentionSuggestion = {
   // Fetch matching users from Supabase
   items: async ({ query }: { query: string }): Promise<MentionUser[]> => {
     if (!query && query !== '') return [];
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('users')
       .select('id, full_name, role, profile_pic_url')
       .ilike('full_name', `%${query}%`)

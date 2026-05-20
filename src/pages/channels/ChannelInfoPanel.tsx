@@ -135,7 +135,7 @@ export default function ChannelInfoPanel({
   // ── Fetch members ──────────────────────────────────────────────────────────
   const fetchMembers = useCallback(async () => {
     setLoading(true);
-    const { data: memberData } = await supabase
+    const { data: memberData } = await getDb()
       .from('channel_members')
       .select('user_id, role, joined_at')
       .eq('channel_id', channel.id)
@@ -144,7 +144,7 @@ export default function ChannelInfoPanel({
     if (!memberData?.length) { setLoading(false); return; }
 
     const userIds = memberData.map(m => m.user_id);
-    const { data: profiles } = await supabase
+    const { data: profiles } = await getDb()
       .from('users')
       .select('id, full_name, profile_pic_url, role')
       .in('id', userIds);
@@ -173,7 +173,7 @@ export default function ChannelInfoPanel({
     if (memberSearch.length < 2) { setSearchResults([]); return; }
     const t = setTimeout(async () => {
       const existingIds = members.map(m => m.user_id);
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('users')
         .select('id, full_name, role, neighbourhood, profile_pic_url')
         .ilike('full_name', `%${memberSearch}%`)

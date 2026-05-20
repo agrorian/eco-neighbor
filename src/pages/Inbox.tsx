@@ -145,7 +145,7 @@ export default function Inbox() {
     if (!user) return;
 
     // Fetch broadcasts + mention notifications for this user
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('messages')
       .select('*')
       .or(
@@ -165,7 +165,7 @@ export default function Inbox() {
   useEffect(() => {
     fetchMessages();
 
-    const channel = supabase
+    const channel = getDb()
       .channel('inbox-realtime')
       .on('postgres_changes', {
         event: '*',

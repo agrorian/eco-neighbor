@@ -56,7 +56,7 @@ export default function AdminOnboarding() {
     setLoading(true);
 
     // Fetch partner applications awaiting admin review
-    const { data: apps } = await supabase
+    const { data: apps } = await getDb()
       .from('partner_applications')
       .select('*')
       .order('created_at', { ascending: false });
@@ -65,7 +65,7 @@ export default function AdminOnboarding() {
     if (apps && apps.length > 0) {
       const teamIds = [...new Set(apps.filter(a => a.assigned_to).map(a => a.assigned_to))];
       if (teamIds.length > 0) {
-        const { data: teamMembers } = await supabase
+        const { data: teamMembers } = await getDb()
           .from('users').select('id, full_name').in('id', teamIds);
         const teamMap = new Map((teamMembers || []).map(t => [t.id, t.full_name]));
         setPartnerApps(apps.map(a => ({ ...a, team_member_name: teamMap.get(a.assigned_to) || 'Unknown' })));
@@ -77,14 +77,14 @@ export default function AdminOnboarding() {
     }
 
     // Fetch volunteer applications
-    const { data: vApps } = await supabase
+    const { data: vApps } = await getDb()
       .from('volunteer_applications')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (vApps && vApps.length > 0) {
       const userIds = vApps.map(v => v.user_id);
-      const { data: vUsers } = await supabase
+      const { data: vUsers } = await getDb()
         .from('users').select('id, full_name, email, rep_score').in('id', userIds);
       const userMap = new Map((vUsers || []).map(u => [u.id, u]));
       setVolunteerApps(vApps.map(v => ({

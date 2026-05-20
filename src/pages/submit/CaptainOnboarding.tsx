@@ -61,7 +61,7 @@ export default function CaptainOnboarding({ onApproved }: Props) {
   const fetchApplication = async () => {
     if (!user || !user.id) return;  // guard: never query with undefined id
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('captain_applications')
       .select('*')
       .eq('user_id', user.id)

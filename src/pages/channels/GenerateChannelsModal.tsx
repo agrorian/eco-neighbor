@@ -41,7 +41,7 @@ export default function GenerateChannelsModal({
     setLoading(true);
 
     // 1. Get all active memberships where user has Dept Admin or Regional Head role
-    const { data: adminMemberships } = await supabase
+    const { data: adminMemberships } = await getDb()
       .from('user_org_memberships')
       .select(`
         user_id, department_id, region_id,
@@ -129,7 +129,7 @@ export default function GenerateChannelsModal({
 
     for (const ch of toCreate) {
       // Create channel
-      const { data: channel } = await supabase
+      const { data: channel } = await getDb()
         .from('channels')
         .insert({
           name:          ch.name,
@@ -153,7 +153,7 @@ export default function GenerateChannelsModal({
       });
 
       // Auto-add all org members from that dept+region
-      const { data: members } = await supabase
+      const { data: members } = await getDb()
         .from('user_org_memberships')
         .select('user_id')
         .eq('department_id', ch.dept_id)

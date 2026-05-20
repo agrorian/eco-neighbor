@@ -303,7 +303,7 @@ export default function RichTextEditor({
     if (!others.length) return;
 
     // Get sender's name
-    const { data: sender } = await supabase
+    const { data: sender } = await getDb()
       .from('users')
       .select('full_name')
       .eq('id', currentUserId)

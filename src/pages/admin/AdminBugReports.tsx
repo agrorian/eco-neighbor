@@ -49,7 +49,7 @@ export default function AdminBugReports() {
 
   const fetchReports = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('bug_reports')
       .select('*')
       .order('created_at', { ascending: false });

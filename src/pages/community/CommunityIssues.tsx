@@ -362,7 +362,7 @@ export default function CommunityIssues() {
 
   const fetchReports = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('submissions')
       .select('id, action_type, description, photo_urls, gps_lat, gps_lng, gps_address, submitted_at, status, report_status, resolved_at, resolved_by, user_id, enb_awarded')
       .in('action_type', Array.from(REPORTING_TYPES))

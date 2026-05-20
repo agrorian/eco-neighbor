@@ -134,7 +134,7 @@ export default function Wallet() {
     if (!user?.id) return;  // ENB DOCTRINE: guard user.id specifically, not just user
 
     const refreshBalance = async () => {
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('users')
         .select('enb_local_bal, enb_global_bal, rep_score, tier, lifetime_earned')
         .eq('id', user.id)
@@ -154,7 +154,7 @@ export default function Wallet() {
     if (!user?.id) return;  // ENB DOCTRINE: guard user.id specifically
 
     const fetchBusinessBal = async () => {
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('business_partners')
         .select('enb_global_bal')
         .eq('owner_user_id', user.id)
@@ -163,7 +163,7 @@ export default function Wallet() {
     };
     fetchBusinessBal();
 
-    const bpChannel = supabase
+    const bpChannel = getDb()
       .channel(`wallet-bp-${user.id}`)
       .on(
         'postgres_changes',

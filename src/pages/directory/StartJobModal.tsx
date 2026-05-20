@@ -40,7 +40,7 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
   // Fetch recent conversation partners when code is generated
   const fetchRecentContacts = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('messages')
       .select('sender_id, recipient_id')
       .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
@@ -53,7 +53,7 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
     )].slice(0, 6);
 
     if (partnerIds.length === 0) return;
-    const { data: users } = await supabase
+    const { data: users } = await getDb()
       .from('users')
       .select('id, full_name')
       .in('id', partnerIds);

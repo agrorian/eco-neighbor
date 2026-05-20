@@ -78,7 +78,7 @@ export default function ModAssignments() {
     setLoading(true);
     try {
       // Fetch all non-resolved assignments
-      const { data: assgn, error } = await supabase
+      const { data: assgn, error } = await getDb()
         .from('moderator_assignments')
         .select('*')
         .order('created_at', { ascending: false });
@@ -89,21 +89,21 @@ export default function ModAssignments() {
 
       // Fetch all related submissions
       const subIds = [...new Set(assgn.map(a => a.submission_id))];
-      const { data: subs } = await supabase
+      const { data: subs } = await getDb()
         .from('submissions')
         .select('id, action_type, submitted_at, status, gps_address, gps_accuracy_m, gps_duplicate_flag, gps_outside_boundary, gps_out_of_range, user_id')
         .in('id', subIds);
 
       // Fetch all moderator user names
       const modIds = [...new Set([...assgn.map(a => a.mod1_id), ...assgn.map(a => a.mod2_id)])];
-      const { data: modUsers } = await supabase
+      const { data: modUsers } = await getDb()
         .from('users')
         .select('id, full_name, email')
         .in('id', modIds);
 
       // Fetch submitter names
       const userIds = [...new Set((subs || []).map(s => s.user_id))];
-      const { data: submitters } = await supabase
+      const { data: submitters } = await getDb()
         .from('users')
         .select('id, full_name, email')
         .in('id', userIds);

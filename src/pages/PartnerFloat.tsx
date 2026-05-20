@@ -40,7 +40,7 @@ export default function PartnerFloat() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const { data: partner } = await supabase
+    const { data: partner } = await getDb()
       .from('business_partners')
       .select('id, enb_float, enb_float_allocated, float_alert_status, last_replenishment_date, float_replenishment_log')
       .eq('owner_user_id', user!.id)
@@ -48,7 +48,7 @@ export default function PartnerFloat() {
 
     if (partner) {
       setFloatData(partner);
-      const { data: reqs } = await supabase
+      const { data: reqs } = await getDb()
         .from('replenishment_requests')
         .select('*')
         .eq('business_id', partner.id)
@@ -61,7 +61,7 @@ export default function PartnerFloat() {
 
   const checkStatus = async () => {
     setChecking(true);
-    const { data: partner } = await supabase
+    const { data: partner } = await getDb()
       .from('business_partners')
       .select('id')
       .eq('owner_user_id', user!.id)

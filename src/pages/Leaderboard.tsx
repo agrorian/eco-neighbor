@@ -44,7 +44,7 @@ export default function Leaderboard() {
   useEffect(() => {
     const fetchCities = async () => {
       setCitiesLoading(true);
-      const { data: rows } = await supabase
+      const { data: rows } = await getDb()
         .from('users')
         .select('city')
         .eq('is_active', true)
@@ -65,7 +65,7 @@ export default function Leaderboard() {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
-      let query = supabase
+      let query = getDb()
         .from('users')
         .select('id, full_name, neighbourhood, city, enb_local_bal, rep_score, tier')
         .eq('is_active', true)

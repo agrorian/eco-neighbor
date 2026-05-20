@@ -295,25 +295,25 @@ export default function FoodSharing() {
   useEffect(() => {
     const fetchStats = async () => {
       // Food donations stats - two-step queries
-      const { data: foodData } = await supabase
+      const { data: foodData } = await getDb()
         .from('food_donations')
         .select('quantity_kg')
         .eq('status', 'completed');
 
       const kgDiverted = (foodData || []).reduce((sum, f) => sum + (Number(f.quantity_kg) || 0), 0);
 
-      const { count: donationCount } = await supabase
+      const { count: donationCount } = await getDb()
         .from('food_donations')
         .select('id', { count: 'exact', head: true });
 
       // Check existing food_runner applications
-      const { count: runnerCount } = await supabase
+      const { count: runnerCount } = await getDb()
         .from('volunteer_applications')
         .select('id', { count: 'exact', head: true })
         .eq('role_applied', 'food_runner');
 
       // Check if this user already applied
-      const { count: myApp } = await supabase
+      const { count: myApp } = await getDb()
         .from('volunteer_applications')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)

@@ -46,7 +46,7 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       // Admin sees ALL pending submissions — including those assigned to mods
-      const pendingQuery = supabase
+      const pendingQuery = getDb()
         .from('submissions')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending');

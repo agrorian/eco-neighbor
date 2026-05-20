@@ -98,7 +98,7 @@ export function useOrgPermissions(): UseOrgPermissionsReturn {
     // SA gets everything — no need to fetch
     if (isSuperAdmin) { setLoading(false); return; }
 
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('user_org_memberships')
       .select('id, department_id, region_id, org_role_id')
       .eq('user_id', user.id)

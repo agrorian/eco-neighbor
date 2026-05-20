@@ -57,7 +57,7 @@ export default function BusinessOffers() {
 
   const fetchOffers = async () => {
     setLoading(true);
-    const { data: partnerData } = await supabase
+    const { data: partnerData } = await getDb()
       .from('business_partners')
       .select('id')
       .eq('owner_user_id', user.id)
@@ -65,7 +65,7 @@ export default function BusinessOffers() {
 
     if (partnerData?.id) {
       setPartnerId(partnerData.id);
-      const { data: offersData } = await supabase
+      const { data: offersData } = await getDb()
         .from('business_offers')
         .select('*')
         .eq('partner_id', partnerData.id)

@@ -87,7 +87,7 @@ export default function MyHistory() {
     if (!user) return;
     const fetch = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('submissions')
         .select(
           'id, action_type, description, status, enb_awarded, rep_awarded, submitted_at, ' +

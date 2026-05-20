@@ -107,7 +107,7 @@ export default function ModPerformance() {
     setLoadingL1(true);
     const since = getTimeFilter(timeWindow);
 
-    let q = supabase
+    let q = getDb()
       .from('moderator_assignments')
       .select(`
         id, mod1_id, mod2_id, decision1, decision2,
@@ -205,7 +205,7 @@ export default function ModPerformance() {
     setLoadingL2(true);
     const since = getTimeFilter(timeWindow);
 
-    let q = supabase
+    let q = getDb()
       .from('moderator_assignments')
       .select(`
         id, mod1_id, mod2_id, decision1, decision2,

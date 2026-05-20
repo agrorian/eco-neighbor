@@ -82,7 +82,7 @@ function AssignModal({
   useEffect(() => {
     const searchUsers = async () => {
       if (search.length < 2) { setUsers([]); return; }
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('users')
         .select('id, full_name, email, role, neighbourhood, profile_pic_url')
         .ilike('full_name', `%${search}%`)
@@ -262,7 +262,7 @@ export default function MembersTab() {
 
   const fetchAll = useCallback(async () => {
     // Fetch memberships first
-    const { data: memData, error: memErr } = await supabase
+    const { data: memData, error: memErr } = await getDb()
       .from('user_org_memberships')
       .select('*')
       .eq('is_active', true)

@@ -82,7 +82,7 @@ export default function CreateChannelModal({ onCreated, onClose }: CreateChannel
   useEffect(() => {
     if (memberSearch.length < 2) { setSearchResults([]); return; }
     const t = setTimeout(async () => {
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('users')
         .select('id, full_name, role')
         .ilike('full_name', `%${memberSearch}%`)
@@ -129,7 +129,7 @@ export default function CreateChannelModal({ onCreated, onClose }: CreateChannel
     setError('');
 
     // 1. Create channel
-    const { data: channel, error: chanErr } = await supabase
+    const { data: channel, error: chanErr } = await getDb()
       .from('channels')
       .insert({
         name: name.trim(),

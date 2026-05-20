@@ -190,7 +190,7 @@ function NewMessageModal({ currentUserId, onSelect, onClose }: {
     const searchUsers = async () => {
       if (search.length < 2) { setUsers([]); return; }
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('users')
         .select('id, full_name, profile_pic_url, role, neighbourhood, last_seen')
         .neq('id', currentUserId)
@@ -291,7 +291,7 @@ export default function MessagesPage() {
   const fetchConversations = useCallback(async () => {
     if (!user) return;
 
-    const { data: msgs } = await supabase
+    const { data: msgs } = await getDb()
       .from('messages')
       .select('*')
       .eq('message_type', 'direct')
@@ -312,7 +312,7 @@ export default function MessagesPage() {
     const partnerIds = [...partnerMap.keys()];
     if (partnerIds.length === 0) { setConversations([]); return; }
 
-    const { data: profiles } = await supabase
+    const { data: profiles } = await getDb()
       .from('users')
       .select('id, full_name, profile_pic_url, role, neighbourhood, last_seen')
       .in('id', partnerIds);
@@ -339,7 +339,7 @@ export default function MessagesPage() {
   const fetchMessages = useCallback(async (partnerId: string) => {
     if (!user) return;
     setLoadingMsgs(true);
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('messages')
       .select('*')
       .eq('message_type', 'direct')
@@ -350,7 +350,7 @@ export default function MessagesPage() {
 
     // Mark ALL unread messages from this partner as read
     const now = new Date().toISOString();
-    await supabase
+    await getDb()
       .from('messages')
       .update({ read_at: now })
       .eq('message_type', 'direct')
@@ -372,7 +372,7 @@ export default function MessagesPage() {
     setLoadingChannels(true);
 
     // Get channels user is a member of
-    const { data: memberOf } = await supabase
+    const { data: memberOf } = await getDb()
       .from('channel_members')
       .select('channel_id')
       .eq('user_id', user.id);
@@ -391,7 +391,7 @@ export default function MessagesPage() {
       return;
     }
 
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('channels')
       .select('*')
       .in('id', isSuperAdmin ? [] : channelIds)
@@ -412,7 +412,7 @@ export default function MessagesPage() {
     fetchChannels();
     if (!user) return;
 
-    const channel = supabase
+    const channel = getDb()
       .channel('dm-realtime')
       .on('postgres_changes', {
         event: 'INSERT',

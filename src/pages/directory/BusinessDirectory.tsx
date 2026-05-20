@@ -151,7 +151,7 @@ export default function BusinessDirectory() {
   useEffect(() => {
     const fetchBusinesses = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('business_partners')
         .select('id, business_name, category, address, discount_offer, enb_float, is_active, is_verified, gps_lat, gps_lng')
         .eq('is_active', true)

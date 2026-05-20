@@ -31,12 +31,12 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data: assignedData } = await supabase
+      const { data: assignedData } = await getDb()
         .from('moderator_assignments')
         .select('submission_id');
       const assignedIds = (assignedData || []).map((r: any) => r.submission_id);
 
-      let pendingQuery = supabase
+      let pendingQuery = getDb()
         .from('submissions')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending');

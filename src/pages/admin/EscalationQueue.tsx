@@ -60,7 +60,7 @@ export default function EscalationQueue() {
     setLoading(true);
 
     // Fetch all escalated assignments
-    const { data: assignments } = await supabase
+    const { data: assignments } = await getDb()
       .from('moderator_assignments')
       .select('*')
       .eq('escalation_flag', true);
@@ -73,13 +73,13 @@ export default function EscalationQueue() {
 
     // Fetch submissions
     const subIds = assignments.map(a => a.submission_id);
-    const { data: subs } = await supabase
+    const { data: subs } = await getDb()
       .from('submissions').select('*').in('id', subIds);
     const subMap = new Map((subs || []).map(s => [s.id, s]));
 
     // Fetch mod names
     const modIds = [...new Set(assignments.flatMap(a => [a.mod1_id, a.mod2_id].filter(Boolean)))];
-    const { data: mods } = await supabase
+    const { data: mods } = await getDb()
       .from('users').select('id, full_name').in('id', modIds);
     const modMap = new Map((mods || []).map(m => [m.id, m.full_name]));
 
@@ -126,11 +126,11 @@ export default function EscalationQueue() {
 
     // Pay senior mod 750 ENB
     await getDb().from('users')
-      .update({ enb_local_bal: supabase.rpc as any })
+      .update({ enb_local_bal: getDb().rpc as any })
       .eq('id', user.id);
 
     // Use raw update for senior mod payment
-    const { data: seniorUser } = await supabase
+    const { data: seniorUser } = await getDb()
       .from('users').select('enb_local_bal').eq('id', user.id).single();
     if (seniorUser) {
       await getDb().from('users')

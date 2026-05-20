@@ -155,7 +155,7 @@ export default function App() {
     isLoadingProfile.current = true;
     try {
       // ── Try public schema first ───────────────────────────────────────────
-      const { data: publicData, error: publicError } = await supabase
+      const { data: publicData, error: publicError } = await getDb()
         .from('users').select('*').eq('id', userId).maybeSingle();
 
       if (publicData) {
@@ -190,7 +190,7 @@ export default function App() {
       console.warn('[ENB] 0 rows in both schemas — JWT race. Retrying...');
       for (const delay of [500, 1500, 3000]) {
         await new Promise(r => setTimeout(r, delay));
-        const { data: retryPublic } = await supabase
+        const { data: retryPublic } = await getDb()
           .from('users').select('*').eq('id', userId).maybeSingle();
         if (retryPublic) { setUser(rowToUser(retryPublic, userEmail, 'real')); setDbEnvironment('real'); return; }
 

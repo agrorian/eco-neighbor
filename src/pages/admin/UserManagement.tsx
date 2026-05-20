@@ -156,7 +156,7 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('users')
       .select('id, full_name, email, role, rep_score, enb_local_bal, tier, whatsapp_number, neighbourhood, city, profession, wallet_address, is_active, cnic_number, cnic_photo_url, cnic_verified, cnic_submitted_at, joined_at, updated_at')
       .order('rep_score', { ascending: false });
@@ -244,7 +244,7 @@ export default function UserManagement() {
   const handleVerify = async () => {
     if (!verifyTarget) return;
     setVerifying(true);
-    const { error } = await supabase
+    const { error } = await getDb()
       .from('users')
       .update({ cnic_verified: true })
       .eq('id', verifyTarget.id);
@@ -262,7 +262,7 @@ export default function UserManagement() {
     setDeleteError('');
     try {
       // Step 1: delete from public.users (cascades to all related rows)
-      const { error: dbError } = await supabase
+      const { error: dbError } = await getDb()
         .from('users')
         .delete()
         .eq('id', deleteTarget.id);

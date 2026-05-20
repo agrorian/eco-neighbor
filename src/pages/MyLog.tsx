@@ -563,7 +563,7 @@ export default function MyLog() {
   const fetchLogs = async () => {
     setLoading(true);
     const today = getPKTDate();
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('daily_logs').select('*').eq('user_id', user!.id)
       .order('log_date', { ascending: false }).limit(14);
     if (data) {

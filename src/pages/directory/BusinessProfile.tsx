@@ -55,7 +55,7 @@ export default function BusinessProfile() {
 
   const fetchBusiness = async () => {
     setLoading(true);
-    const { data: biz, error: bizErr } = await supabase
+    const { data: biz, error: bizErr } = await getDb()
       .from('business_partners')
       .select('*')
       .eq('id', id)
@@ -64,7 +64,7 @@ export default function BusinessProfile() {
     if (bizErr || !biz) { setError('Business not found.'); setLoading(false); return; }
     setBusiness(biz);
 
-    const { data: offersData } = await supabase
+    const { data: offersData } = await getDb()
       .from('business_offers')
       .select('*')
       .eq('partner_id', id)

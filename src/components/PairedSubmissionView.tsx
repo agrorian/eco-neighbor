@@ -81,7 +81,7 @@ export default function PairedSubmissionView({ beforeSubmission: sub, onAfterRes
   useEffect(() => {
     const fetchAfter = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('submissions')
         .select('*')
         .eq('parent_submission_id', sub.id)

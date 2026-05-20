@@ -88,7 +88,7 @@ export default function PartnerManager() {
 
   const fetchPartners = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('business_partners')
       .select('*')
       .order('created_at', { ascending: false });
@@ -98,7 +98,7 @@ export default function PartnerManager() {
 
   const fetchReplenishments = async () => {
     setReplenishLoading(true);
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('replenishment_requests')
       .select('*, business_partners(business_name)')
       .eq('status', 'pending')
@@ -113,7 +113,7 @@ export default function PartnerManager() {
 
   const handleApproveReplenishment = async (req: ReplenishmentRequest) => {
     // Step 1: Read current float
-    const { data: bp } = await supabase
+    const { data: bp } = await getDb()
       .from('business_partners')
       .select('enb_float')
       .eq('id', req.business_id)
@@ -122,7 +122,7 @@ export default function PartnerManager() {
     if (!bp) return;
 
     // Step 2: Add top-up amount to current float
-    const { error } = await supabase
+    const { error } = await getDb()
       .from('business_partners')
       .update({
         enb_float: bp.enb_float + req.top_up_amount,
@@ -134,7 +134,7 @@ export default function PartnerManager() {
     if (error) { console.error('Float update error:', error); return; }
 
     // Step 3: Mark request as approved
-    await supabase
+    await getDb()
       .from('replenishment_requests')
       .update({
         status: 'approved',
@@ -149,7 +149,7 @@ export default function PartnerManager() {
   };
 
   const handleRejectReplenishment = async (req: ReplenishmentRequest) => {
-    await supabase
+    await getDb()
       .from('replenishment_requests')
       .update({ status: 'rejected', reviewed_at: new Date().toISOString(), admin_note: replenishNote || 'Rejected by admin.' })
       .eq('id', req.id);
@@ -158,7 +158,7 @@ export default function PartnerManager() {
   };
 
   const handleApprove = async (id: string) => {
-    await supabase
+    await getDb()
       .from('business_partners')
       .update({ is_verified: true, is_active: true })
       .eq('id', id);
@@ -182,7 +182,7 @@ export default function PartnerManager() {
 
     // Update float — write to both enb_float and enb_float_allocated
     const newFloat = parseInt(editFloat) || selectedPartner.enb_float;
-    const { error: floatError } = await supabase
+    const { error: floatError } = await getDb()
       .from('business_partners')
       .update({
         enb_float: newFloat,
@@ -195,14 +195,14 @@ export default function PartnerManager() {
     // Update email if provided (admin only action)
     if (editEmail.trim() && editEmail.includes('@')) {
       // Update in users table
-      const { data: ownerData } = await supabase
+      const { data: ownerData } = await getDb()
         .from('business_partners')
         .select('owner_user_id')
         .eq('id', selectedPartner.id)
         .single();
 
       if (ownerData?.owner_user_id) {
-        await supabase
+        await getDb()
           .from('users')
           .update({ email: editEmail.trim().toLowerCase() })
           .eq('id', ownerData.owner_user_id);
@@ -221,7 +221,7 @@ export default function PartnerManager() {
   };
 
   const handleSuspend = async (id: string) => {
-    await supabase
+    await getDb()
       .from('business_partners')
       .update({ is_active: false })
       .eq('id', id);

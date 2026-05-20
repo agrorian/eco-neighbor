@@ -119,7 +119,7 @@ async function checkGpsDuplicate(
 ): Promise<boolean> {
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await supabase
+    const { data, error } = await getDb()
       .from('submissions')
       .select('gps_lat, gps_lng')
       .eq('user_id', userId)
@@ -306,7 +306,7 @@ export default function SubmitAction() {
       // The more context Gemini has, the more autonomously it can decide.
       let userVerifiedCount = 0;
       try {
-        const { count } = await supabase
+        const { count } = await getDb()
           .from('submissions')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
@@ -436,7 +436,7 @@ export default function SubmitAction() {
       // ── Wire linked job code → job_requests.submission_id ───────────────
       if (actionKey === 'trade_job' && formData.linkedJobCode) {
         try {
-          const { data: newSub } = await supabase
+          const { data: newSub } = await getDb()
             .from('submissions')
             .select('id')
             .eq('user_id', user.id)
@@ -446,7 +446,7 @@ export default function SubmitAction() {
             .single();
 
           if (newSub?.id) {
-            await supabase
+            await getDb()
               .from('job_requests')
               .update({ submission_id: newSub.id })
               .eq('job_code', formData.linkedJobCode.trim().toUpperCase())
@@ -460,7 +460,7 @@ export default function SubmitAction() {
       // ── Save captain's passenger rating if provided ──────────────────────
       if (isCarpool && rideSession?.passengerRating && user?.id) {
         try {
-          const { data: sub } = await supabase
+          const { data: sub } = await getDb()
             .from('submissions')
             .select('id')
             .eq('ride_token', rideSession.rideToken)

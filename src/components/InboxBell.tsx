@@ -19,7 +19,7 @@ export default function InboxBell() {
   const calcUnread = async () => {
     if (!user?.id || !storageKey) return;
 
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('messages')
       .select('id')
       .or(
@@ -43,7 +43,7 @@ export default function InboxBell() {
     if (location.pathname !== '/inbox') return;
 
     const markAllRead = async () => {
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('messages')
         .select('id')
         .or(
@@ -72,7 +72,7 @@ export default function InboxBell() {
 
     calcUnread();
 
-    const channel = supabase
+    const channel = getDb()
       .channel('inbox-bell')
       .on('postgres_changes', {
         event: 'INSERT',

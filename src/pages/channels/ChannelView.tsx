@@ -327,7 +327,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
     if (!msgs.length || !user) return msgs;
     const ids = msgs.map(m => m.id);
 
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('message_reactions')
       .select('message_id, emoji, user_id')
       .in('message_id', ids);
@@ -356,7 +356,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
 
   // ── Fetch messages ────────────────────────────────────────────────────────
   const fetchMessages = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('messages')
       .select('id, sender_id, content, created_at, is_pinned, pinned_by, pinned_at')
       .eq('message_type', 'channel')
@@ -367,7 +367,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
     if (!data?.length) { setMessages([]); setPinnedMsg(null); return; }
 
     const senderIds = [...new Set(data.map(m => m.sender_id))];
-    const { data: profiles } = await supabase
+    const { data: profiles } = await getDb()
       .from('users')
       .select('id, full_name, profile_pic_url, role')
       .in('id', senderIds);
@@ -393,7 +393,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   useEffect(() => {
     const checkMembership = async () => {
       if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
-      const { data } = await supabase
+      const { data } = await getDb()
         .from('channel_members')
         .select('user_id, role')
         .eq('channel_id', channel.id)
@@ -403,7 +403,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
     };
 
     const fetchMemberCount = async () => {
-      const { count } = await supabase
+      const { count } = await getDb()
         .from('channel_members')
         .select('*', { count: 'exact', head: true })
         .eq('channel_id', channel.id);
@@ -421,7 +421,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
 
   // ── Realtime ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    const ch = supabase
+    const ch = getDb()
       .channel(`channel-${channel.id}`)
       .on('postgres_changes', {
         event: '*',
@@ -460,7 +460,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
     if (!html.trim() || !user || sending || !canPost) return;
     setSending(true);
 
-    const { data: inserted } = await supabase
+    const { data: inserted } = await getDb()
       .from('messages')
       .insert({
         sender_id:    user.id,
@@ -480,7 +480,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
 
       if (mentioned.length > 0) {
         // Find users in channel matching the mentioned names
-        const { data: members } = await supabase
+        const { data: members } = await getDb()
           .from('channel_members')
           .select('user_id, users(id, full_name)')
           .eq('channel_id', channel.id)
@@ -521,7 +521,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
     const existing = msg?.reactions?.find(r => r.emoji === emoji && r.reacted);
 
     if (existing) {
-      await supabase
+      await getDb()
         .from('message_reactions')
         .delete()
         .eq('message_id', msgId)
@@ -542,20 +542,20 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
     if (!user || !canPin) return;
 
     // Unpin any currently pinned message first
-    await supabase
+    await getDb()
       .from('messages')
       .update({ is_pinned: false, pinned_by: null, pinned_at: null })
       .eq('channel_id', channel.id)
       .eq('is_pinned', true);
 
     // Pin new message
-    await supabase
+    await getDb()
       .from('messages')
       .update({ is_pinned: true, pinned_by: user.id, pinned_at: new Date().toISOString() })
       .eq('id', msgId);
 
     // L7: notify all channel members of new pin
-    const { data: members } = await supabase
+    const { data: members } = await getDb()
       .from('channel_members')
       .select('user_id')
       .eq('channel_id', channel.id)
@@ -581,7 +581,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   // ── Unpin message ─────────────────────────────────────────────────────────
   const handleUnpin = async (msgId: string) => {
     if (!user || !canPin) return;
-    await supabase
+    await getDb()
       .from('messages')
       .update({ is_pinned: false, pinned_by: null, pinned_at: null })
       .eq('id', msgId);

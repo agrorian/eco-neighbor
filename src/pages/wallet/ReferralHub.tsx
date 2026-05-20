@@ -38,7 +38,7 @@ export default function ReferralHub() {
         const generated = `ENB-${(user.full_name || user.email || 'ENB')
           .toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 4)}-${user.id.slice(0, 4).toUpperCase()}`;
 
-        const { error } = await supabase
+        const { error } = await getDb()
           .from('users')
           .update({ referral_code: generated })
           .eq('id', user.id);

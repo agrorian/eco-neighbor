@@ -17,7 +17,7 @@ const ActiveCampaignBanner = () => {
   React.useEffect(() => {
     const fetchCampaign = async () => {
       try {
-        const { data } = await supabase
+        const { data } = await getDb()
           .from('campaigns')
           .select('name, multiplier, ends_at')
           .eq('is_active', true)
@@ -123,7 +123,7 @@ const ImpactCounter = () => {
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { count: approvedCount } = await supabase
+        const { count: approvedCount } = await getDb()
           .from('submissions')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'approved');
@@ -146,7 +146,7 @@ const ImpactCounter = () => {
     setLoading(true);
     setRows([]);
     // CORRECT column names: enb_awarded (not enb_earned), submitted_at (not created_at)
-    const { data: submissions } = await supabase
+    const { data: submissions } = await getDb()
       .from('submissions')
       .select('id, user_id, action_type, neighbourhood, enb_awarded, submitted_at')
       .eq('status', 'approved')
@@ -156,7 +156,7 @@ const ImpactCounter = () => {
     if (!submissions || submissions.length === 0) { setLoading(false); return; }
 
     const uniqueUserIds = [...new Set(submissions.map((s: any) => s.user_id).filter(Boolean))];
-    const { data: usersData } = await supabase
+    const { data: usersData } = await getDb()
       .from('users').select('id, full_name').in('id', uniqueUserIds);
 
     const nameMap: Record<string, string> = {};
@@ -278,7 +278,7 @@ const RecentActivity = () => {
     if (!user?.id) return;
     const fetchTx = async () => {
       try {
-        const { data } = await supabase
+        const { data } = await getDb()
           .from('transactions')
           .select('id, description, enb_amount, rep_change, created_at, type')
           .eq('user_id', user.id)

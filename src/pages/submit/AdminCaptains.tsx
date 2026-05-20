@@ -46,14 +46,14 @@ export default function AdminCaptains() {
 
   const fetchApps = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('captain_applications')
       .select('*')
       .order('applied_at', { ascending: false });
 
     if (data && data.length > 0) {
       const userIds = data.map(a => a.user_id);
-      const { data: users } = await supabase
+      const { data: users } = await getDb()
         .from('users')
         .select('id, full_name, email, rep_score')
         .in('id', userIds);
@@ -85,7 +85,7 @@ export default function AdminCaptains() {
   const handleApprove = async (app: CaptainApp) => {
     if (selectedVehicles.length === 0) { alert('Select at least one vehicle type to approve.'); return; }
     setSaving(app.id);
-    await supabase
+    await getDb()
       .from('captain_applications')
       .update({
         status: 'approved',
@@ -103,7 +103,7 @@ export default function AdminCaptains() {
   const handleReject = async (app: CaptainApp) => {
     if (!adminNote.trim()) { alert('Please add a reason for rejection.'); return; }
     setSaving(app.id);
-    await supabase
+    await getDb()
       .from('captain_applications')
       .update({
         status: 'rejected',
@@ -120,7 +120,7 @@ export default function AdminCaptains() {
   const handleSuspend = async (app: CaptainApp) => {
     if (!adminNote.trim()) { alert('Please add a reason for suspension.'); return; }
     setSaving(app.id);
-    await supabase
+    await getDb()
       .from('captain_applications')
       .update({
         status: 'suspended',

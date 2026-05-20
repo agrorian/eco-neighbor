@@ -273,7 +273,7 @@ export default function AfterPhotoSubmission({
         aiVerdict === 'reject'  && aiConfidence >= 0.85 ? 'rejected' : // threshold: 0.85
         'pending';
 
-      const { data: afterRec, error: insertErr } = await supabase
+      const { data: afterRec, error: insertErr } = await getDb()
         .from('submissions')
         .insert({
           user_id: user.id,
@@ -302,7 +302,7 @@ export default function AfterPhotoSubmission({
 
       // ⚠️ CRITICAL: await this update before calling onSuccess()
       // Otherwise SubmissionDetail re-fetches Before while after_submitted is still false
-      const { error: updateErr, count: updateCount } = await supabase
+      const { error: updateErr, count: updateCount } = await getDb()
         .from('submissions')
         .update({ after_submitted: true, after_submission_id: afterRec.id })
         .eq('id', submissionId)
@@ -321,7 +321,7 @@ export default function AfterPhotoSubmission({
 
       // Assign the SAME two moderators to the After submission as the Before.
       // This ensures both mods see Before + After side-by-side in their queue.
-      const { data: beforeAssignment } = await supabase
+      const { data: beforeAssignment } = await getDb()
         .from('moderator_assignments')
         .select('mod1_id, mod2_id')
         .eq('submission_id', submissionId)
@@ -329,7 +329,7 @@ export default function AfterPhotoSubmission({
         .maybeSingle();
 
       if (beforeAssignment?.mod1_id && beforeAssignment?.mod2_id) {
-        await supabase
+        await getDb()
           .from('moderator_assignments')
           .insert({
             submission_id: afterRec.id,

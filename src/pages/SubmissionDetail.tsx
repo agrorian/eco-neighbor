@@ -56,7 +56,7 @@ export default function SubmissionDetail() {
 
   const fetchSubmission = async (subId: string) => {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('submissions')
       .select('*')
       .eq('id', subId)
@@ -74,12 +74,12 @@ export default function SubmissionDetail() {
         // Fall back to parent_submission_id query ordered by most recent
         const afterId = data.after_submission_id;
         const { data: afterData } = afterId
-          ? await supabase
+          ? await getDb()
               .from('submissions')
               .select('*')
               .eq('id', afterId)
               .maybeSingle()
-          : await supabase
+          : await getDb()
               .from('submissions')
               .select('*')
               .eq('parent_submission_id', subId)

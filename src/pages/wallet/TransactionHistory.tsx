@@ -24,7 +24,7 @@ export default function TransactionHistory() {
   const fetchTransactions = async () => {
     if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await getDb()
       .from('transactions')
       .select('id, type, enb_amount, rep_change, description, created_at')
       .eq('user_id', user.id)
@@ -38,7 +38,7 @@ export default function TransactionHistory() {
     fetchTransactions();
 
     // Real-time subscription — new transactions appear instantly
-    const channel = supabase
+    const channel = getDb()
       .channel(`transactions-${user.id}`)
       .on(
         'postgres_changes',
