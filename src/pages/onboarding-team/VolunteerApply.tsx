@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, Navigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 export default function VolunteerApply() {
@@ -34,7 +34,7 @@ export default function VolunteerApply() {
     if (!motivation.trim()) { setError('Please tell us why you want to join.'); return; }
     setLoading(true); setError('');
 
-    const { error: dbError } = await supabase.from('volunteer_applications').insert({
+    const { error: dbError } = await getDb().from('volunteer_applications').insert({
       user_id: user.id,
       role_applied: 'onboarding_team',
       motivation: motivation.trim(),

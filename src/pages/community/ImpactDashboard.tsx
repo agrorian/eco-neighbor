@@ -4,7 +4,7 @@ import { Leaf, Users, Store, CheckCircle, Share2, Coins, Apple, Flame, BarChart2
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useT } from '@/contexts/LanguageContext';
 
 interface Stats {
@@ -58,14 +58,14 @@ export default function ImpactDashboard() {
 
       // Step 1: Core counts
       const [usersRes, approvedRes, pendingRes, partnersRes] = await Promise.all([
-        supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
-        supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('business_partners').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        getDb().from('users').select('id', { count: 'exact', head: true }),
+        getDb().from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+        getDb().from('submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        getDb().from('business_partners').select('id', { count: 'exact', head: true }).eq('is_active', true),
       ]);
 
       // Step 2: ENB distributed from users lifetime_earned
-      const { data: enbData } = await supabase.from('users').select('lifetime_earned');
+      const { data: enbData } = await getDb().from('users').select('lifetime_earned');
       const totalEnb = (enbData || []).reduce((sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0);
 
       // Step 3: Food donations

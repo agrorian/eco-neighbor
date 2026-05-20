@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bug, ChevronDown, ChevronUp, ExternalLink, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 const SEVERITY_COLORS: Record<string, string> = {
   critical:   'bg-red-100 text-red-700 border-red-200',
@@ -65,13 +65,13 @@ export default function AdminBugReports() {
   useEffect(() => { fetchReports(); }, []);
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('bug_reports').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+    await getDb().from('bug_reports').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
     setReports(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   const saveNote = async (id: string) => {
     setSaving(id);
-    await supabase.from('bug_reports').update({
+    await getDb().from('bug_reports').update({
       admin_note: adminNotes[id] || null,
       updated_at: new Date().toISOString()
     }).eq('id', id);

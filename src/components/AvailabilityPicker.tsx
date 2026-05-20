@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Clock, Calendar, Check, X, Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 // ── AvailabilityPicker — two-tab visual-first availability setter ─────────────
@@ -89,7 +89,7 @@ export default function AvailabilityPicker({
       availability = 'busy';
     }
 
-    await supabase.from('users').update({
+    await getDb().from('users').update({
       trade_availability: availability,
       trade_availability_until: until,
       trade_availability_updated_at: new Date().toISOString(),
@@ -109,7 +109,7 @@ export default function AvailabilityPicker({
     DAYS.forEach(d => { if (schedule[d.key]) activeSchedule[d.key] = schedule[d.key]; });
     const hasSchedule = Object.keys(activeSchedule).length > 0;
 
-    await supabase.from('users').update({
+    await getDb().from('users').update({
       trade_availability_schedule: hasSchedule ? activeSchedule : null,
       trade_availability_updated_at: new Date().toISOString(),
     }).eq('id', user.id);
@@ -122,7 +122,7 @@ export default function AvailabilityPicker({
   const handleClear = async () => {
     if (!user) return;
     setSaving(true);
-    await supabase.from('users').update({
+    await getDb().from('users').update({
       trade_availability: 'not_set',
       trade_availability_until: null,
       trade_availability_schedule: null,

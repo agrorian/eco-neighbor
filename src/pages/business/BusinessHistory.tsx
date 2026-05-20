@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { History, Loader2, TrendingUp, Calendar } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { Navigate } from 'react-router-dom';
 
@@ -24,7 +24,7 @@ export default function BusinessHistory() {
 
   const fetchHistory = async () => {
     setLoading(true);
-    const { data } = await supabase.rpc('get_business_redemption_history', {
+    const { data } = await getDb().rpc('get_business_redemption_history', {
       p_user_id: user!.id,
       p_limit: 100,
     });

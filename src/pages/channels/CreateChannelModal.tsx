@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Hash, Megaphone, Lock, Check, Search, Minus, Plus } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface Department { id: string; name: string; icon: string | null; }
@@ -69,8 +69,8 @@ export default function CreateChannelModal({ onCreated, onClose }: CreateChannel
   useEffect(() => {
     const fetchOptions = async () => {
       const [deptsRes, regionsRes] = await Promise.all([
-        supabase.from('departments').select('id, name, icon').eq('is_active', true).order('name'),
-        supabase.from('regions').select('id, name, level, parent_id').order('name'),
+        getDb().from('departments').select('id, name, icon').eq('is_active', true).order('name'),
+        getDb().from('regions').select('id, name, level, parent_id').order('name'),
       ]);
       setDepartments(deptsRes.data || []);
       setRegions(regionsRes.data || []);
@@ -152,7 +152,7 @@ export default function CreateChannelModal({ onCreated, onClose }: CreateChannel
     }
 
     // 2. Add creator as admin
-    await supabase.from('channel_members').insert({
+    await getDb().from('channel_members').insert({
       channel_id: channel.id,
       user_id: user.id,
       role: 'admin',
@@ -160,7 +160,7 @@ export default function CreateChannelModal({ onCreated, onClose }: CreateChannel
 
     // 3. Add selected members
     if (selectedMembers.length > 0) {
-      await supabase.from('channel_members').insert(
+      await getDb().from('channel_members').insert(
         selectedMembers.map(m => ({
           channel_id: channel.id,
           user_id: m.id,

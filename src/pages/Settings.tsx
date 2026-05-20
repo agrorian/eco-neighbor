@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Bell, Shield, HelpCircle, LogOut, MessageCircle, Save, User, KeyRound, Camera, Loader2 } from 'lucide-react';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLang, useT } from '@/contexts/LanguageContext';
 import { PROFESSIONS } from '@/lib/constants';
@@ -84,7 +84,7 @@ export default function Settings() {
       profile_pic_url: profilePic || null,
     };
 
-    const { error } = await supabase.from('users').update(updates).eq('id', user.id);
+    const { error } = await getDb().from('users').update(updates).eq('id', user.id);
 
     if (error) { setProfileError(l('settings', 'saveError')); setSaving(false); return; }
 

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { Navigate } from 'react-router-dom';
 
@@ -124,7 +124,7 @@ export default function OnboardingQueue() {
 
   const markContacted = async (appId: string) => {
     setSaving(appId);
-    await supabase.rpc('mark_application_contacted', {
+    await getDb().rpc('mark_application_contacted', {
       p_application_id: appId,
       p_team_member_id: user!.id,
       p_notes: notes || null,
@@ -148,7 +148,7 @@ export default function OnboardingQueue() {
     }
 
     setSaving(appId);
-    await supabase.rpc('submit_onboarding_complete', {
+    await getDb().rpc('submit_onboarding_complete', {
       p_application_id: appId,
       p_team_member_id: user!.id,
       p_owner_name: ownerName,

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 const SCREENS = [
@@ -68,7 +68,7 @@ export default function BugReport() {
     setError('');
     try {
       const browserInfo = `${navigator.userAgent.substring(0, 120)}`;
-      const { error: dbError } = await supabase.from('bug_reports').insert({
+      const { error: dbError } = await getDb().from('bug_reports').insert({
         title: title.trim(),
         description: description.trim(),
         screen,

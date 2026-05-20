@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser';
 
@@ -57,7 +57,7 @@ export default function ScanRedemption() {
     setProcessing(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.rpc('confirm_redemption', {
+      const { data, error } = await getDb().rpc('confirm_redemption', {
         p_qr_code: code.trim(),
       });
       if (error) throw error;

@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link, Navigate } from 'react-router-dom';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 export default function FounderHardship() {
   const { user } = useUserStore();
@@ -21,7 +21,7 @@ export default function FounderHardship() {
     setSubmitting(true);
     setError('');
     try {
-      const { error } = await supabase.from('hardship_applications').insert({
+      const { error } = await getDb().from('hardship_applications').insert({
         founder_id: user.id,
         reason: reason.trim(),
         status: 'PENDING',

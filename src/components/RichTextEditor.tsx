@@ -3,7 +3,7 @@
 // Tiptap v3 + React 19
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -322,7 +322,7 @@ export default function RichTextEditor({
       target_audience: 'all',
     }));
 
-    await supabase.from('messages').insert(notifications);
+    await getDb().from('messages').insert(notifications);
   }, [currentUserId, channelId, extractMentionIds]);
 
   const [editorHtml, setEditorHtml] = useState('<p></p>');

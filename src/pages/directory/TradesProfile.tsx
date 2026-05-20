@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Phone, Loader2, AlertTriangle, CheckCircle, Star, Briefcase, MapPin, Calendar, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import StarRating from '@/components/StarRating';
 import { TRADE_EMOJI, TRADE_LABEL } from './TradesDirectory';
@@ -296,7 +296,7 @@ export default function TradesProfile() {
 
     const message = REQUEST_MESSAGE[primaryTrade] || REQUEST_MESSAGE.general;
 
-    await supabase.from('messages').insert({
+    await getDb().from('messages').insert({
       sender_id: currentUser.id,
       recipient_id: userId,
       message_type: 'direct',

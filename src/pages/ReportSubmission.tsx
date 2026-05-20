@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const CATEGORIES = [
@@ -33,7 +33,7 @@ export default function ReportSubmission() {
     setSubmitting(true);
     setError('');
     try {
-      const { data, error } = await supabase.rpc('file_report', {
+      const { data, error } = await getDb().rpc('file_report', {
         p_reporter_id: user.id,
         p_target_id: targetId,
         p_submission_id: submissionId || null,

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import ActionSelector from './submit/ActionSelector';
 import ActionForm from './submit/ActionForm';
 import SubmissionReview from './submit/SubmissionReview';
@@ -170,7 +170,7 @@ async function checkGpsBoundary(
       .filter((t): t is string => !!t && t.length > 2);
 
     for (const term of searchTerms) {
-      const { data, error } = await supabase.rpc('check_point_in_boundary', {
+      const { data, error } = await getDb().rpc('check_point_in_boundary', {
         p_lat: lat,
         p_lng: lng,
         p_name: term,
@@ -380,7 +380,7 @@ export default function SubmitAction() {
         }
       }
 
-      const { error } = await supabase.from('submissions').insert({
+      const { error } = await getDb().from('submissions').insert({
         user_id: user.id,
         action_type: actionKey,
         description: formData.description,
@@ -468,7 +468,7 @@ export default function SubmitAction() {
             .single();
 
           if (sub?.id) {
-            await supabase.rpc('submit_captain_passenger_rating', {
+            await getDb().rpc('submit_captain_passenger_rating', {
               p_submission_id:  sub.id,
               p_captain_id:     user.id,
               p_rating:         rideSession.passengerRating,

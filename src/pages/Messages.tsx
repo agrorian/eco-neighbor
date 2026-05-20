@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, ArrowLeft, MessageCircle, Circle, Hash } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import ChannelsSidebar from './channels/ChannelsSidebar';
 import ChannelView from './channels/ChannelView';
@@ -382,7 +382,7 @@ export default function MessagesPage() {
     if (channelIds.length === 0) {
       // SA can see all channels
       if (isSuperAdmin) {
-        const { data } = await supabase.from('channels').select('*').eq('is_active', true).order('name');
+        const { data } = await getDb().from('channels').select('*').eq('is_active', true).order('name');
         setChannels(data || []);
       } else {
         setChannels([]);
@@ -400,7 +400,7 @@ export default function MessagesPage() {
 
     // SA sees all
     if (isSuperAdmin) {
-      const { data: all } = await supabase.from('channels').select('*').eq('is_active', true).order('name');
+      const { data: all } = await getDb().from('channels').select('*').eq('is_active', true).order('name');
       setChannels(all || []);
     } else {
       setChannels(data || []);
@@ -428,7 +428,7 @@ export default function MessagesPage() {
             (msg.sender_id === partner.id || msg.recipient_id === partner.id)) {
             setMessages(prev => [...prev, msg]);
             if (msg.sender_id === partner.id) {
-              supabase.from('messages').update({ read_at: new Date().toISOString() })
+              getDb().from('messages').update({ read_at: new Date().toISOString() })
                 .eq('id', msg.id).then(() => {});
             }
           }
@@ -456,7 +456,7 @@ export default function MessagesPage() {
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => getDb().removeChannel(channel);
   }, [fetchConversations, fetchChannels, user]);
 
   // ── Open conversation ─────────────────────────────────────────────────────
@@ -477,7 +477,7 @@ export default function MessagesPage() {
     if (!content || !activePartner || !user || sending) return;
     setSending(true);
 
-    const { error } = await supabase.from('messages').insert({
+    const { error } = await getDb().from('messages').insert({
       sender_id: user.id,
       recipient_id: activePartner.id,
       message_type: 'direct',

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Shield, ArrowDownLeft, RefreshCw, Leaf, Gift, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useT } from '@/contexts/LanguageContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface Transaction {
@@ -57,7 +57,7 @@ export default function TransactionHistory() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      getDb().removeChannel(channel);
     };
   }, [user?.id]);
 

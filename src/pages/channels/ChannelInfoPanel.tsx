@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Hash, Megaphone, Lock, Users, Search, Plus,
   Pencil, Check, Shield, Trash2, LogOut, ChevronDown } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -189,21 +189,21 @@ export default function ChannelInfoPanel({
   // ── Save name ──────────────────────────────────────────────────────────────
   const saveName = async () => {
     if (!nameVal.trim()) return;
-    await supabase.from('channels').update({ name: nameVal.trim() }).eq('id', channel.id);
+    await getDb().from('channels').update({ name: nameVal.trim() }).eq('id', channel.id);
     setEditingName(false);
     onChannelUpdated({ name: nameVal.trim() });
   };
 
   // ── Save description ───────────────────────────────────────────────────────
   const saveDesc = async () => {
-    await supabase.from('channels').update({ description: descVal.trim() || null }).eq('id', channel.id);
+    await getDb().from('channels').update({ description: descVal.trim() || null }).eq('id', channel.id);
     setEditingDesc(false);
     onChannelUpdated({ description: descVal.trim() || null });
   };
 
   // ── Save posting mode ──────────────────────────────────────────────────────
   const saveMode = async (mode: string) => {
-    await supabase.from('channels').update({ posting_mode: mode }).eq('id', channel.id);
+    await getDb().from('channels').update({ posting_mode: mode }).eq('id', channel.id);
     setModeVal(mode);
     setEditingMode(false);
     onChannelUpdated({ posting_mode: mode });
@@ -213,7 +213,7 @@ export default function ChannelInfoPanel({
   const addMember = async (u: SearchUser) => {
     setAddingMember(true);
     const role = u.role === 'admin' ? 'admin' : 'member';
-    await supabase.from('channel_members').insert({
+    await getDb().from('channel_members').insert({
       channel_id: channel.id,
       user_id:    u.id,
       role,
@@ -226,7 +226,7 @@ export default function ChannelInfoPanel({
 
   // ── Change member role ─────────────────────────────────────────────────────
   const changeMemberRole = async (userId: string, newRole: string) => {
-    await supabase.from('channel_members')
+    await getDb().from('channel_members')
       .update({ role: newRole })
       .eq('channel_id', channel.id)
       .eq('user_id', userId);
@@ -235,7 +235,7 @@ export default function ChannelInfoPanel({
 
   // ── Remove member ──────────────────────────────────────────────────────────
   const removeMember = async (userId: string) => {
-    await supabase.from('channel_members')
+    await getDb().from('channel_members')
       .delete()
       .eq('channel_id', channel.id)
       .eq('user_id', userId);
@@ -245,7 +245,7 @@ export default function ChannelInfoPanel({
   // ── Leave channel ──────────────────────────────────────────────────────────
   const leaveChannel = async () => {
     if (!user) return;
-    await supabase.from('channel_members')
+    await getDb().from('channel_members')
       .delete()
       .eq('channel_id', channel.id)
       .eq('user_id', user.id);
@@ -256,7 +256,7 @@ export default function ChannelInfoPanel({
   const deleteChannel = async () => {
     if (!canManageFully) return;
     if (!confirm('Delete this channel? This cannot be undone.')) return;
-    await supabase.from('channels').delete().eq('id', channel.id);
+    await getDb().from('channels').delete().eq('id', channel.id);
     onChannelDeleted();
   };
 

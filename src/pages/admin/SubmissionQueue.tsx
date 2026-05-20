@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, MapPin, Loader2, RefreshCw, MessageCircle, User }
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface Submission {
@@ -105,7 +105,7 @@ export default function SubmissionQueue() {
     if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     setProcessing(item.id);
     try {
-      const { data, error } = await supabase.rpc('approve_submission', {
+      const { data, error } = await getDb().rpc('approve_submission', {
         p_submission_id: item.id,
         p_moderator_id: user.id,
         p_enb_amount: item.enb_awarded,
@@ -129,7 +129,7 @@ export default function SubmissionQueue() {
     if (!rejectReason || !user) return;
     setProcessing(item.id);
     try {
-      const { data, error } = await supabase.rpc('reject_submission', {
+      const { data, error } = await getDb().rpc('reject_submission', {
         p_submission_id: item.id,
         p_moderator_id: user.id,
         p_reason: rejectReason,

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 function formatCnic(val: string) {
   const digits = val.replace(/\D/g, '').slice(0, 13);
@@ -39,7 +39,7 @@ export default function BusinessSettings() {
 
   useEffect(() => {
     if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
-    supabase.from('business_partners').select('*').eq('owner_user_id', user.id).single()
+    getDb().from('business_partners').select('*').eq('owner_user_id', user.id).single()
       .then(({ data }) => {
         if (data) {
           setPartnerId(data.id);
@@ -76,7 +76,7 @@ export default function BusinessSettings() {
   const handleSave = async () => {
     if (!partnerId) return;
     setSaving(true); setError(''); setSaved(false);
-    const { error: dbError } = await supabase.from('business_partners').update({
+    const { error: dbError } = await getDb().from('business_partners').update({
       business_name: businessName.trim(),
       address: address.trim() || null,
       phone: phone.trim() || null,

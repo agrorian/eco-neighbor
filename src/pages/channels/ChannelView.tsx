@@ -6,7 +6,7 @@ import {
   Hash, Users, Megaphone, Lock, ArrowLeft, Info,
   Pin, SmilePlus, X, Bell, BellOff,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import ChannelInfoPanel from './ChannelInfoPanel';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -435,7 +435,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
         table: 'message_reactions',
       }, () => fetchMessages()) // refresh reactions on any change
       .subscribe();
-    return () => supabase.removeChannel(ch);
+    return () => getDb().removeChannel(ch);
   }, [channel.id, fetchMessages]);
 
   // ── Scroll to bottom ──────────────────────────────────────────────────────
@@ -447,7 +447,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
   const joinChannel = async () => {
     if (!user?.id) return;  // ENB DOCTRINE: guard user.id not just user
     const role = isSuperAdmin ? 'admin' : 'member';
-    await supabase.from('channel_members').insert({
+    await getDb().from('channel_members').insert({
       channel_id: channel.id,
       user_id: user.id,
       role,
@@ -495,7 +495,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
 
         if (toNotify.length > 0) {
           // Inbox reads message_type='mention' rows — no separate notifications table
-          await supabase.from('messages').insert(
+          await getDb().from('messages').insert(
             toNotify.map((uid: string) => ({
               sender_id:    user.id,
               recipient_id: uid,
@@ -528,7 +528,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
         .eq('user_id', user.id)
         .eq('emoji', emoji);
     } else {
-      await supabase.from('message_reactions').insert({
+      await getDb().from('message_reactions').insert({
         message_id: msgId,
         user_id:    user.id,
         emoji,
@@ -563,7 +563,7 @@ export default function ChannelView({ channel, onBack }: ChannelViewProps) {
 
     if (members?.length) {
       // Inbox reads message_type='mention' rows — no separate notifications table
-      await supabase.from('messages').insert(
+      await getDb().from('messages').insert(
         members.map((m: any) => ({
           sender_id:    user.id,
           recipient_id: m.user_id,

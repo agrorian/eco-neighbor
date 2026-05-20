@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { BUSINESS_CATEGORIES as CATEGORIES } from '@/lib/constants';
 
 interface Partner {
@@ -271,7 +271,7 @@ export default function PartnerManager() {
       }
 
       // Step 2: Upsert users row with business role
-      await supabase.from('users').upsert({
+      await getDb().from('users').upsert({
         id: userId,
         email: form.email.trim().toLowerCase(),
         full_name: form.business_name,
@@ -285,7 +285,7 @@ export default function PartnerManager() {
       }, { onConflict: 'id' });
 
       // Step 3: Insert business_partners row
-      const { error: partnerError } = await supabase.from('business_partners').insert({
+      const { error: partnerError } = await getDb().from('business_partners').insert({
         owner_user_id: userId,
         business_name: form.business_name.trim(),
         category: form.category,

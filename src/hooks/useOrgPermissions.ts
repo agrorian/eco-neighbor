@@ -3,7 +3,7 @@
 // Usage: const { can, isInDept, isInRegion, memberships, loading } = useOrgPermissions()
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -112,10 +112,10 @@ export function useOrgPermissions(): UseOrgPermissionsReturn {
     const roleIds   = [...new Set(data.map(m => m.org_role_id).filter(Boolean))];
 
     const [deptsRes, regionsRes, rolesRes] = await Promise.all([
-      supabase.from('departments').select('id, name, icon').in('id', deptIds),
-      supabase.from('regions').select('id, name, level').in('id', regionIds),
+      getDb().from('departments').select('id, name, icon').in('id', deptIds),
+      getDb().from('regions').select('id, name, level').in('id', regionIds),
       roleIds.length
-        ? supabase.from('org_roles').select('id, name, permissions').in('id', roleIds)
+        ? getDb().from('org_roles').select('id, name, permissions').in('id', roleIds)
         : Promise.resolve({ data: [] }),
     ]);
 

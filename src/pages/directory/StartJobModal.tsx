@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Loader2, Copy, Check, AlertTriangle, MessageCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { useNavigate } from 'react-router-dom';
 import { TRADE_EMOJI, TRADE_LABEL } from './TradesDirectory';
@@ -68,7 +68,7 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
 
     const code = generateCode();
 
-    const { error } = await supabase.from('job_requests').insert({
+    const { error } = await getDb().from('job_requests').insert({
       job_code: code,
       tradesperson_id: tradespersonId,
       trade_type: selectedTrade,
@@ -101,7 +101,7 @@ export default function StartJobModal({ tradespersonId, tradespersonName, tradeT
     setMessageSending(true);
     const url = `${window.location.origin}/job/${jobCode}`;
     const content = `<p>Here is your Job Code link to confirm our job agreement:</p><p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p><p>Job Code: <strong>${jobCode}</strong></p><p>Please open this link and enter your details to confirm the job. شکریہ 🔑</p>`;
-    await supabase.from('messages').insert({
+    await getDb().from('messages').insert({
       sender_id: user.id,
       recipient_id: recipientId,
       message_type: 'direct',

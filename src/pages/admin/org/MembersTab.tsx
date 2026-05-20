@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, X, Users, ChevronDown } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface UserProfile {
@@ -100,7 +100,7 @@ function AssignModal({
     }
     setSaving(true);
     setError('');
-    const { error: err } = await supabase.from('user_org_memberships').upsert({
+    const { error: err } = await getDb().from('user_org_memberships').upsert({
       user_id: selectedUser.id,
       department_id: deptId,
       region_id: regionId,
@@ -274,10 +274,10 @@ export default function MembersTab() {
 
     // Fetch supporting data in parallel
     const [usersRes, deptRes, regRes, roleRes] = await Promise.all([
-      supabase.from('users').select('id, full_name, email, profile_pic_url'),
-      supabase.from('departments').select('id, name, icon').eq('is_active', true).order('name'),
-      supabase.from('regions').select('id, name, level').order('name'),
-      supabase.from('org_roles').select('id, name').order('name'),
+      getDb().from('users').select('id, full_name, email, profile_pic_url'),
+      getDb().from('departments').select('id, name, icon').eq('is_active', true).order('name'),
+      getDb().from('regions').select('id, name, level').order('name'),
+      getDb().from('org_roles').select('id, name').order('name'),
     ]);
 
     const usersMap   = new Map((usersRes.data   || []).map(u => [u.id, u]));
@@ -304,7 +304,7 @@ export default function MembersTab() {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const revoke = async (id: string) => {
-    await supabase.from('user_org_memberships').update({ is_active: false }).eq('id', id);
+    await getDb().from('user_org_memberships').update({ is_active: false }).eq('id', id);
     fetchAll();
   };
 

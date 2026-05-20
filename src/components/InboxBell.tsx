@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 export default function InboxBell() {
@@ -81,7 +81,7 @@ export default function InboxBell() {
       }, () => calcUnread())
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => getDb().removeChannel(channel);
   }, [user?.id, user?.role]);
 
   return (

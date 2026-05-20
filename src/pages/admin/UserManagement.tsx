@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import LocationPicker, { LocationValue } from '@/components/LocationPicker';
 import { PROFESSIONS, USER_TIERS, USER_ROLES } from '@/lib/constants';
@@ -126,7 +126,7 @@ export default function UserManagement() {
     // ── ENB DOCTRINE: Admin updates to other users' rows MUST use a SECURITY DEFINER RPC.
     // Direct .update() is blocked by RLS (anon key — each user can only update their own row).
     // The RPC runs with elevated privileges, bypassing RLS safely with an internal auth check.
-    const { error } = await supabase.rpc('admin_update_user_profile', {
+    const { error } = await getDb().rpc('admin_update_user_profile', {
       p_target_id:    editTarget.id,
       p_full_name:    updatedFields.full_name    ?? null,
       p_neighbourhood: updatedFields.neighbourhood ?? null,
@@ -169,7 +169,7 @@ export default function UserManagement() {
     setAirdropping(true);
     setAirdropError('');
     try {
-      const { data, error } = await supabase.rpc('airdrop_enb', {
+      const { data, error } = await getDb().rpc('airdrop_enb', {
         p_admin_id: adminUser.id,
         p_target_user_id: airdropTarget.id,
         p_amount: parseFloat(airdropAmount),
@@ -190,7 +190,7 @@ export default function UserManagement() {
 
   const handleToggleActive = async (u: DBUser) => {
     // RLS blocks direct update on other users — must use RPC
-    const { error } = await supabase.rpc('admin_update_user_profile', {
+    const { error } = await getDb().rpc('admin_update_user_profile', {
       p_target_id:     u.id,
       p_full_name:     u.full_name ?? null,
       p_neighbourhood: u.neighbourhood ?? null,
@@ -209,7 +209,7 @@ export default function UserManagement() {
   const handleChangeRole = async (u: DBUser, newRole: string) => {
     const oldRole = u.role;
     // RLS blocks direct update on other users — must use RPC
-    const { error } = await supabase.rpc('admin_update_user_profile', {
+    const { error } = await getDb().rpc('admin_update_user_profile', {
       p_target_id:     u.id,
       p_full_name:     u.full_name ?? null,
       p_neighbourhood: u.neighbourhood ?? null,
@@ -230,7 +230,7 @@ export default function UserManagement() {
       setUser((prev: any) => prev ? { ...prev, role: newRole as any } : prev);
     }
     // Write audit record — never lose the trail of who was changed to what and when
-    await supabase.from('role_change_audit').insert({
+    await getDb().from('role_change_audit').insert({
       user_id:    u.id,
       changed_by: adminUser?.id || null,
       old_role:   oldRole,
@@ -269,7 +269,7 @@ export default function UserManagement() {
       if (dbError) throw dbError;
 
       // Step 2: delete from auth.users via SECURITY DEFINER RPC
-      const { error: authError } = await supabase.rpc('admin_delete_auth_user', {
+      const { error: authError } = await getDb().rpc('admin_delete_auth_user', {
         p_user_id: deleteTarget.id,
       });
       if (authError) throw authError;

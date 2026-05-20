@@ -6,7 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -194,7 +194,7 @@ function ResolutionModal({ report, onClose, onSuccess }: ResolutionModalProps) {
 
     setSubmitting(true); setError('');
     try {
-      const { error: insertErr } = await supabase.from('submissions').insert({
+      const { error: insertErr } = await getDb().from('submissions').insert({
         user_id: user.id,
         action_type: 'resolution',
         parent_submission_id: report.id,

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Shield, Car, CheckCircle, Clock, XCircle, Upload, Loader2, ChevronDown, ChevronUp, Camera, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 
@@ -114,7 +114,7 @@ export default function CaptainOnboarding({ onApproved }: Props) {
     if (!cnicFrontUrl) { setError('Please upload your CNIC front.'); return; }
     setSubmitting(true);
     setError('');
-    const { error: err } = await supabase.from('captain_applications').upsert({
+    const { error: err } = await getDb().from('captain_applications').upsert({
       user_id: user.id,
       status: 'pending',
       license_categories: licenseCategories,

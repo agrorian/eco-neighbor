@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { Navigate } from 'react-router-dom';
 
 const ALLOWED_ROLES = ['founder', 'moderator', 'admin', 'super_admin', 'onboarding_team'];
@@ -99,7 +99,7 @@ function ReportTab({ userId }: { userId: string }) {
   const fetchReport = async () => {
     setLoading(true);
     setError('');
-    const { data, error } = await supabase.rpc('generate_log_report', {
+    const { data, error } = await getDb().rpc('generate_log_report', {
       p_user_id: userId,
       p_from_date: range.from,
       p_to_date: range.to,
@@ -595,7 +595,7 @@ export default function MyLog() {
     if (description.length > MAX_CHARS) { setError(`Total content exceeds ${MAX_CHARS} characters.`); return; }
     setSubmitting(true); setError('');
     try {
-      const { data, error } = await supabase.rpc('submit_daily_log', {
+      const { data, error } = await getDb().rpc('submit_daily_log', {
         p_user_id: user!.id, p_category: category, p_description: description,
       });
       if (error) throw error;

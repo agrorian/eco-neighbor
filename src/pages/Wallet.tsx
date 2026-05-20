@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
 import TransactionHistory from './wallet/TransactionHistory';
 
@@ -182,7 +182,7 @@ export default function Wallet() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(bpChannel);
+      getDb().removeChannel(bpChannel);
     };
   }, [user?.id]);
 

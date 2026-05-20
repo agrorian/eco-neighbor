@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import QRCode from 'qrcode';
 
 interface Business {
@@ -43,18 +43,18 @@ export default function GenerateRedemptionQR() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    supabase.from('business_partners')
+    getDb().from('business_partners')
       .select('id, business_name, discount_offer')
       .eq('is_active', true)
       .then(({ data }) => { if (data) setBusinesses(data); });
 
-    supabase.rpc('release_expired_redemptions').then(() => {});
+    getDb().rpc('release_expired_redemptions').then(() => {});
   }, []);
 
   // Fetch offers when business selected
   useEffect(() => {
     if (!selectedBiz) { setOffers([]); setSelectedOffer(null); return; }
-    supabase.from('business_offers')
+    getDb().from('business_offers')
       .select('*')
       .eq('partner_id', selectedBiz)
       .eq('is_active', true)
@@ -79,7 +79,7 @@ export default function GenerateRedemptionQR() {
       if (secs === 0) {
         setQrData(null);
         setQrImageUrl('');
-        supabase.from('users').select('enb_local_bal').eq('id', user!.id).single()
+        getDb().from('users').select('enb_local_bal').eq('id', user!.id).single()
           .then(({ data }) => { if (data) setUser((prev: any) => prev ? { ...prev, enb_local_bal: data.enb_local_bal } : prev); }); // ENB DOCTRINE: functional update
       }
     }, 1000);
@@ -106,7 +106,7 @@ export default function GenerateRedemptionQR() {
 
     setLoading(true); setError('');
     try {
-      const { data, error: rpcError } = await supabase.rpc('create_redemption_qr', {
+      const { data, error: rpcError } = await getDb().rpc('create_redemption_qr', {
         p_user_id: user.id,
         p_business_id: selectedBiz,
         p_enb_amount: amount,
@@ -129,7 +129,7 @@ export default function GenerateRedemptionQR() {
     setCancelling(true);
     try {
       // Supabase ground truth: cancel_redemption_qr(p_qr_token text, p_user_id uuid)
-      const { data } = await supabase.rpc('cancel_redemption_qr', {
+      const { data } = await getDb().rpc('cancel_redemption_qr', {
         p_qr_token: qrData.code,
         p_user_id: user.id,
       });

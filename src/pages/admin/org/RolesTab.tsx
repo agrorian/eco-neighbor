@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Pencil, Check, X, Shield, ChevronDown, ChevronUp } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface OrgRole {
@@ -97,7 +97,7 @@ function RoleCard({ role, departments, onRefresh }: {
   const save = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    await supabase.from('org_roles').update({
+    await getDb().from('org_roles').update({
       name: name.trim(),
       department_id: deptId || null,
       permissions,
@@ -235,7 +235,7 @@ function NewRoleForm({ departments, onSave, onCancel }: {
   const save = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    await supabase.from('org_roles').insert({
+    await getDb().from('org_roles').insert({
       name: name.trim(),
       department_id: deptId || null,
       permissions,
@@ -314,8 +314,8 @@ export default function RolesTab() {
 
   const fetchAll = useCallback(async () => {
     const [rolesRes, deptsRes] = await Promise.all([
-      supabase.from('org_roles').select('*').order('name'),
-      supabase.from('departments').select('id, name, icon').eq('is_active', true).order('name'),
+      getDb().from('org_roles').select('*').order('name'),
+      getDb().from('departments').select('id, name, icon').eq('is_active', true).order('name'),
     ]);
     setRoles(rolesRes.data || []);
     setDepartments(deptsRes.data || []);

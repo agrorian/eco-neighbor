@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface BusinessStats {
@@ -100,7 +100,7 @@ export default function BusinessDashboard() {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { getDb().removeChannel(channel); };
   }, [user?.id]);
 
   const fetchDashboard = async () => {
@@ -118,7 +118,7 @@ export default function BusinessDashboard() {
       setInitialFloat(biz.enb_float || 10000);
     }
 
-    const { data } = await supabase.rpc('get_business_stats', { p_user_id: user.id });
+    const { data } = await getDb().rpc('get_business_stats', { p_user_id: user.id });
     if (data?.success) setStats(data);
 
     setLoading(false);

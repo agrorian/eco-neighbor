@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Bell, BellOff, Pin, CheckCheck } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -184,7 +184,7 @@ export default function Inbox() {
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => getDb().removeChannel(channel);
   }, [fetchMessages]);
 
   // ── Mark as read ────────────────────────────────────────────────────────────

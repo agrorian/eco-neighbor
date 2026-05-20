@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useT } from '@/contexts/LanguageContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { isTransformationAction, formatActionLabel } from '@/lib/beforeAfter';
 import PairedSubmissionView from '@/components/PairedSubmissionView';
@@ -298,7 +298,7 @@ export default function ModQueue() {
       return;
     }
 
-    const { data: result } = await supabase.rpc('evaluate_mod_decision', { p_assignment_id: assignment.id });
+    const { data: result } = await getDb().rpc('evaluate_mod_decision', { p_assignment_id: assignment.id });
 
     if (result?.status === 'approved') {
       showToast('\u2705 Both mods agreed \u2014 submission approved! +500 ENB earned.');
@@ -320,7 +320,7 @@ export default function ModQueue() {
 
           if (jobReq?.customer_user_id && jobReq?.job_code) {
             const ratingUrl = `${window.location.origin}/job/${jobReq.job_code}/rate`;
-            await supabase.from('messages').insert({
+            await getDb().from('messages').insert({
               sender_id:    jobReq.tradesperson_id,
               recipient_id: jobReq.customer_user_id,
               message_type: 'direct',

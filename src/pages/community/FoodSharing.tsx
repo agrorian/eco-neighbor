@@ -8,7 +8,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 // ── CFSP Priority Waterfall — Canonical ──────────────────────────────────────
 // T1 has two sub-categories (a) and (b) per whitepaper v6.2
@@ -151,7 +151,7 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
     if (!motivation.trim()) { setError('Please tell us a bit about yourself.'); return; }
     setLoading(true); setError('');
 
-    const { error: dbError } = await supabase.from('volunteer_applications').insert({
+    const { error: dbError } = await getDb().from('volunteer_applications').insert({
       user_id: user.id,
       role_applied: 'food_runner',
       motivation: `Vehicle: ${vehicle}\nPhone: ${phone}\n\n${motivation.trim()}`,

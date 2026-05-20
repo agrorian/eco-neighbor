@@ -3,7 +3,7 @@ import { ArrowLeft, TrendingDown, AlertCircle, Loader2, RefreshCw, CheckCircle, 
 import { Button } from '@/components/ui/button';
 import { Link, Navigate } from 'react-router-dom';
 import { useUserStore } from '@/store/user';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 interface FloatData {
   id: string;
@@ -67,7 +67,7 @@ export default function PartnerFloat() {
       .eq('owner_user_id', user!.id)
       .single();
     if (partner) {
-      await supabase.rpc('check_float_status', { p_partner_id: partner.id });
+      await getDb().rpc('check_float_status', { p_partner_id: partner.id });
       await fetchAll();
     }
     setChecking(false);

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, CheckCircle, Loader2, AlertCircle, X, Plus, MapPin, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { useUserStore } from '@/store/user';
 import { gpsDistanceMetres, MAX_GPS_DRIFT_METRES } from '@/lib/beforeAfter';
@@ -312,7 +312,7 @@ export default function AfterPhotoSubmission({
       // RLS silent failure: update ran but matched 0 rows (policy blocked it)
       // In this case we use an RPC fallback that runs with SECURITY DEFINER
       if (!updateCount || updateCount === 0) {
-        const { error: rpcErr } = await supabase.rpc('mark_before_submitted', {
+        const { error: rpcErr } = await getDb().rpc('mark_before_submitted', {
           p_submission_id: submissionId,
           p_after_id: afterRec.id,
         });

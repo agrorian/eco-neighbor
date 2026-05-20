@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 interface Stats {
   totalUsers: number;
@@ -52,10 +52,10 @@ export default function AdminDashboard() {
         .eq('status', 'pending');
 
       const [usersRes, pendingRes, txRes, recentSubsRes] = await Promise.all([
-        supabase.from('users').select('id', { count: 'exact', head: true }),
+        getDb().from('users').select('id', { count: 'exact', head: true }),
         pendingQuery,
-        supabase.from('users').select('lifetime_earned'),
-        supabase.from('submissions')
+        getDb().from('users').select('lifetime_earned'),
+        getDb().from('submissions')
           .select('id, user_id, action_type, status, reviewed_at, submitted_at')
           .in('status', ['approved', 'rejected'])
           .order('submitted_at', { ascending: false })
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
       // Fetch user names separately to avoid join issues
       const userIds = [...new Set((recentSubsRes.data || []).map((s: any) => s.user_id))];
       const { data: usersData } = userIds.length > 0
-        ? await supabase.from('users').select('id, full_name').in('id', userIds)
+        ? await getDb().from('users').select('id, full_name').in('id', userIds)
         : { data: [] };
       const userMap = new Map((usersData || []).map((u: any) => [u.id, u.full_name]));
 
@@ -98,10 +98,10 @@ export default function AdminDashboard() {
       // Pool stats fetch
       try {
         const [swapAgg, opsLedger] = await Promise.all([
-          supabase.from('redemptions')
+          getDb().from('redemptions')
             .select('enb_spent, crp_credit, business_global_credit, treasury_credit, ops_fund_credit')
             .eq('status', 'confirmed'),
-          supabase.from('ops_fund_ledger')
+          getDb().from('ops_fund_ledger')
             .select('enb_amount, ops_fund_enb, created_at')
             .order('created_at', { ascending: false }),
         ]);

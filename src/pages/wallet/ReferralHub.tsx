@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import QRCode from 'qrcode';
 
 interface ReferredUser {
@@ -74,11 +74,11 @@ export default function ReferralHub() {
   const fetchReferralData = async () => {
     setLoading(true);
     const [refRes, escrowRes] = await Promise.all([
-      supabase.from('users')
+      getDb().from('users')
         .select('id, full_name, email, tier, referral_reward_paid, referral_milestone_paid, created_at')
         .eq('referred_by', user!.id)
         .order('created_at', { ascending: false }),
-      supabase.from('referral_escrow')
+      getDb().from('referral_escrow')
         .select('*')
         .eq('referrer_id', user!.id)
         .order('created_at', { ascending: false }),

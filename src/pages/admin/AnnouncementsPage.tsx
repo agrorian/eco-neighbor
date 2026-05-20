@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Pin, Trash2, Send, Users, Clock } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import RichTextEditor from '@/components/RichTextEditor';
 
@@ -176,7 +176,7 @@ export default function AnnouncementsPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages',
         filter: 'message_type=eq.broadcast' }, fetchMessages)
       .subscribe();
-    return () => supabase.removeChannel(channel);
+    return () => getDb().removeChannel(channel);
   }, [fetchMessages, user?.id]);
 
   const persistDrafts = (d: any[]) => {
@@ -187,7 +187,7 @@ export default function AnnouncementsPage() {
   const handleSend = async (html: string) => {
     if (!user) return;
     setSending(true);
-    const { error } = await supabase.from('messages').insert({
+    const { error } = await getDb().from('messages').insert({
       sender_id:       user.id,
       message_type:    'broadcast',
       content:         html,
@@ -228,13 +228,13 @@ export default function AnnouncementsPage() {
   };
 
   const deleteMessage = async (id: string) => {
-    await supabase.from('messages').delete().eq('id', id);
+    await getDb().from('messages').delete().eq('id', id);
     setMessages(prev => prev.filter(m => m.id !== id));
     showToast('Deleted.');
   };
 
   const pinMessage = async (msg: Message) => {
-    await supabase.from('messages').update({ is_pinned: !msg.is_pinned }).eq('id', msg.id);
+    await getDb().from('messages').update({ is_pinned: !msg.is_pinned }).eq('id', msg.id);
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned: !m.is_pinned } : m));
     showToast(msg.is_pinned ? 'Unpinned.' : 'Pinned.');
   };

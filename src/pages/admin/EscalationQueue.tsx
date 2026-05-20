@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle, XCircle, Loader2, RefreshCw, MapPin, Shield
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface EscalatedCase {
@@ -101,7 +101,7 @@ export default function EscalationQueue() {
 
     if (dec.decision === 'APPROVE') {
       // Approve via RPC
-      const { error } = await supabase.rpc('approve_submission', {
+      const { error } = await getDb().rpc('approve_submission', {
         p_submission_id: c.submission_id,
         p_moderator_id: user.id,
         p_enb_amount: 500,
@@ -111,7 +111,7 @@ export default function EscalationQueue() {
       if (error) { showToast('❌ Error: ' + error.message); setSubmitting(null); return; }
     } else {
       // Reject
-      await supabase.from('submissions').update({
+      await getDb().from('submissions').update({
         status: 'rejected',
         moderator_note: `Senior decision: ${dec.reason}`,
         reviewed_at: new Date().toISOString(),
@@ -120,12 +120,12 @@ export default function EscalationQueue() {
     }
 
     // Clear escalation flag
-    await supabase.from('moderator_assignments')
+    await getDb().from('moderator_assignments')
       .update({ escalation_flag: false })
       .eq('id', c.id);
 
     // Pay senior mod 750 ENB
-    await supabase.from('users')
+    await getDb().from('users')
       .update({ enb_local_bal: supabase.rpc as any })
       .eq('id', user.id);
 
@@ -133,11 +133,11 @@ export default function EscalationQueue() {
     const { data: seniorUser } = await supabase
       .from('users').select('enb_local_bal').eq('id', user.id).single();
     if (seniorUser) {
-      await supabase.from('users')
+      await getDb().from('users')
         .update({ enb_local_bal: (seniorUser.enb_local_bal || 0) + 750 })
         .eq('id', user.id);
     }
-    await supabase.from('transactions').insert({
+    await getDb().from('transactions').insert({
       user_id: user.id,
       type: 'MODERATOR_REWARD',
       enb_amount: 750,

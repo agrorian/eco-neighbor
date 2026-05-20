@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Zap, Check, AlertCircle, Hash } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface PreviewChannel {
@@ -62,10 +62,10 @@ export default function GenerateChannelsModal({
     const userIds   = [...new Set(admins.map(a => a.user_id))];
 
     const [deptsRes, regionsRes, usersRes, existingRes] = await Promise.all([
-      supabase.from('departments').select('id, name, icon').in('id', deptIds),
-      supabase.from('regions').select('id, name').in('id', regionIds),
-      supabase.from('users').select('id, full_name').in('id', userIds),
-      supabase.from('channels').select('dept_id, region_id').eq('auto_generated', true),
+      getDb().from('departments').select('id, name, icon').in('id', deptIds),
+      getDb().from('regions').select('id, name').in('id', regionIds),
+      getDb().from('users').select('id, full_name').in('id', userIds),
+      getDb().from('channels').select('dept_id, region_id').eq('auto_generated', true),
     ]);
 
     const deptsMap   = new Map((deptsRes.data   || []).map(d => [d.id, d]));
@@ -146,7 +146,7 @@ export default function GenerateChannelsModal({
       if (!channel) continue;
 
       // Add dept admin as channel admin
-      await supabase.from('channel_members').insert({
+      await getDb().from('channel_members').insert({
         channel_id: channel.id,
         user_id:    ch.admin_id,
         role:       'admin',
@@ -162,7 +162,7 @@ export default function GenerateChannelsModal({
         .neq('user_id', ch.admin_id);
 
       if (members?.length) {
-        await supabase.from('channel_members').insert(
+        await getDb().from('channel_members').insert(
           members.map(m => ({
             channel_id: channel.id,
             user_id:    m.user_id,

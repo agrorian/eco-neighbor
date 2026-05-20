@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { BUSINESS_CATEGORIES, BUSINESS_TYPE_EMOJI } from '@/lib/constants';
 
 export default function PartnerSignup() {
@@ -118,7 +118,7 @@ export default function PartnerSignup() {
     }
     setLoading(true); setError('');
 
-    const { error: dbError } = await supabase.from('partner_applications').insert({
+    const { error: dbError } = await getDb().from('partner_applications').insert({
       business_name: businessName.trim(),
       category,
       owner_name: ownerName.trim(),

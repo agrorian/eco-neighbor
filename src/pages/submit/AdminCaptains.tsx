@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Shield, ChevronDown, ChevronUp, CheckCircle, XCircle, Loader2, ExternalLink, Car } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 const ALL_VEHICLE_TYPES = ['Bike', 'Rickshaw', 'Auto-rickshaw', 'Car', 'Van/Minivan', 'Bus/Coaster'];
@@ -130,7 +130,7 @@ export default function AdminCaptains() {
       })
       .eq('id', app.id);
     // Also revoke rider status
-    await supabase.from('users').update({ is_carpool_rider: false }).eq('id', app.user_id);
+    await getDb().from('users').update({ is_carpool_rider: false }).eq('id', app.user_id);
     setSaving(null);
     setExpandedId(null);
     fetchApps();

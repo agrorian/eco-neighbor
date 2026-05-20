@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 // ── v6.3 canonical ECP model ─────────────────────────────────────────────────
 // ECP = tokens individually aged 365+ days (from reviewed_at) - FIFO debits - prior conversions
@@ -84,7 +84,7 @@ export default function MaturationBridge() {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const { data, error: rpcErr } = await supabase.rpc('check_bridge_eligibility', {
+      const { data, error: rpcErr } = await getDb().rpc('check_bridge_eligibility', {
         p_user_id: user.id,
       });
       if (rpcErr) throw rpcErr;
@@ -122,7 +122,7 @@ export default function MaturationBridge() {
     setSubmitting(true);
     setError('');
     try {
-      const { error: insertErr } = await supabase.from('bridge_requests').insert({
+      const { error: insertErr } = await getDb().from('bridge_requests').insert({
         user_id: user.id,
         requested_amount: amt,
         ecp_snapshot: eligibility.ecp,

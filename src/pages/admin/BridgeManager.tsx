@@ -6,7 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface BridgeRequest {
@@ -270,7 +270,7 @@ export default function BridgeManager() {
     if (!user?.id) return;
     setProcessing(requestId);
     try {
-      const { data, error } = await supabase.rpc('approve_bridge_request', {
+      const { data, error } = await getDb().rpc('approve_bridge_request', {
         p_request_id: requestId,
         p_reviewer_id: user.id,
       });

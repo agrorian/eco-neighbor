@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Bug, X, Send, Loader2, CheckCircle, MapPin } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { useLocation } from 'react-router-dom';
 
@@ -65,7 +65,7 @@ export default function FloatingBugButton() {
     if (!title.trim() || !description.trim()) return;
     setSubmitting(true);
 
-    await supabase.from('bug_reports').insert({
+    await getDb().from('bug_reports').insert({
       title: title.trim(),
       description: description.trim(),
       screen: screenName,

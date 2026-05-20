@@ -1,6 +1,6 @@
 import React from 'react';
 import ENBLeaf from '@/components/ENBLeaf';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { motion } from 'motion/react';
 import { ArrowRight, Clock, Star, MapPin, History, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -127,7 +127,7 @@ const ImpactCounter = () => {
           .from('submissions')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'approved');
-        const { data: usersData } = await supabase.from('users').select('lifetime_earned');
+        const { data: usersData } = await getDb().from('users').select('lifetime_earned');
         const totalEnb = (usersData || []).reduce(
           (sum: number, u: any) => sum + (Number(u.lifetime_earned) || 0), 0
         );

@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 interface Campaign {
   id: string;
@@ -47,7 +47,7 @@ export default function CampaignManager() {
 
   const fetchCampaigns = async () => {
     setLoading(true);
-    const { data } = await supabase.from('campaigns').select('*').order('starts_at', { ascending: false });
+    const { data } = await getDb().from('campaigns').select('*').order('starts_at', { ascending: false });
     if (data) setCampaigns(data);
     setLoading(false);
   };
@@ -78,7 +78,7 @@ export default function CampaignManager() {
     if (!form.name || !form.budget_cap) { setError('Name and budget are required.'); return; }
     setSaving(true); setError('');
     try {
-      const { error } = await supabase.from('campaigns').insert({
+      const { error } = await getDb().from('campaigns').insert({
         name: form.name, description: form.description || null,
         multiplier: parseFloat(form.multiplier),
         budget_cap: parseInt(form.budget_cap), enb_distributed: 0,
@@ -97,7 +97,7 @@ export default function CampaignManager() {
     if (!editingCampaign || !form.name || !form.budget_cap) { setError('Name and budget are required.'); return; }
     setSaving(true); setError('');
     try {
-      const { error } = await supabase.from('campaigns').update({
+      const { error } = await getDb().from('campaigns').update({
         name: form.name, description: form.description || null,
         multiplier: parseFloat(form.multiplier),
         budget_cap: parseInt(form.budget_cap),
@@ -125,12 +125,12 @@ export default function CampaignManager() {
 
   const endCampaign = async (campaign: Campaign) => {
     if (!confirm(`End "${campaign.name}"? This will stop the campaign but keep all history.`)) return;
-    await supabase.from('campaigns').update({ is_active: false, ended_at: new Date().toISOString() }).eq('id', campaign.id);
+    await getDb().from('campaigns').update({ is_active: false, ended_at: new Date().toISOString() }).eq('id', campaign.id);
     fetchCampaigns();
   };
 
   const toggleActive = async (campaign: Campaign) => {
-    await supabase.from('campaigns').update({ is_active: !campaign.is_active }).eq('id', campaign.id);
+    await getDb().from('campaigns').update({ is_active: !campaign.is_active }).eq('id', campaign.id);
     setCampaigns(prev => prev.map(c => c.id === campaign.id ? { ...c, is_active: !c.is_active } : c));
   };
 

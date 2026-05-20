@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Shield, Camera, X, CheckCircle, Loader2, AlertCircle, ChevronDown, ChevronUp, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 function formatCNIC(value: string): string {
@@ -55,7 +55,7 @@ export default function CnicPrompt() {
     setCheckingCnic(true);
     setCnicError('');
     const digits = formatted.replace(/\D/g, '');
-    const { data } = await supabase.from('users').select('id').eq('cnic_number', digits).maybeSingle();
+    const { data } = await getDb().from('users').select('id').eq('cnic_number', digits).maybeSingle();
     setCheckingCnic(false);
     if (data && data.id !== user.id) {
       setCnicError('This ID is already registered to another account.');
@@ -159,7 +159,7 @@ export default function CnicPrompt() {
       const digits = isPakistan ? cnicNumber.replace(/\D/g, '') : cnicNumber.trim();
 
       if (digits) {
-        const { data: existing } = await supabase.from('users').select('id').eq('cnic_number', digits).maybeSingle();
+        const { data: existing } = await getDb().from('users').select('id').eq('cnic_number', digits).maybeSingle();
         if (existing && existing.id !== user.id) {
           setError('This ID is already registered to another account.');
           setSaving(false);
@@ -167,7 +167,7 @@ export default function CnicPrompt() {
         }
       }
 
-      const { error: updateError } = await supabase.from('users').update({
+      const { error: updateError } = await getDb().from('users').update({
         ...(digits ? { cnic_number: digits } : {}),
         ...(isPakistan && cnicPhotoUrl ? { cnic_photo_url: cnicPhotoUrl } : {}),
         cnic_submitted_at: new Date().toISOString(),

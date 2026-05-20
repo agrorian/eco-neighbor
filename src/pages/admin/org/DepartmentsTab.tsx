@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Pencil, Check, X, Building2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface Department {
@@ -40,7 +40,7 @@ function DeptCard({
   const save = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    await supabase.from('departments').update({
+    await getDb().from('departments').update({
       name: name.trim(),
       description: description.trim() || null,
       icon,
@@ -52,7 +52,7 @@ function DeptCard({
   };
 
   const toggleActive = async () => {
-    await supabase.from('departments')
+    await getDb().from('departments')
       .update({ is_active: !dept.is_active })
       .eq('id', dept.id);
     onRefresh();
@@ -174,7 +174,7 @@ function NewDeptForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =>
   const save = async () => {
     if (!name.trim() || !user) return;
     setSaving(true);
-    await supabase.from('departments').insert({
+    await getDb().from('departments').insert({
       name: name.trim(),
       description: description.trim() || null,
       icon,

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronDown, Plus, Pencil, Check, X, MapPin, Layers } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -92,7 +92,7 @@ function AddRegionForm({
   const save = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from('regions').insert({
+    const { error } = await getDb().from('regions').insert({
       name: name.trim(),
       level,
       is_group: isGroup,
@@ -160,7 +160,7 @@ function EditRegionForm({ region, onSave, onCancel }: {
   const save = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    await supabase.from('regions').update({
+    await getDb().from('regions').update({
       name: name.trim(),
       description: description.trim() || null,
     }).eq('id', region.id);

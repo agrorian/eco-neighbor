@@ -3,7 +3,7 @@ import { CheckCircle, X, Loader2, Store, Users, ChevronDown, ChevronUp, AlertCir
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 
 interface PartnerApp {
@@ -102,7 +102,7 @@ export default function AdminOnboarding() {
 
   const approvePartner = async (appId: string) => {
     setSaving(appId);
-    await supabase.rpc('approve_partner_application', {
+    await getDb().rpc('approve_partner_application', {
       p_application_id: appId,
       p_admin_id: user!.id,
       p_admin_note: adminNote || null,
@@ -115,7 +115,7 @@ export default function AdminOnboarding() {
   const returnPartner = async (appId: string) => {
     if (!adminNote.trim()) { alert('Please add a note explaining what needs to be corrected.'); return; }
     setSaving(appId);
-    await supabase.rpc('return_partner_application', {
+    await getDb().rpc('return_partner_application', {
       p_application_id: appId,
       p_admin_note: adminNote,
     });
@@ -126,17 +126,17 @@ export default function AdminOnboarding() {
   const approveVolunteer = async (vApp: VolunteerApp) => {
     setSaving(vApp.id);
     // Update volunteer application
-    await supabase.from('volunteer_applications').update({
+    await getDb().from('volunteer_applications').update({
       status: 'approved', reviewed_by: user!.id, reviewed_at: new Date().toISOString()
     }).eq('id', vApp.id);
     // Update user role
-    await supabase.from('users').update({ role: 'onboarding_team' }).eq('id', vApp.user_id);
+    await getDb().from('users').update({ role: 'onboarding_team' }).eq('id', vApp.user_id);
     setSaving(null); fetchAll();
   };
 
   const rejectVolunteer = async (vApp: VolunteerApp) => {
     setSaving(vApp.id);
-    await supabase.from('volunteer_applications').update({
+    await getDb().from('volunteer_applications').update({
       status: 'rejected', reviewed_by: user!.id, reviewed_at: new Date().toISOString()
     }).eq('id', vApp.id);
     setSaving(null); fetchAll();

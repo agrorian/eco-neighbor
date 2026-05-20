@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 import { useUserStore } from '@/store/user';
 import { Navigate } from 'react-router-dom';
 
@@ -101,7 +101,7 @@ export default function BusinessOffers() {
     if (formType === 'swap' && !enbCost) return;
 
     setSaving(true);
-    const { error } = await supabase.from('business_offers').insert({
+    const { error } = await getDb().from('business_offers').insert({
       partner_id: partnerId,
       owner_user_id: user.id,
       category: formType,
@@ -130,7 +130,7 @@ export default function BusinessOffers() {
   const handleEditSave = async () => {
     if (!editingOffer || !editName.trim()) return;
     setEditSaving(true);
-    await supabase.from('business_offers').update({
+    await getDb().from('business_offers').update({
       item_name: editName.trim(),
       description: editDesc.trim() || null,
       discount_pct: editingOffer.category === 'discount' ? parseInt(editDiscount) || null : null,
@@ -144,13 +144,13 @@ export default function BusinessOffers() {
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    await supabase.from('business_offers').update({ is_active: !current }).eq('id', id);
+    await getDb().from('business_offers').update({ is_active: !current }).eq('id', id);
     fetchOffers();
   };
 
   const deleteOffer = async (id: string) => {
     if (!confirm('Delete this offer? This cannot be undone.')) return;
-    await supabase.from('business_offers').delete().eq('id', id);
+    await getDb().from('business_offers').delete().eq('id', id);
     fetchOffers();
   };
 

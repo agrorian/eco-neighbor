@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
 import { useT } from '@/contexts/LanguageContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDb } from '@/lib/supabase';
 
 interface Proposal {
   id: string;
@@ -72,7 +72,7 @@ export default function Governance() {
     setCreateError('');
     const endsAt = new Date();
     endsAt.setDate(endsAt.getDate() + newProposal.voting_days);
-    const { error } = await supabase.from('governance_proposals').insert({
+    const { error } = await getDb().from('governance_proposals').insert({
       title: newProposal.title.trim(),
       description: newProposal.description.trim(),
       proposal_type: newProposal.proposal_type,
@@ -124,7 +124,7 @@ export default function Governance() {
     if (!canVoteOnProposal(proposal) || userVotes[proposal.id]) return;
     setVoting(proposal.id);
     try {
-      const { error } = await supabase.from('governance_votes').insert({
+      const { error } = await getDb().from('governance_votes').insert({
         proposal_id: proposal.id,
         user_id: user.id,
         vote: voteType,
@@ -132,7 +132,7 @@ export default function Governance() {
       if (!error) {
         setUserVotes(prev => ({ ...prev, [proposal.id]: voteType }));
         // Update vote counts via RPC or optimistically
-        await supabase.from('governance_proposals').update({
+        await getDb().from('governance_proposals').update({
           votes_for: proposal.votes_for + (voteType === 'for' ? 1 : 0),
           votes_against: proposal.votes_against + (voteType === 'against' ? 1 : 0),
         }).eq('id', proposal.id);
