@@ -19,7 +19,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const { user } = useUserStore();
-  const { isTestEnvironment } = useEnvironment();
+  const { isTestEnvironment, environment } = useEnvironment();
 
   // ── Global last_seen updater — runs app-wide ──────────────────────────────
   // Uses correct schema client based on user's environment
@@ -53,7 +53,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="md:hidden flex justify-end items-center px-4 pt-3 pb-1">
           <InboxBell />
         </div>
-        <main className="p-4 md:p-6 pb-24 md:pb-8 max-w-5xl mx-auto">
+        <main key={environment} className="p-4 md:p-6 pb-24 md:pb-8 max-w-5xl mx-auto">
           {children}
         </main>
       </div>

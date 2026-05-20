@@ -29,7 +29,7 @@ export default function AdminLayout() {
   const location = useLocation();
   const { user } = useUserStore();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const { isTestEnvironment } = useEnvironment();
+  const { isTestEnvironment, environment } = useEnvironment();
 
   // ── ENB DOCTRINE: Role comes from the store — never re-query DB for role on each render ──
   // [user?.id] dep: only re-evaluate when the user identity changes, not on every balance update.
@@ -142,7 +142,7 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto h-[calc(100vh-64px)] md:h-screen p-4 md:p-6">
+      <main key={environment} className="flex-1 overflow-y-auto h-[calc(100vh-64px)] md:h-screen p-4 md:p-6">
         <div className="max-w-5xl mx-auto">
           <Outlet />
         </div>
