@@ -1,12 +1,4 @@
 // src/lib/supabase.ts
-// ── ENB DOCTRINE: Two named clients — never mix schemas accidentally ─────────
-// supabase → always queries public schema (real/Genesis environment)
-// supabaseTest → always queries test schema (development environment)
-// getDb() → returns the correct client based on current user environment
-//
-// SECURITY: auth operations always use the public client regardless of environment.
-// Supabase Auth lives in auth.users — it is schema-agnostic and shared.
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -26,16 +18,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // ── Test schema client (development/QA environment) ───────────────────────────
+// CRITICAL: Must use same storageKey as supabase client to share the auth session.
+// Different storageKey causes unauthenticated requests (auth.uid() = null).
 export const supabaseTest = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { ...AUTH_CONFIG, storageKey: 'enb-auth-token-test' },
+  auth: AUTH_CONFIG,
   db: { schema: 'test' },
 });
 
 // ── Environment-aware client selector ────────────────────────────────────────
-// Reads from a module-level variable set by setDbEnvironment().
-// Components call getDb() — no React hook, no require(), no circular deps.
-// App.tsx calls setDbEnvironment() whenever user.environment changes.
-
 let _currentEnvironment: 'real' | 'test' = 'real';
 
 export function setDbEnvironment(env: 'real' | 'test') {
