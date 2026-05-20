@@ -3,6 +3,8 @@ import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { AlertTriangle, LayoutDashboard, CheckSquare, Users, Megaphone, Store, ArrowRightLeft, Shield, LogOut, Loader2, ClipboardList, Bug, Radio, GitBranch, BarChart2, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserStore, isSuperAdmin as checkSuperAdmin } from '@/store/user';
+import { useEnvironment } from '@/contexts/EnvironmentContext';
+import TestEnvironmentBanner from '@/components/layout/TestEnvironmentBanner';
 import { supabase } from '@/lib/supabase';
 
 const NAV_ITEMS = [
@@ -27,6 +29,7 @@ export default function AdminLayout() {
   const location = useLocation();
   const { user } = useUserStore();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const { isTestEnvironment } = useEnvironment();
 
   // ── ENB DOCTRINE: Role comes from the store — never re-query DB for role on each render ──
   // [user?.id] dep: only re-evaluate when the user identity changes, not on every balance update.
@@ -52,8 +55,12 @@ export default function AdminLayout() {
     return <Navigate to="/" replace />;
   }
 
+  const bannerOffset = isTestEnvironment ? '36px' : '0px';
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+    <>
+      <TestEnvironmentBanner />
+      <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row" style={{ paddingTop: bannerOffset }}>
       <aside className="bg-white border-b md:border-b-0 md:border-r border-gray-200 w-full md:w-64 flex-shrink-0">
 
         {/* Header */}
@@ -141,5 +148,6 @@ export default function AdminLayout() {
         </div>
       </main>
     </div>
+    </>
   );
 }
